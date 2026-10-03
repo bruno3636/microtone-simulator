@@ -9,6 +9,7 @@ import { DegreeGrid } from './components/DegreeGrid';
 import { KeyboardMap } from './components/KeyboardMap';
 import { InterScaleRatios } from './components/InterScaleRatios';
 import { SynthPanel } from './components/SynthPanel';
+import { Visualizer } from './viz/Visualizer';
 
 export default function App() {
   useResolvedTheme();
@@ -28,7 +29,7 @@ export default function App() {
             {tab === 'tuning' ? <TuningPanel /> : <SynthPanel />}
           </div>
         </div>
-        {/* VISUALIZER */}
+        <Visualizer />
         <DegreeGrid />
         <KeyboardMap />
         <InterScaleRatios />
