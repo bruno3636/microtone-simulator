@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildDegree, DEGREE_SOURCES } from '../src/tuning/degreeInput';
+import { buildDegree, DEGREE_SOURCES, SPELLED_NOTES } from '../src/tuning/degreeInput';
 import { evalRatio } from '../src/tuning/ratios';
 
 const value = (s: string | null) => (s == null ? null : evalRatio(s));
@@ -25,19 +25,32 @@ describe('buildDegree (insert degree from a typed value)', () => {
     expect(value(buildDegree({ source: 'custom_edo', steps: 11, divisions: 19 }))).toBeCloseTo(2 ** (11 / 19), 12);
     expect(buildDegree({ source: 'custom_edo', steps: 1, divisions: 0 })).toBeNull();
   });
-  it('Pythagorean: a note of the 12-note Pythagorean tuning (root = C)', () => {
-    expect(value(buildDegree({ source: 'pythagorean', note: 7 }))).toBeCloseTo(3 / 2, 12);
-    expect(value(buildDegree({ source: 'pythagorean', note: 5 }))).toBeCloseTo(4 / 3, 12);
-    expect(value(buildDegree({ source: 'pythagorean', note: 2 }))).toBeCloseTo(9 / 8, 12);
-    expect(value(buildDegree({ source: 'pythagorean', note: 6 }))).toBeCloseTo(1024 / 729, 12);
-    expect(buildDegree({ source: 'pythagorean', note: 0 })).toBe('1');
-    expect(buildDegree({ source: 'pythagorean', note: -1 })).toBeNull();
+  it('spelled notes: sharps and flats are separate entries placed on the chain of fifths', () => {
+    expect(SPELLED_NOTES.map((n) => n.name)).toEqual([
+      'C', 'C♯', 'D♭', 'D', 'D♯', 'E♭', 'E', 'F', 'F♯', 'G♭', 'G', 'G♯', 'A♭', 'A', 'A♯', 'B♭', 'B',
+    ]);
+    const fifths = Object.fromEntries(SPELLED_NOTES.map((n) => [n.name, n.fifths]));
+    expect(fifths).toMatchObject({ C: 0, G: 1, F: -1, 'C♯': 7, 'D♭': -5, 'F♯': 6, 'G♭': -6 });
   });
-  it('meantone: a note of the chosen variant (root = C)', () => {
-    expect(value(buildDegree({ source: 'meantone', variant: 'quarter', note: 4 }))).toBeCloseTo(5 / 4, 12);
-    expect(cents(buildDegree({ source: 'meantone', variant: 'third', note: 7 }))).toBeCloseTo(694.786, 2);
-    expect(value(buildDegree({ source: 'meantone', variant: 'quarter', note: 5 }))).toBeCloseTo(2 / 5 ** 0.25, 12);
-    expect(buildDegree({ source: 'meantone', variant: 'quarter', note: 12 })).toBeNull();
+  it('Pythagorean: sharps and flats are distinct pitches', () => {
+    const py = (spelling: string) => buildDegree({ source: 'pythagorean', spelling });
+    expect(value(py('G'))).toBeCloseTo(3 / 2, 12);
+    expect(value(py('F'))).toBeCloseTo(4 / 3, 12);
+    expect(value(py('C♯'))).toBeCloseTo(2187 / 2048, 12); // 113.7¢ apotome
+    expect(value(py('D♭'))).toBeCloseTo(256 / 243, 12); // 90.2¢ limma
+    expect(value(py('F♯'))).toBeCloseTo(729 / 512, 12);
+    expect(value(py('G♭'))).toBeCloseTo(1024 / 729, 12);
+    expect(py('C')).toBe('1');
+    expect(py('H')).toBeNull();
+  });
+  it('meantone: sharps and flats are distinct pitches in the chosen variant', () => {
+    const mt = (spelling: string, variant = 'quarter') => buildDegree({ source: 'meantone', variant, spelling });
+    expect(value(mt('E'))).toBeCloseTo(5 / 4, 12);
+    expect(cents(mt('C♯'))).toBeCloseTo(76.049, 2);
+    expect(cents(mt('D♭'))).toBeCloseTo(117.108, 2);
+    expect(cents(mt('G♯'))).toBeCloseTo(772.627, 2);
+    expect(cents(mt('A♭'))).toBeCloseTo(813.686, 2);
+    expect(cents(mt('G', 'third'))).toBeCloseTo(694.786, 2);
   });
   it('well temperament: a note of the chosen variant', () => {
     expect(cents(buildDegree({ source: 'well', variant: 'werckmeister3', note: 4 }))).toBeCloseTo(390.225, 2);

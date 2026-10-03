@@ -390,8 +390,11 @@ Behavior matches the original unless noted.
   Custom EDO are always chromatic.
 - **Insert degree popover** (`src/tuning/degreeInput.ts`): choose a value type and type the value —
   Just intonation (ratio), Tempered JI (ratio ± cents), 12EDO (steps), Custom EDO (steps of N),
-  Pythagorean (note), Meantone (variant + note), Well temperament (variant + note) — notes are
-  picked C–B with the root as C — **Cents** (stored as
+  Pythagorean (note), Meantone (variant + note), Well temperament (variant + note), with the root
+  as C. Pythagorean and meantone list 17 spelled notes (C C♯ D♭ D D♯ E♭ E F F♯ G♭ G G♯ A♭ A A♯ B♭ B),
+  each placed by its position on the chain of fifths, so enharmonic pairs are distinct pitches
+  (Pythagorean C♯ 2187/2048 vs D♭ 256/243); well temperament keeps 12 names (closed circle).
+  **Cents** (stored as
   `1 +Nc`, editable on the card) or **Frequency** (stored as `Hz / rootHz` against the current
   root). A preview shows the expression, cents and Hz; Add is disabled until the value is valid.
   The popover opens on the value type matching the current tuning (Just intonation for the

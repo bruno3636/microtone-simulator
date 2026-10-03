@@ -1,4 +1,4 @@
-import { tuningNotes } from './presets';
+import { MEANTONE_FRACTIONS, meantoneDegree, tuningNotes } from './presets';
 import { evalRatio, joinCents } from './ratios';
 
 /** Ways to type in a new scale degree (the "insert degree" popover). */
@@ -24,7 +24,9 @@ export interface DegreeInput {
   steps?: number;
   divisions?: number;
   variant?: string;
-  /** chromatic note index 0–11, root = C (Pythagorean, meantone, well temperament) */
+  /** spelled note name from SPELLED_NOTES, root = C (Pythagorean, meantone) */
+  spelling?: string;
+  /** chromatic note index 0–11, root = C (well temperament) */
   note?: number;
   hz?: number;
   rootHz?: number;
@@ -33,9 +35,30 @@ export interface DegreeInput {
 const isInt = (n: number | undefined): n is number => n != null && Number.isInteger(n);
 const finite = (n: number | undefined): n is number => n != null && Number.isFinite(n);
 
-/** A note (0–11, root = C) of a 12-note tuning, or null for an out-of-range note. */
-const noteOf = (tuning: string, note: number | undefined, variant?: string) =>
-  isInt(note) && note >= 0 && note < 12 ? tuningNotes(tuning, variant)[note] : null;
+/**
+ * Spelled notes for chain-of-fifths tunings, where sharps and flats are different pitches
+ * (C♯ is 7 fifths up, D♭ is 5 fifths down). `fifths` is the position relative to the root C.
+ */
+export const SPELLED_NOTES: { name: string; fifths: number }[] = [
+  { name: 'C', fifths: 0 }, { name: 'C♯', fifths: 7 }, { name: 'D♭', fifths: -5 }, { name: 'D', fifths: 2 },
+  { name: 'D♯', fifths: 9 }, { name: 'E♭', fifths: -3 }, { name: 'E', fifths: 4 }, { name: 'F', fifths: -1 },
+  { name: 'F♯', fifths: 6 }, { name: 'G♭', fifths: -6 }, { name: 'G', fifths: 1 }, { name: 'G♯', fifths: 8 },
+  { name: 'A♭', fifths: -4 }, { name: 'A', fifths: 3 }, { name: 'A♯', fifths: 10 }, { name: 'B♭', fifths: -2 },
+  { name: 'B', fifths: 5 },
+];
+
+const fifthsOf = (spelling: string | undefined) => SPELLED_NOTES.find((n) => n.name === spelling)?.fifths;
+
+/** `n` pure fifths from the root as an exact ratio 3^a / 2^b, reduced into the octave. */
+function pythagorean(n: number): string {
+  if (n === 0) return '1';
+  if (n > 0) {
+    const m = Math.floor(n * Math.log2(3));
+    return m === 0 ? `3^${n}` : `3^${n} / 2^${m}`;
+  }
+  const m = Math.ceil(-n * Math.log2(3));
+  return `2^${m} / 3^${-n}`;
+}
 
 /** The note expression for a typed-in degree, or null when the input is incomplete or invalid. */
 export function buildDegree(i: DegreeInput): string | null {
@@ -49,12 +72,18 @@ export function buildDegree(i: DegreeInput): string | null {
     case 'custom_edo':
       if (!isInt(i.steps) || !isInt(i.divisions) || i.divisions < 1) return null;
       return i.steps === 0 ? '1' : `2^(${i.steps}/${i.divisions})`;
-    case 'pythagorean':
-      return noteOf('pythagorean_tuning', i.note);
-    case 'meantone':
-      return noteOf('meantone', i.note, i.variant ?? 'quarter');
+    case 'pythagorean': {
+      const n = fifthsOf(i.spelling);
+      return n == null ? null : pythagorean(n);
+    }
+    case 'meantone': {
+      const n = fifthsOf(i.spelling);
+      const f = MEANTONE_FRACTIONS[i.variant ?? 'quarter'];
+      return n == null || !f ? null : meantoneDegree(f[0], f[1], n);
+    }
     case 'well':
-      return noteOf('well_temperament', i.note, i.variant);
+      // a closed circle: enharmonic notes coincide, so 12 names suffice
+      return isInt(i.note) && i.note >= 0 && i.note < 12 ? tuningNotes('well_temperament', i.variant)[i.note] : null;
     case 'cents':
       return finite(i.cents) ? joinCents('1', i.cents) : null;
     case 'frequency':

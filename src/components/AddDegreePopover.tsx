@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../state/store';
 import { NOTE_NAMES, TUNINGS } from '../tuning/presets';
 import { evalRatio } from '../tuning/ratios';
-import { buildDegree, DEGREE_SOURCES, type DegreeSourceId } from '../tuning/degreeInput';
+import { buildDegree, DEGREE_SOURCES, SPELLED_NOTES, type DegreeSourceId } from '../tuning/degreeInput';
 import { NumberField } from './ui';
 
 /** The typed-input source that matches the current tuning, so the popover opens on the familiar one. */
@@ -21,6 +21,7 @@ export function AddDegreePopover({ after, onClose }: { after: number; onClose():
   const [meantone, setMeantone] = useState(tuning === 'meantone' && tuningVariant ? tuningVariant : 'quarter');
   const [well, setWell] = useState(tuning === 'well_temperament' && tuningVariant ? tuningVariant : 'werckmeister3');
   const [note, setNote] = useState(7);
+  const [spelling, setSpelling] = useState('G');
   const [hz, setHz] = useState(Math.round(root.freq * 1.5 * 100) / 100);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -33,7 +34,7 @@ export function AddDegreePopover({ after, onClose }: { after: number; onClose():
   }, [onClose]);
 
   const variant = source === 'meantone' ? meantone : source === 'well' ? well : undefined;
-  const built = buildDegree({ source, ratio, cents, steps, divisions, variant, note, hz, rootHz: root.freq });
+  const built = buildDegree({ source, ratio, cents, steps, divisions, variant, spelling, note, hz, rootHz: root.freq });
   const value = built == null ? null : evalRatio(built);
   const add = () => {
     if (built == null) return;
@@ -77,7 +78,15 @@ export function AddDegreePopover({ after, onClose }: { after: number; onClose():
       )}
       {source === 'meantone' && variantSelect('meantone', meantone, setMeantone)}
       {source === 'well' && variantSelect('well_temperament', well, setWell)}
-      {(source === 'pythagorean' || source === 'meantone' || source === 'well') && (
+      {(source === 'pythagorean' || source === 'meantone') && (
+        <label className="flex flex-col gap-1">
+          <span className="label">Note (root = C)</span>
+          <select className="input" value={spelling} onChange={(e) => setSpelling(e.target.value)}>
+            {SPELLED_NOTES.map((n) => <option key={n.name} value={n.name}>{n.name}</option>)}
+          </select>
+        </label>
+      )}
+      {source === 'well' && (
         <label className="flex flex-col gap-1">
           <span className="label">Note (root = C)</span>
           <select className="input" value={note} onChange={(e) => setNote(Number(e.target.value))}>
