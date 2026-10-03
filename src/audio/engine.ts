@@ -86,7 +86,8 @@ export class AudioEngine {
       this.master.connect(this.analyser);
       this.applyReverb(0, true);
     }
-    if (this.ctx.state === 'suspended') void this.ctx.resume();
+    // 'suspended' or iOS 'interrupted'; swallow rejection so it never goes unhandled
+    if (this.ctx.state !== 'running') this.ctx.resume().catch(() => {});
     return this.ctx;
   }
 
