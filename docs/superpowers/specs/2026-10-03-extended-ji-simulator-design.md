@@ -227,7 +227,7 @@ Editor UI: an SVG graph. The x axis is time; the sustain portion is drawn as a f
 ### 4.4 Presets
 
 Segmented bar, grouped by family (`PRESET_ORDER`): **SINE · PLUCK · ORGAN · PIANO · HARPSICHORD ·
-GUITAR · HARP · VIOLIN · CELLO · FLUTE · OBOE · CLARINET · SAXOPHONE · BASSOON · TRUMPET · FRENCH HORN ·
+GUITAR · HARP · VIOLIN · CELLO · VOICE · FLUTE · OBOE · CLARINET · SAXOPHONE · BASSOON · TRUMPET · FRENCH HORN ·
 TROMBONE · TUBA · CUSTOM** (wraps on narrow screens). A preset sets harmonics, envelope and
 brightness decay together; any later edit flips the selection to CUSTOM. SINE and PLUCK are
 synthetic; every other preset uses a measured spectrum (§4.7). (STRINGS was removed 2026-10-03;
@@ -284,6 +284,7 @@ PIANO, GUITAR, VIOLIN and CELLO use measured harmonic spectra, stored as per-har
 | SAXOPHONE | Univ. of Iowa MIS Eb alto sax, `AltoSax.NoVib.mf.{Db3B3,C4B4}`, 23 notes, steady state 0.3–0.8 s | off |
 | HARP | VSCO 2 CE (CC0) `KSHarp_{C3…E5}_mf`, 9 notes × 2 channels, attack/sustain windows as piano | on, τ = 595 ms |
 | HARPSICHORD | Freesound "Harpsichord" pack by pjcohen (CC0), notes sounding D4/E4/D5/E5 (files labelled an octave lower), HQ MP3 previews, analysis capped at 16 kHz | on, τ = 475 ms |
+| VOICE | Sung "ah", modelled from measured formants: Peterson & Barney (1952) /ɑ/ F1–F3 (mean of men and women: 790 / 1155 / 2625 Hz), typical F4/F5 and bandwidths, glottal source −12 dB/oct + radiation +6 dB/oct, evaluated at 220 Hz. Formants are fixed in Hz in a real voice; here the harmonic levels are fixed, so the vowel colour is exact at A3 and shifts at other pitches | off |
 
 Envelopes: piano and guitar decay to silence while held, with the decay length chosen so the
 measured median time to −20 dB (≈0.9 s) is matched by the EXP decay curve; bowed strings, winds,

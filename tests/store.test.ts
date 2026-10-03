@@ -190,4 +190,13 @@ describe('store', () => {
       expect(PRESET_ORDER.indexOf('tuba')).toBe(PRESET_ORDER.length - 1);
     });
   });
+
+  it('voice is an "ah" vowel: harmonics near the first two formants and the third-formant bump stand out', () => {
+    const t = SYNTH_PRESETS.voice.harmonics.tweaks; // reference pitch 220 Hz
+    expect(Math.max(t[4], t[5])).toBe(1); // F1/F2 ≈ 790/1155 Hz
+    expect(t[12]).toBeGreaterThan(t[11]); // F3 ≈ 2625 Hz
+    expect(t[12]).toBeGreaterThan(t[13]);
+    expect(PRESET_ORDER).toContain('voice');
+    expect(SYNTH_PRESETS.voice.dark).toBeUndefined();
+  });
 });

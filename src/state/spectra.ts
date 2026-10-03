@@ -150,3 +150,17 @@ export const HARPSICHORD_SUSTAIN = [
 
 export const HARP_TAU_MS = 595;
 export const HARPSICHORD_TAU_MS = 475;
+
+/*
+ * Voice, sung "ah" — modelled from measured formant data rather than one recording.
+ * Formants F1–F3: Peterson & Barney (1952) vowel /ɑ/ ("hod"), mean of men (730, 1090, 2440 Hz)
+ * and women (850, 1220, 2810 Hz) → 790, 1155, 2625 Hz; F4 3500 Hz and F5 4500 Hz are typical
+ * adult vocal-tract values; bandwidths 80/90/120/150/200 Hz are typical measured values (Fant).
+ * Source-filter model: glottal source −12 dB/oct plus lip radiation +6 dB/oct (amplitude ∝ 1/k),
+ * times the all-pole formant response, evaluated at the harmonics of a 220 Hz (A3) reference
+ * pitch shared by alto and tenor voices.
+ */
+export const VOICE_AH = [
+  0.4069, 0.318, 0.6323, 1.0, 0.9021, 0.1787, 0.0499, 0.0244, 0.0163, 0.0146, 0.0197, 0.0518, 0.0115, 0.0064,
+  0.0063, 0.0103, 0.0022,
+];

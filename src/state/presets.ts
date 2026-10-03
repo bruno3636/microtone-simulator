@@ -3,16 +3,16 @@ import type { EnvelopeSettings } from '../audio/envelope';
 import {
   ALTO_SAX, BASSOON, CELLO, CLARINET, FLUTE, FRENCH_HORN, GUITAR_ATTACK, GUITAR_SUSTAIN, GUITAR_TAU_MS,
   HARP_ATTACK, HARP_SUSTAIN, HARP_TAU_MS, HARPSICHORD_ATTACK, HARPSICHORD_SUSTAIN, HARPSICHORD_TAU_MS, OBOE,
-  ORGAN_CHORUS, PIANO_ATTACK, PIANO_SUSTAIN, PIANO_TAU_MS, TROMBONE, TRUMPET, TUBA, VIOLIN,
+  ORGAN_CHORUS, PIANO_ATTACK, PIANO_SUSTAIN, PIANO_TAU_MS, TROMBONE, TRUMPET, TUBA, VIOLIN, VOICE_AH,
 } from './spectra';
 
 export type PresetId =
-  | 'sine' | 'pluck' | 'organ' | 'piano' | 'harpsichord' | 'guitar' | 'harp' | 'violin' | 'cello'
+  | 'sine' | 'pluck' | 'organ' | 'piano' | 'harpsichord' | 'guitar' | 'harp' | 'violin' | 'cello' | 'voice'
   | 'flute' | 'oboe' | 'clarinet' | 'sax' | 'bassoon' | 'trumpet' | 'horn' | 'trombone' | 'tuba' | 'custom';
 
-/** Preset bar order: synthetic, keyboards, plucked, bowed, woodwinds, brass (high to low). */
+/** Preset bar order: synthetic, keyboards, plucked, bowed, voice, woodwinds, brass (high to low). */
 export const PRESET_ORDER: Exclude<PresetId, 'custom'>[] = [
-  'sine', 'pluck', 'organ', 'piano', 'harpsichord', 'guitar', 'harp', 'violin', 'cello',
+  'sine', 'pluck', 'organ', 'piano', 'harpsichord', 'guitar', 'harp', 'violin', 'cello', 'voice',
   'flute', 'oboe', 'clarinet', 'sax', 'bassoon', 'trumpet', 'horn', 'trombone', 'tuba',
 ];
 
@@ -147,5 +147,11 @@ export const SYNTH_PRESETS: Record<Exclude<PresetId, 'custom'>, SynthPreset> = {
     dark: measured(HARPSICHORD_SUSTAIN),
     tauMs: HARPSICHORD_TAU_MS,
     envelope: { attack: 2, decay: 2900, sustain: 0, release: 100, attackCurve: 0, decayCurve: 0.6, releaseCurve: 0.6 },
+  },
+  voice: {
+    // sung "ah" from formant data (see spectra.ts); soft onset, no vibrato
+    label: 'Voice',
+    harmonics: measured(VOICE_AH),
+    envelope: { attack: 80, decay: 100, sustain: 0.9, release: 150, attackCurve: -0.6, decayCurve: 0.6, releaseCurve: 0.6 },
   },
 };
