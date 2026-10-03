@@ -34,17 +34,19 @@ export function Slider({ label, value, min, max, step, onChange, format }: {
 }
 
 /** Text-backed number input: keeps the user's typing, commits only valid in-range numbers. */
-export function NumberField({ label, value, min, max, step = 1, suffix, onChange }: {
+/** `hideLabel`: compact inline field — the label is kept for screen readers only. */
+export function NumberField({ label, value, min, max, step = 1, suffix, onChange, hideLabel = false }: {
   label: string; value: number; min: number; max: number; step?: number; suffix?: string; onChange(v: number): void;
+  hideLabel?: boolean;
 }) {
   const [text, setText] = useState(String(value));
   useEffect(() => setText(String(value)), [value]);
   const invalid = text.trim() === '' || Number.isNaN(Number(text)) || Number(text) < min || Number(text) > max;
   return (
     <label className="flex flex-col gap-1">
-      <span className="label">{label}</span>
+      <span className={hideLabel ? 'sr-only' : 'label'}>{label}</span>
       <span className="flex items-center gap-1">
-        <input className="input mono w-20" inputMode="decimal" value={text} aria-invalid={invalid}
+        <input className={`input mono ${hideLabel ? 'w-16 py-0.5 text-right text-xs' : 'w-20'}`} inputMode="decimal" value={text} aria-invalid={invalid}
           step={step}
           onChange={(e) => {
             setText(e.target.value);

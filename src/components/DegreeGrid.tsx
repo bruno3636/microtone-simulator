@@ -87,13 +87,19 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
         <input className="input mono w-full text-right" value={cents == null ? note : ratio} aria-invalid={!valid}
           onChange={(e) => setNote(i, cents == null ? e.target.value : joinCents(e.target.value, cents))} />
       </label>
-      {cents != null && (
-        <NumberField label="± cents" value={cents} min={-1200} max={1200} step={0.1}
-          onChange={(c) => setNote(i, joinCents(ratio, c))} />
-      )}
-      <div className="flex justify-between">
+      <div className="flex items-center justify-between gap-2">
         <span className="label">Cents</span>
-        <span className="mono text-sm">{centsAboveRoot == null ? '—' : `${centsAboveRoot.toFixed(1)}¢`}</span>
+        <span className="flex items-center gap-1.5">
+          {cents != null && (
+            // tempered JI: the cents offset sits beside the total it produces
+            <>
+              <span className="label" aria-hidden>±</span>
+              <NumberField hideLabel label="Cents offset" value={cents} min={-1200} max={1200} step={0.1}
+                onChange={(c) => setNote(i, joinCents(ratio, c))} />
+            </>
+          )}
+          <span className="mono text-sm">{centsAboveRoot == null ? '—' : `${centsAboveRoot.toFixed(1)}¢`}</span>
+        </span>
       </div>
       <div className="flex justify-between">
         <span className="label">Freq</span>
