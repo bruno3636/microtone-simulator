@@ -31,6 +31,8 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
   // tempered JI degrees carry a cents offset ("5/4 -13.7c"): edit the ratio and the offset separately
   const { ratio, cents } = splitCents(note);
   const hz = degreeFreq(notes, i, rootHz);
+  const ratioValue = evalRatio(note);
+  const centsAboveRoot = ratioValue == null ? null : 1200 * Math.log2(ratioValue);
 
   const release = (e: RPointerEvent) => {
     if (!pointers.current.delete(e.pointerId)) return;
@@ -89,6 +91,10 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
         <NumberField label="± cents" value={cents} min={-1200} max={1200} step={0.1}
           onChange={(c) => setNote(i, joinCents(ratio, c))} />
       )}
+      <div className="flex justify-between">
+        <span className="label">Cents</span>
+        <span className="mono text-sm">{centsAboveRoot == null ? '—' : `${centsAboveRoot.toFixed(1)}¢`}</span>
+      </div>
       <div className="flex justify-between">
         <span className="label">Freq</span>
         <span className="mono text-sm">{hz == null ? '—' : `${hz.toFixed(2)} Hz`}</span>
