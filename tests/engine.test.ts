@@ -153,4 +153,86 @@ describe('AudioEngine', () => {
     eng.noteOff('0');
     expect(envOf(0).gain.last('ramp')!.time).toBeCloseTo(1 + 0.2);
   });
+
+  describe('brightness decay', () => {
+    const bright = { count: 4, start: 1, end: 0.8, curve: 0, filter: 'all' as const, tweaks: {} };
+    const dark = { count: 4, start: 1, end: 0.05, curve: 0, filter: 'all' as const, tweaks: {} };
+    const weightsOf = (i: number) => {
+      const wB = fake.oscillators[i].connections[0] as FakeGain;
+      const wD = fake.oscillators[i + 1].connections[0] as FakeGain;
+      return { wB, wD };
+    };
+
+    it('off: one oscillator per voice', () => {
+      eng.setTimbre(bright, null);
+      eng.noteOn('0', 440);
+      expect(fake.oscillators).toHaveLength(1);
+      expect(eng.getVoices()[0].brightness).toBe(1);
+    });
+
+    it('on: two phase-locked oscillators whose weights cross-fade with time constant τ', () => {
+      eng.setTimbre(bright, { harmonics: dark, tauMs: 500 });
+      eng.noteOn('0', 440);
+      expect(fake.oscillators).toHaveLength(2);
+      const [a, b] = fake.oscillators;
+      expect(a.startedAt).toBe(0);
+      expect(b.startedAt).toBe(0);
+      expect(b.frequency.value).toBe(440);
+      expect(a.wave).not.toBe(b.wave);
+      const { wB, wD } = weightsOf(0);
+      expect(wB.connections[0]).toBe(wD.connections[0]); // both feed the same envelope gain
+      expect(wB.gain.events[0]).toMatchObject({ type: 'set', value: 1, time: 0 });
+      expect(wB.gain.last('target')).toMatchObject({ value: 0, time: 0, tau: 0.5 });
+      expect(wD.gain.events[0]).toMatchObject({ type: 'set', value: 0, time: 0 });
+      expect(wD.gain.last('target')).toMatchObject({ value: 1, time: 0, tau: 0.5 });
+      fake.currentTime = 0.5;
+      expect(eng.getVoices()[0].brightness).toBeCloseTo(Math.exp(-1));
+    });
+
+    it('both sustain-spectrum amplitudes are RMS-normalized and exposed for the visualizer', () => {
+      eng.setTimbre(bright, { harmonics: dark, tauMs: 500 });
+      const d = eng.getDarkAmplitudes()!;
+      expect(d.reduce((s, x) => s + x * x, 0)).toBeCloseTo(1);
+      expect(eng.getDarkWavetable()).not.toBeNull();
+      eng.setTimbre(bright, null);
+      expect(eng.getDarkAmplitudes()).toBeNull();
+      expect(eng.getDarkWavetable()).toBeNull();
+    });
+
+    it('noteOff stops both oscillators', () => {
+      eng.setTimbre(bright, { harmonics: dark, tauMs: 500 });
+      eng.noteOn('0', 440);
+      fake.currentTime = 0.3;
+      eng.noteOff('0');
+      expect(fake.oscillators[0].stoppedAt).toBeCloseTo(0.3 + 0.2 + 0.05);
+      expect(fake.oscillators[1].stoppedAt).toBeCloseTo(0.3 + 0.2 + 0.05);
+    });
+
+    it('a re-strike brightens again over 5 ms, then darkens anew', () => {
+      eng.setTimbre(bright, { harmonics: dark, tauMs: 500 });
+      eng.noteOn('0', 440);
+      fake.currentTime = 1;
+      const w = eng.getVoices()[0].brightness;
+      eng.noteOn('0', 440);
+      expect(fake.oscillators).toHaveLength(2);
+      const { wB, wD } = weightsOf(0);
+      expect(wB.gain.last('set')).toMatchObject({ value: w, time: 1 });
+      expect(wB.gain.last('ramp')).toMatchObject({ value: 1 });
+      expect(wB.gain.last('ramp')!.time).toBeCloseTo(1.005);
+      expect(wB.gain.last('target')!.time).toBeCloseTo(1.005);
+      expect(wD.gain.last('set')).toMatchObject({ value: 1 - w, time: 1 });
+      expect(wD.gain.last('ramp')).toMatchObject({ value: 0 });
+    });
+
+    it('harmonic edits update both waves of held voices after the debounce', () => {
+      vi.useFakeTimers();
+      eng.setTimbre(bright, { harmonics: dark, tauMs: 500 });
+      eng.noteOn('0', 440);
+      const [a0, b0] = fake.oscillators.map((o) => o.wave);
+      eng.setTimbre({ ...bright, end: 0.5 }, { harmonics: { ...dark, end: 0.2 }, tauMs: 500 });
+      vi.advanceTimersByTime(51);
+      expect(fake.oscillators[0].wave).not.toBe(a0);
+      expect(fake.oscillators[1].wave).not.toBe(b0);
+    });
+  });
 });

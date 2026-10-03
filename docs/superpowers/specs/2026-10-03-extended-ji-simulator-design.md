@@ -235,6 +235,41 @@ together; any later edit flips the selection to CUSTOM.
 - **Volume** (master), 0–1, default 0.6.
 - **Space** (reverb wet), 0–1, default 0.
 
+### 4.6 Brightness decay (added 2026-10-03)
+
+Plucked and struck instruments get darker as they ring: upper partials die faster. A timbre can
+optionally carry a second, **sustain spectrum** and a **darken time τ**.
+
+- Settings: `darkHarmonics: HarmonicSettings | null` (null = off) and `brightnessTau` (ms, 50–5000).
+- Engine: each voice runs two phase-locked oscillators (same frequency, same start time), one with
+  the attack spectrum and one with the sustain spectrum, feeding the envelope gain through two
+  weight gains. The attack weight w(t) = e^(−t/τ) (`setTargetAtTime`), the sustain weight 1 − w.
+  Because both oscillators share phase and every harmonic is in sine phase, the sum is exactly the
+  harmonic-by-harmonic blend `w·a_k + (1−w)·d_k`, with no phasing. Off → one oscillator per voice.
+- Re-strike brightens again: the weights ramp back to fully bright over 5 ms, then darken anew.
+- Both spectra are RMS-normalized independently; harmonic edits to either update held voices.
+- UI: a **Brightness decay** toggle in the Harmonics editor; when on, an `ATTACK | SUSTAIN` switch
+  picks which spectrum the controls and bars edit, and a **Darken** slider sets τ. Turning it on
+  seeds the sustain spectrum from the attack spectrum with its end level lowered.
+- Visualizer: each note's computed wave and spectrum use its current blend (`VoiceSnapshot.brightness`).
+
+### 4.7 Instrument presets from spectral analysis (added 2026-10-03)
+
+PIANO, GUITAR, VIOLIN and CELLO use measured harmonic spectra, stored as per-harmonic levels
+(tweaks for every harmonic; values below −60 dB are dropped as noise floor).
+
+| Preset | Spectrum source | Brightness decay |
+|---|---|---|
+| VIOLIN | SHARC (Sandell 1991, McGill Master Samples), `violin_vibrato`, median of 27 notes G3–A5, each normalized to its strongest harmonic | off |
+| CELLO | SHARC `cello_vibrato`, median of 27 notes C2–D4 | off |
+| PIANO | Univ. of Iowa MIS, Steinway, `Piano.mf.{C3,C4,A4}`, both channels: attack = 30–200 ms window, sustain = 0.8–1.2 s window, partial search allowing inharmonicity | on, τ = 1220 ms (fitted) |
+| GUITAR | Univ. of Iowa MIS, `Guitar.mf.sulE.E2B2` + `sulA.C3B3`, 16 clean notes, same windows | on, τ = 570 ms (fitted) |
+
+Envelopes: piano and guitar decay to silence while held, with the decay length chosen so the
+measured median time to −20 dB (≈0.9 s) is matched by the EXP decay curve; bowed strings sustain.
+Inharmonicity (piano) and vibrato (violin/cello) are intentionally not reproduced: the synth keeps
+exact integer harmonics and no pitch modulation, so beating and consonance stay readable.
+
 ## 5. Visualizer
 
 A single `<canvas>` panel (DPR-aware, resizes with a `ResizeObserver`), redrawn on every
@@ -415,6 +450,5 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
 ## 10. Out of scope (v1)
 
 - MIDI file playback and MIDI input.
-- Per-harmonic envelopes / brightness decay. The engine interface allows adding them later
-  (dual-wave crossfade or AudioWorklet).
+- Fully per-harmonic envelopes (brightness decay in §4.6 covers the main effect with two spectra).
 - Saving or sharing custom tunings as files or links.

@@ -37,4 +37,10 @@ describe('partials', () => {
     const strength = (n: (typeof near)[0]) => Math.min(n.a.amp, n.b.amp);
     expect(strength(near[0])).toBeGreaterThanOrEqual(strength(near[2]));
   });
+  it('blends attack and sustain spectra by each note\'s brightness', () => {
+    const p = buildPartials([{ id: '0', degree: 0, freq: 100, level: 0.5, brightness: 0.25 }], [1, 0.8], 20000, [1, 0, 0.4]);
+    expect(p.map((x) => x.harmonic)).toEqual([1, 2, 3]);
+    expect(p[1].amp).toBeCloseTo(0.5 * (0.25 * 0.8 + 0.75 * 0));
+    expect(p[2].amp).toBeCloseTo(0.5 * (0.75 * 0.4));
+  });
 });

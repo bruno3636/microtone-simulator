@@ -19,7 +19,7 @@ function drawnNotes(dark: boolean): Drawn[] {
   for (const v of engine.getVoices()) {
     const degree = Number(v.id);
     sounding.add(degree);
-    out.push({ id: v.id, degree, freq: v.freq, level: v.level, color: degreeColor(mod(degree, len), dark), dim: false });
+    out.push({ id: v.id, degree, freq: v.freq, level: v.level, brightness: v.brightness, color: degreeColor(mod(degree, len), dark), dim: false });
   }
   for (const d of s.shown) {
     if (sounding.has(d) || d >= len) continue;
@@ -86,9 +86,9 @@ export function Visualizer() {
       if (v.source === 'computed') {
         const notes = drawnNotes(dark);
         if (v.view === 'wave') {
-          drawComputedWave(dc, notes, engine.getWavetable(), s.root.freq, v.periods, clock, v.showSum, sumState);
+          drawComputedWave(dc, notes, engine.getWavetable(), s.root.freq, v.periods, clock, v.showSum, sumState, engine.getDarkWavetable());
         } else {
-          const partials = buildPartials(notes, engine.getAmplitudes());
+          const partials = buildPartials(notes, engine.getAmplitudes(), 20000, engine.getDarkAmplitudes());
           const colors = new Map(notes.map((n) => [n.id, n.color]));
           drawComputedSpectrum(dc, partials, findCoincidences(partials), (id) => colors.get(id) ?? dc.colors.text, v.freqScale, hoverX.current);
         }

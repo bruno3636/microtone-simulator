@@ -28,6 +28,10 @@ interface Data {
   shown: number[];
   held: number[];
   harmonics: HarmonicSettings;
+  /** sustain spectrum for brightness decay; null = off */
+  darkHarmonics: HarmonicSettings | null;
+  /** darken time constant (ms) */
+  brightnessTau: number;
   envelope: EnvelopeSettings;
   preset: PresetId;
   volume: number;
@@ -53,9 +57,11 @@ interface Actions {
   deleteKeyDegree(degree: number): void;
   toggleShown(i: number): void;
   setHeld(degree: number, on: boolean): void;
-  setHarmonics(p: Partial<HarmonicSettings>): void;
-  setTweak(n: number, v: number | null): void;
-  resetTweaks(): void;
+  setHarmonics(p: Partial<HarmonicSettings>, which?: Spectrum): void;
+  setTweak(n: number, v: number | null, which?: Spectrum): void;
+  resetTweaks(which?: Spectrum): void;
+  setBrightnessDecay(on: boolean): void;
+  setBrightnessTau(ms: number): void;
   setEnvelope(p: Partial<EnvelopeSettings>): void;
   applyPreset(id: Exclude<PresetId, 'custom'>): void;
   setVolume(v: number): void;
@@ -66,6 +72,18 @@ interface Actions {
 }
 
 export type StoreState = Data & Actions;
+
+/** Which spectrum a harmonics edit targets: the attack spectrum or the brightness-decay sustain spectrum. */
+export type Spectrum = 'attack' | 'sustain';
+
+/** Seed a sustain spectrum from the attack spectrum: the same shape, progressively darker toward the top. */
+function darken(h: HarmonicSettings): HarmonicSettings {
+  const span = Math.max(1, h.count - 1);
+  const tweaks = Object.fromEntries(
+    Object.entries(h.tweaks).map(([k, v]) => [k, v * 0.3 ** ((Number(k) - 1) / span)]),
+  );
+  return { ...h, end: h.end * 0.3, tweaks };
+}
 
 const safeStorage: StateStorage = {
   getItem: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
@@ -88,6 +106,8 @@ export const useStore = create<StoreState>()(
       shown: [0],
       held: [],
       harmonics: structuredClone(DEFAULT_HARMONICS),
+      darkHarmonics: null,
+      brightnessTau: 1000,
       envelope: { ...DEFAULT_ENVELOPE },
       preset: 'custom',
       volume: 0.6,
@@ -143,21 +163,40 @@ export const useStore = create<StoreState>()(
         set((s) => ({ shown: s.shown.includes(i) ? s.shown.filter((d) => d !== i) : [...s.shown, i] })),
       setHeld: (degree, on) =>
         set((s) => ({ held: on ? [...new Set([...s.held, degree])] : s.held.filter((d) => d !== degree) })),
-      setHarmonics: (p) => set((s) => ({ harmonics: { ...s.harmonics, ...p }, preset: 'custom' })),
-      setTweak: (n, v) =>
+      setHarmonics: (p, which = 'attack') =>
         set((s) => {
-          const tweaks = { ...s.harmonics.tweaks };
+          if (which === 'sustain') return s.darkHarmonics ? { darkHarmonics: { ...s.darkHarmonics, ...p }, preset: 'custom' } : {};
+          return { harmonics: { ...s.harmonics, ...p }, preset: 'custom' };
+        }),
+      setTweak: (n, v, which = 'attack') =>
+        set((s) => {
+          const h = which === 'sustain' ? s.darkHarmonics : s.harmonics;
+          if (!h) return {};
+          const tweaks = { ...h.tweaks };
           if (v == null) delete tweaks[n];
           else tweaks[n] = Math.min(1, Math.max(0, v));
-          return { harmonics: { ...s.harmonics, tweaks }, preset: 'custom' };
+          const next = { ...h, tweaks };
+          return which === 'sustain' ? { darkHarmonics: next, preset: 'custom' } : { harmonics: next, preset: 'custom' };
         }),
-      resetTweaks: () => set((s) => ({ harmonics: { ...s.harmonics, tweaks: {} }, preset: 'custom' })),
+      resetTweaks: (which = 'attack') =>
+        set((s) => {
+          if (which === 'sustain') return s.darkHarmonics ? { darkHarmonics: { ...s.darkHarmonics, tweaks: {} }, preset: 'custom' } : {};
+          return { harmonics: { ...s.harmonics, tweaks: {} }, preset: 'custom' };
+        }),
+      setBrightnessDecay: (on) =>
+        set((s) => ({ darkHarmonics: on ? (s.darkHarmonics ?? darken(s.harmonics)) : null, preset: 'custom' })),
+      setBrightnessTau: (brightnessTau) => set({ brightnessTau, preset: 'custom' }),
       setEnvelope: (p) => set((s) => ({ envelope: { ...s.envelope, ...p }, preset: 'custom' })),
       applyPreset: (id) =>
-        set({
-          harmonics: structuredClone(SYNTH_PRESETS[id].harmonics),
-          envelope: { ...SYNTH_PRESETS[id].envelope },
-          preset: id,
+        set((s) => {
+          const p = SYNTH_PRESETS[id];
+          return {
+            harmonics: structuredClone(p.harmonics),
+            darkHarmonics: p.dark ? structuredClone(p.dark) : null,
+            brightnessTau: p.tauMs ?? s.brightnessTau,
+            envelope: { ...p.envelope },
+            preset: id,
+          };
         }),
       setVolume: (volume) => set({ volume }),
       setSpace: (space) => set({ space }),
@@ -167,7 +206,8 @@ export const useStore = create<StoreState>()(
     }),
     {
       name: 'ejis-settings',
-      version: 1,
+      // v2 added darkHarmonics + brightnessTau; missing keys fall back to the initial state on merge
+      version: 2,
       storage: createJSONStorage(() => safeStorage),
       partialize: ({ held: _held, ...rest }) => {
         void _held;

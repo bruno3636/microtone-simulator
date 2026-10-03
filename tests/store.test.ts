@@ -77,6 +77,54 @@ describe('store', () => {
     const saved = JSON.parse(localStorage.getItem('ejis-settings')!);
     expect(saved.state.volume).toBe(0.42);
     expect(saved.state.held).toBeUndefined();
-    expect(saved.version).toBe(1);
+    expect(saved.version).toBe(2);
+  });
+
+  describe('brightness decay + instrument presets', () => {
+    it('instrument presets carry measured spectra; piano and guitar darken, bowed strings do not', () => {
+      s().applyPreset('piano');
+      expect(s().harmonics.tweaks[1]).toBe(1);
+      expect(Object.keys(s().harmonics.tweaks)).toHaveLength(s().harmonics.count);
+      expect(s().darkHarmonics).not.toBeNull();
+      expect(s().brightnessTau).toBe(SYNTH_PRESETS.piano.tauMs);
+      s().applyPreset('violin');
+      expect(s().darkHarmonics).toBeNull();
+      expect(s().harmonics.tweaks[2]).toBeCloseTo(0.7025);
+    });
+    it('turning brightness decay on seeds a darker sustain spectrum; off clears it', () => {
+      s().applyPreset('organ');
+      s().setBrightnessDecay(true);
+      const d = s().darkHarmonics!;
+      expect(d.count).toBe(s().harmonics.count);
+      expect(d.end).toBeLessThan(s().harmonics.end);
+      expect(d.tweaks[8]).toBeLessThan(s().harmonics.tweaks[8]);
+      expect(d.tweaks[1] ?? 1).toBeCloseTo(s().harmonics.tweaks[1] ?? 1);
+      expect(s().preset).toBe('custom');
+      s().setBrightnessDecay(false);
+      expect(s().darkHarmonics).toBeNull();
+    });
+    it('harmonic actions can target the sustain spectrum', () => {
+      s().applyPreset('guitar');
+      const attackBefore = structuredClone(s().harmonics);
+      s().setHarmonics({ end: 0.01 }, 'sustain');
+      s().setTweak(3, 0.5, 'sustain');
+      expect(s().darkHarmonics!.end).toBe(0.01);
+      expect(s().darkHarmonics!.tweaks[3]).toBe(0.5);
+      expect(s().harmonics).toEqual(attackBefore);
+      s().resetTweaks('sustain');
+      expect(s().darkHarmonics!.tweaks).toEqual({});
+      expect(s().preset).toBe('custom');
+    });
+    it('sustain edits are ignored while brightness decay is off', () => {
+      s().applyPreset('sine');
+      s().setHarmonics({ end: 0.2 }, 'sustain');
+      expect(s().darkHarmonics).toBeNull();
+    });
+    it('darken time is editable and flips the preset to custom', () => {
+      s().applyPreset('piano');
+      s().setBrightnessTau(300);
+      expect(s().brightnessTau).toBe(300);
+      expect(s().preset).toBe('custom');
+    });
   });
 });

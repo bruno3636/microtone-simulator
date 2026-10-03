@@ -1,15 +1,18 @@
-export interface NoteInput { id: string; degree: number; freq: number; level: number }
+/** `brightness` (default 1) weights the attack spectrum against the sustain spectrum (brightness decay). */
+export interface NoteInput { id: string; degree: number; freq: number; level: number; brightness?: number }
 export interface Partial { noteId: string; degree: number; harmonic: number; freq: number; amp: number }
 export interface Coincidence { freq: number; members: Partial[] }
 export interface NearMiss { a: Partial; b: Partial; cents: number; beatHz: number }
 
-export function buildPartials(notes: NoteInput[], amps: number[], maxHz = 20000): Partial[] {
+export function buildPartials(notes: NoteInput[], amps: number[], maxHz = 20000, darkAmps: number[] | null = null): Partial[] {
   const out: Partial[] = [];
+  const count = Math.max(amps.length, darkAmps?.length ?? 0);
   for (const n of notes) {
-    for (let k = 1; k <= amps.length; k++) {
+    const w = darkAmps ? (n.brightness ?? 1) : 1;
+    for (let k = 1; k <= count; k++) {
       const freq = k * n.freq;
       if (freq > maxHz) break;
-      const amp = n.level * amps[k - 1];
+      const amp = n.level * (w * (amps[k - 1] ?? 0) + (1 - w) * (darkAmps?.[k - 1] ?? 0));
       if (amp > 0) out.push({ noteId: n.id, degree: n.degree, harmonic: k, freq, amp });
     }
   }

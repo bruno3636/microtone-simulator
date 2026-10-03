@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sampleTable, tablePeak, findTrigger } from '../src/viz/drawWave';
+import { sampleTable, tablePeak, findTrigger, blendedSample } from '../src/viz/drawWave';
 import { freqToX } from '../src/viz/drawSpectrum';
 
 describe('draw helpers', () => {
@@ -27,5 +27,12 @@ describe('draw helpers', () => {
     expect(freqToX(400, 100, 400, 200, 'log')).toBe(200);
     expect(freqToX(200, 100, 400, 200, 'log')).toBeCloseTo(100);
     expect(freqToX(250, 100, 400, 300, 'lin')).toBeCloseTo(150);
+  });
+  it('blendedSample mixes attack and sustain tables by brightness', () => {
+    const dark = new Float32Array([0, 0.2, 0, -0.2]);
+    expect(blendedSample(table, dark, 1, 0.25)).toBeCloseTo(1);
+    expect(blendedSample(table, dark, 0, 0.25)).toBeCloseTo(0.2);
+    expect(blendedSample(table, dark, 0.5, 0.25)).toBeCloseTo(0.6);
+    expect(blendedSample(table, null, 0.3, 0.25)).toBeCloseTo(1);
   });
 });

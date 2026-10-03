@@ -1,14 +1,23 @@
-import { useRef, type PointerEvent as RPointerEvent } from 'react';
-import { useStore } from '../state/store';
-import { computeAmplitudes, MAX_HARMONICS, type HarmonicFilter } from '../audio/harmonics';
+import { useRef, useState, type PointerEvent as RPointerEvent } from 'react';
+import { useStore, type Spectrum } from '../state/store';
+import { computeAmplitudes, MAX_HARMONICS, type HarmonicFilter, type HarmonicSettings } from '../audio/harmonics';
 import { NumberField, Segmented, Slider } from './ui';
 
 const fmtCurve = (c: number) => (Math.abs(c) < 0.005 ? 'LIN' : c > 0 ? `EXP ${c.toFixed(2)}` : `LOG ${(-c).toFixed(2)}`);
 
 export function HarmonicsEditor() {
-  const h = useStore((s) => s.harmonics);
-  const { setHarmonics, setTweak, resetTweaks } = useStore.getState();
+  const attack = useStore((s) => s.harmonics);
+  const dark = useStore((s) => s.darkHarmonics);
+  const tau = useStore((s) => s.brightnessTau);
+  const { setTweak, resetTweaks, setBrightnessDecay, setBrightnessTau } = useStore.getState();
+  const [picked, setPicked] = useState<Spectrum>('attack');
+  // the spectrum the controls edit; the other one is drawn as a ghost for comparison
+  const which: Spectrum = picked === 'sustain' && dark ? 'sustain' : 'attack';
+  const h = which === 'sustain' ? dark! : attack;
+  const other = dark ? (which === 'sustain' ? attack : dark) : null;
+  const setHarmonics = (p: Partial<HarmonicSettings>) => useStore.getState().setHarmonics(p, which);
   const amps = computeAmplitudes(h);
+  const ghost = other ? computeAmplitudes(other) : null;
   const count = amps.length;
   const svgRef = useRef<SVGSVGElement>(null);
   const last = useRef<number | null>(null);
@@ -24,7 +33,7 @@ export function HarmonicsEditor() {
     const { n, level } = hit(e);
     const from = last.current ?? n;
     const [lo, hi] = from < n ? [from, n] : [n, from];
-    for (let k = lo; k <= hi; k++) setTweak(k, level); // fill bars skipped by a fast drag
+    for (let k = lo; k <= hi; k++) setTweak(k, level, which); // fill bars skipped by a fast drag
     last.current = n;
   };
 
@@ -34,8 +43,21 @@ export function HarmonicsEditor() {
     <div className="flex flex-col gap-4">
       <div className="flex items-baseline justify-between">
         <h3 className="display m-0 text-lg">Harmonics</h3>
-        <button type="button" className="btn" disabled={!hasTweaks} onClick={resetTweaks}
+        <button type="button" className="btn" disabled={!hasTweaks} onClick={() => resetTweaks(which)}
           style={{ opacity: hasTweaks ? 1 : 0.4 }}>Reset tweaks</button>
+      </div>
+      <div className="flex flex-wrap items-end gap-4">
+        <button type="button" className={`btn ${dark ? 'btn-primary' : ''}`} aria-pressed={!!dark}
+          title="Fade from the attack spectrum to a darker sustain spectrum while the note rings"
+          onClick={() => setBrightnessDecay(!dark)}>Brightness decay</button>
+        {dark && (
+          <>
+            <Segmented<Spectrum> label="Spectrum to edit" value={which} onChange={setPicked}
+              options={[{ value: 'attack', label: 'Attack' }, { value: 'sustain', label: 'Sustain' }]} />
+            <Slider label="Darken" value={tau} min={50} max={5000} step={10} format={(v) => `${v} ms`}
+              onChange={setBrightnessTau} />
+          </>
+        )}
       </div>
       <div className="flex flex-wrap items-end gap-4">
         <NumberField label="Count" value={h.count} min={1} max={MAX_HARMONICS}
@@ -59,7 +81,11 @@ export function HarmonicsEditor() {
           onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); last.current = null; paint(e); }}
           onPointerMove={(e) => { if (e.currentTarget.hasPointerCapture(e.pointerId)) paint(e); }}
           onPointerUp={() => { last.current = null; }}
-          onDoubleClick={(e) => setTweak(hit(e as unknown as RPointerEvent).n, null)}>
+          onDoubleClick={(e) => setTweak(hit(e as unknown as RPointerEvent).n, null, which)}>
+          {ghost?.map((a, i) => (
+            <rect key={`g${i}`} x={i + 0.05} y={1 - a} width={0.9} height={a} fill="none"
+              stroke="var(--text-muted)" strokeWidth={1} strokeDasharray="2 2" vectorEffect="non-scaling-stroke" />
+          ))}
           {amps.map((a, i) => {
             const tweaked = h.tweaks[i + 1] != null;
             const pad = count > 32 ? 0.1 : 0.15;

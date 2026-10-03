@@ -5,7 +5,8 @@ export interface DrawCtx {
   colors: { text: string; secondary: string; muted: string; border: string; bg: string };
 }
 
-export interface WaveNote { id: string; freq: number; level: number; color: string; dim: boolean }
+/** `brightness` (default 1) weights the attack table against the sustain table (brightness decay). */
+export interface WaveNote { id: string; freq: number; level: number; color: string; dim: boolean; brightness?: number }
 
 export function sampleTable(table: Float32Array, cycles: number): number {
   const n = table.length;
@@ -13,6 +14,12 @@ export function sampleTable(table: Float32Array, cycles: number): number {
   const i = Math.floor(pos);
   const f = pos - i;
   return table[i % n] * (1 - f) + table[(i + 1) % n] * f;
+}
+
+/** One-cycle sample blended between the attack and (optional) sustain wavetables. */
+export function blendedSample(table: Float32Array, dark: Float32Array | null, brightness: number, cycles: number): number {
+  const a = sampleTable(table, cycles);
+  return dark ? brightness * a + (1 - brightness) * sampleTable(dark, cycles) : a;
 }
 
 const peaks = new WeakMap<Float32Array, number>();
@@ -51,11 +58,12 @@ function centerLine(dc: DrawCtx) {
 export function drawComputedWave(
   dc: DrawCtx, notes: WaveNote[], table: Float32Array, rootHz: number,
   periods: number, clock: number, showSum: boolean, sumState: { scale: number },
+  darkTable: Float32Array | null = null,
 ) {
   const { ctx, w, h } = dc;
   centerLine(dc);
   if (notes.length === 0) return drawHint(dc, 'Play a note or show (~) a degree');
-  const peak = tablePeak(table);
+  const peak = Math.max(tablePeak(table), darkTable ? tablePeak(darkTable) : 0);
   const amp = h * 0.4;
   const step = 1; // px
   const sum = showSum ? new Float32Array(Math.ceil(w / step) + 1) : null;
@@ -67,7 +75,7 @@ export function drawComputedWave(
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     for (let px = 0, j = 0; px <= w; px += step, j++) {
-      const v = (sampleTable(table, (clock + (periods * px) / w) * ratio) / peak) * n.level;
+      const v = (blendedSample(table, darkTable, n.brightness ?? 1, (clock + (periods * px) / w) * ratio) / peak) * n.level;
       if (sum) sum[j] += v;
       const y = h / 2 - v * amp;
       if (px === 0) ctx.moveTo(px, y);
