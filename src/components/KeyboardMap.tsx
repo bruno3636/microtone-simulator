@@ -24,7 +24,7 @@ export function KeyboardMap() {
                 borderColor: 'var(--border-subtle)',
                 background: held.includes(d) ? degreeColor(d % len, dark, 0.25) : 'var(--bg-raised)',
               }}>
-              <span className="mono px-1.5 text-xs" style={{ background: degreeColor(d % len, dark), color: '#111' }}>{d + 1}</span>
+              <span className="mono w-8 shrink-0 text-center text-xs" style={{ background: degreeColor(d % len, dark), color: '#111' }}>{d + 1}</span>
               <input className="input mono w-full text-center" value={keys} aria-label={`Keys for degree ${d + 1}`}
                 onChange={(e) => setKey(d, e.target.value)} />
               <button type="button" className="btn px-1.5 py-0.5" title="Remove" onClick={() => deleteKeyDegree(d)}>×</button>

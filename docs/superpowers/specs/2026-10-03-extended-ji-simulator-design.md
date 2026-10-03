@@ -402,7 +402,7 @@ Behavior matches the original unless noted.
 - **Root:** note select (C … B, A = 440 Hz) plus a Hz field. Editing Hz clears the note name
   unless it matches one exactly.
 - **Degree cards:** number + color chip, editable ratio expression (evaluated with mathjs; invalid
-  input highlighted with the error color and the note is skipped), frequency in Hz, "pure" tag,
+  input highlighted with the error color and the note is skipped), frequency in Hz,
   eye toggle, delete × in the top-right corner (not on degree 1), and "+" to insert a degree (see below).
   Cards can be reordered: drag a card's number chip onto another card (or focus it and press ← / →). The
   pitch moves; numbers, colours and key bindings stay positional, so they read 1…n in order

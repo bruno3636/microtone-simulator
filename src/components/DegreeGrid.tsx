@@ -1,7 +1,7 @@
 import { useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent as RPointerEvent } from 'react';
 import { nearestSlot, previewIndex, type SlotRect } from './reorder';
 import { useStore } from '../state/store';
-import { evalRatio, degreeFreq, isPure, splitCents, joinCents } from '../tuning/ratios';
+import { evalRatio, degreeFreq, splitCents, joinCents } from '../tuning/ratios';
 import { NumberField } from './ui';
 import { AddDegreePopover } from './AddDegreePopover';
 import { degreeColor } from '../theme';
@@ -63,7 +63,7 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
       )}
       <div className="flex items-center justify-between gap-1 pr-3">
         {/* the number is the drag handle: drag to move this pitch; ← / → move it with the keyboard */}
-        <button type="button" className="mono cursor-grab border-0 px-2 py-0.5 text-sm"
+        <button type="button" className="mono w-10 shrink-0 cursor-grab border-0 px-0 py-0.5 text-center text-sm"
           style={{ background: degreeColor(i, dark), color: '#111', touchAction: 'none' }}
           title="Drag to move (or ← / →)" aria-label={`Move pitch ${i + 1}`}
           onPointerDown={(e) => grip.down(i, e)}
@@ -71,7 +71,6 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
           onPointerUp={grip.up}
           onPointerCancel={grip.cancel}
           onKeyDown={(e) => grip.key(i, e)}>{i + 1}</button>
-        {i > 0 && isPure(note) && <span className="label italic">pure</span>}
         <div className="flex items-center gap-0.5">
           <button type="button" className="btn px-1 py-0.5" aria-pressed={shown} aria-label="Show in visualizer" title="Show in visualizer"
             style={{ color: shown ? 'var(--text)' : 'var(--text-muted)' }} onClick={() => toggleShown(i)}>~</button>
