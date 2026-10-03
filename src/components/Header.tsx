@@ -11,7 +11,7 @@ export function Header() {
   return (
     <header className="border-b border-[var(--border-subtle)]">
       <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-3 px-4 py-3">
-        <h1 className="display m-0 text-lg sm:text-xl">Extended Just Intonation Simulator</h1>
+        <h1 className="m-0 font-[family-name:var(--font-body)] text-lg font-medium tracking-tight sm:text-xl">Microtone Simulator</h1>
         <div className="flex items-center gap-4">
           <label className="flex items-center gap-2">
             <span className="label">Volume</span>

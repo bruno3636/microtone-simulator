@@ -5,6 +5,8 @@ Status: Approved 2026-10-03
 
 ## 1. Summary
 
+_Renamed 2026-10-03: the app is now titled **Microtone Simulator**; the header wordmark uses DM Sans (sans-serif); the scale-degree section is titled **Pitch Collection**._
+
 A rebuild of [web_intonation](https://flappix.github.io/web_intonation/) as a new web app named
 **Extended Just Intonation Simulator**. It keeps the original's tuning features and adds:
 

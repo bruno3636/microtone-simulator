@@ -84,7 +84,7 @@ export function DegreeGrid() {
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between">
-        <h2 className="display m-0 text-xl">Scale degrees</h2>
+        <h2 className="display m-0 text-xl">Pitch Collection</h2>
         <span className="label">press a card or key to play</span>
       </div>
       <div className="grid grid-cols-2 gap-2 min-[480px]:grid-cols-3 lg:grid-cols-6">
