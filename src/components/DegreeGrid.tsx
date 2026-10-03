@@ -79,21 +79,17 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
       )}
       <div className="flex items-center justify-between gap-1 pr-3">
         {/* the number is the drag handle: drag to move this pitch; ← / → move it with the keyboard */}
-        <button type="button" className="mono w-10 shrink-0 cursor-grab border-0 px-0 py-0.5 text-center text-sm"
+        {/* shows the key(s) that play this pitch on computers, else the pitch number */}
+        <button type="button"
+          className={`mono w-10 shrink-0 cursor-grab border-0 px-0 py-0.5 text-center ${keys.join('').length > 2 ? 'text-xs' : 'text-sm'}`}
           style={{ background: degreeColor(i, dark), color: '#111', touchAction: 'none' }}
-          title="Drag to move (or ← / →)" aria-label={`Move pitch ${i + 1}`}
+          title={`Pitch ${i + 1}${keys.length ? ` · key ${keys.join(', ')}` : ''} — drag to move (or ← / →)`}
+          aria-label={`Move pitch ${i + 1}${keys.length ? ` (key ${keys.join(', ')})` : ''}`}
           onPointerDown={(e) => grip.down(i, e)}
           onPointerMove={grip.move}
           onPointerUp={grip.up}
           onPointerCancel={grip.cancel}
-          onKeyDown={(e) => grip.key(i, e)}>{i + 1}</button>
-        {keys.length > 0 && (
-          <span className="flex min-w-0 flex-wrap gap-0.5" title="Key to play" aria-label={`Key: ${keys.join(', ')}`}>
-            {keys.map((k) => (
-              <kbd key={k} className="mono border border-[var(--border-subtle)] px-1 text-[10px] leading-4 text-[var(--text-secondary)]">{k}</kbd>
-            ))}
-          </span>
-        )}
+          onKeyDown={(e) => grip.key(i, e)}>{keys.length ? keys.join('') : i + 1}</button>
         <div className="flex items-center gap-0.5">
           <button type="button" className="btn px-1 py-0.5" aria-pressed={shown} aria-label="Show in visualizer" title="Show in visualizer"
             style={{ color: shown ? 'var(--text)' : 'var(--text-muted)' }} onClick={() => toggleShown(i)}>~</button>
