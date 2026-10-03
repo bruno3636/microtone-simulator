@@ -13,6 +13,10 @@ export const BASE_VOICE_GAIN = 0.3;
 export const GAIN_TAU = 0.015;
 const RAMP_STEPS = 32;
 const TIMBRE_DEBOUNCE_MS = 50;
+/** Below this envelope level a sounding voice counts as silent: a re-strike starts a fresh voice. */
+const SILENT_LEVEL = 1e-3;
+/** stop() time used to cancel a pending stop (the last stop() call wins). */
+const NEVER = 1e9;
 
 export const voiceGain = (n: number) => BASE_VOICE_GAIN / Math.sqrt(Math.max(1, n));
 
@@ -25,6 +29,8 @@ interface Voice {
   start: number;
   releaseAt: number | null;
   releaseFrom: number;
+  /** level the current attack started from (non-zero after a re-strike) */
+  attackFrom: number;
   settings: EnvelopeSettings;
 }
 
@@ -108,8 +114,37 @@ export class AudioEngine {
   }
 
   private levelOf(v: Voice, now: number): number {
-    if (v.releaseAt == null) return levelAt(v.settings, (now - v.start) * 1000);
+    if (v.releaseAt == null) return levelAt(v.settings, (now - v.start) * 1000, v.attackFrom);
     return releaseLevelAt(v.settings, v.releaseFrom, (now - v.releaseAt) * 1000);
+  }
+
+  /** Attack from `from` to 1, then decay to sustain. Caller must have an event at `now` with value `from`. */
+  private scheduleAttack(p: AudioParam, from: number, s: EnvelopeSettings, now: number) {
+    const a = effMs(s.attack) / 1000;
+    this.segment(p, from, 1, s.attackCurve, now, a);
+    this.segment(p, 1, s.sustain, s.decayCurve, now + a, effMs(s.decay) / 1000);
+  }
+
+  /**
+   * Re-strike a voice that is still sounding: keep its oscillator (no phase reset, no second
+   * same-pitch voice) and restart the envelope from the current level, so there is no dip.
+   */
+  private restrike(v: Voice, freq: number, now: number, level: number) {
+    const g = v.env.gain;
+    const s = { ...this.envelope };
+    g.cancelScheduledValues(now);
+    g.setValueAtTime(level, now);
+    this.scheduleAttack(g, level, s, now);
+    if (v.freq !== freq) {
+      v.osc.frequency.setValueAtTime(freq, now);
+      v.freq = freq;
+    }
+    v.osc.stop(NEVER); // cancel the stop scheduled by the release
+    v.start = now;
+    v.releaseAt = null;
+    v.releaseFrom = 0;
+    v.attackFrom = level;
+    v.settings = s;
   }
 
   private fastFade(v: Voice, now: number) {
@@ -137,7 +172,12 @@ export class AudioEngine {
     const ctx = this.ensureContext();
     const now = ctx.currentTime;
     const existing = this.voices.get(id);
-    if (existing) this.fastFade(existing, now);
+    if (existing) {
+      const level = this.levelOf(existing, now);
+      if (level > SILENT_LEVEL) return this.restrike(existing, freq, now, level);
+      // release has died away: let the old oscillator finish on its own, start a fresh voice
+      this.voices.delete(id);
+    }
     while (this.voices.size >= MAX_VOICES) {
       let oldest: Voice | null = null;
       for (const v of this.voices.values()) if (!oldest || v.start < oldest.start) oldest = v;
@@ -153,14 +193,11 @@ export class AudioEngine {
     osc.connect(env).connect(vgain).connect(this.sum);
 
     const s = { ...this.envelope };
-    const a = effMs(s.attack) / 1000;
-    const d = effMs(s.decay) / 1000;
     env.gain.setValueAtTime(0, now);
-    this.segment(env.gain, 0, 1, s.attackCurve, now, a);
-    this.segment(env.gain, 1, s.sustain, s.decayCurve, now + a, d);
+    this.scheduleAttack(env.gain, 0, s, now);
     osc.start(now);
 
-    const voice: Voice = { id, freq, osc, env, vgain, start: now, releaseAt: null, releaseFrom: 0, settings: s };
+    const voice: Voice = { id, freq, osc, env, vgain, start: now, releaseAt: null, releaseFrom: 0, attackFrom: 0, settings: s };
     osc.onended = () => {
       this.disconnect(voice);
       if (this.voices.get(id) === voice) {

@@ -102,8 +102,11 @@ or an AudioWorklet without UI changes.
   analytically (`envelope.levelAt(settings, elapsed)`), calls `cancelScheduledValues(now)` +
   `setValueAtTime(level, now)`, then schedules the release segment from that level to 0.
   Releasing mid-attack never jumps.
-- **Retrigger:** a note-on for an id that's still sounding (held or releasing) fast-fades the old
-  voice over 8 ms and starts the new one. Same-pitch voices never overlap and phase-cancel.
+- **Re-strike:** a note-on for an id that's still sounding (held or releasing) reuses that voice:
+  same oscillator (no phase reset, no second same-pitch voice) and the envelope restarts from the
+  current level (attack from that level up to 1, then decay). There is no dip, so re-striking
+  common tones in chord changes is click-free. Once the release has died away (level ≤ 0.001)
+  a fresh voice starts instead. The 8 ms fast-fade is used only for voice stealing.
 - Each voice keeps a snapshot of the envelope settings it started with, so editing the envelope
   never alters a note mid-flight.
 - Oscillators are stopped and disconnected 50 ms after their release ends.

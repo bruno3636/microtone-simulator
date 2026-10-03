@@ -23,6 +23,12 @@ describe('envelope', () => {
     expect(releaseLevelAt(env, 0.3, 400)).toBe(0);
     expect(releaseLevelAt(env, 0.3, 1000)).toBe(0);
   });
+  it('attack can start from a non-zero level (re-strike)', () => {
+    expect(levelAt(env, 0, 0.4)).toBeCloseTo(0.4);
+    expect(levelAt(env, 50, 0.4)).toBeCloseTo(0.7);
+    expect(levelAt(env, 100, 0.4)).toBeCloseTo(1);
+    expect(levelAt(env, 300, 0.4)).toBeCloseTo(0.5);
+  });
   it('applies the 3 ms floor to zero-length segments', () => {
     expect(effMs(0)).toBe(3);
     const zero = { ...env, attack: 0 };

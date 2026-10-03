@@ -47,14 +47,51 @@ describe('AudioEngine', () => {
     expect(eng.getVoices()[0].stage).toBe('release');
   });
 
-  it('retrigger fast-fades the old voice over 8 ms', () => {
+  it('re-striking a sounding note reuses its oscillator and restarts the attack from the current level (no dip)', () => {
+    eng.noteOn('0', 440);
+    fake.currentTime = 0.5; // sustaining at 0.5
+    eng.noteOff('0');
+    fake.currentTime = 0.55; // mid-release
+    const levelNow = eng.getVoices()[0].level;
+    expect(levelNow).toBeGreaterThan(0.1);
+    eng.noteOn('0', 440);
+
+    expect(fake.oscillators).toHaveLength(1); // same oscillator: phase continues
+    const g = envOf(0).gain;
+    const set = g.last('set')!;
+    expect(set.time).toBeCloseTo(0.55);
+    expect(set.value).toBeCloseTo(levelNow);
+    const after = g.events.slice(g.events.lastIndexOf(set) + 1).filter((e) => e.type === 'ramp');
+    expect(after).toHaveLength(64); // attack + decay, no fade to 0
+    expect(after[0].value).toBeGreaterThan(levelNow); // rises from where it was
+    expect(after[31]).toMatchObject({ value: 1 });
+    expect(after[31].time).toBeCloseTo(0.55 + 0.1);
+    expect(fake.oscillators[0].stoppedAt).toBeGreaterThan(1e6); // pending release stop pushed out
+    const v = eng.getVoices();
+    expect(v).toHaveLength(1);
+    expect(v[0].stage).toBe('attack');
+    expect(eng.isHeld('0')).toBe(true);
+  });
+
+  it('re-striking a held note restarts its attack from the current level', () => {
     eng.noteOn('0', 440);
     fake.currentTime = 0.5;
     eng.noteOn('0', 440);
-    const old = envOf(0).gain;
-    expect(old.last('ramp')).toMatchObject({ value: 0 });
-    expect(old.last('ramp')!.time).toBeCloseTo(0.508);
+    expect(fake.oscillators).toHaveLength(1);
+    expect(envOf(0).gain.last('set')).toMatchObject({ value: 0.5 });
+    expect(eng.getVoices()[0].level).toBeCloseTo(0.5);
+  });
+
+  it('re-striking after the release has died away starts a fresh voice', () => {
+    eng.noteOn('0', 440);
+    fake.currentTime = 0.5;
+    eng.noteOff('0');
+    fake.currentTime = 0.5 + 0.2 + 0.01; // release (200 ms) finished, oscillator not yet ended
+    eng.noteOn('0', 440);
+    expect(fake.oscillators).toHaveLength(2);
     expect(eng.getVoices()).toHaveLength(1);
+    fake.oscillators[0].end(); // the old voice ending must not remove the new one
+    expect(eng.getVoices().map((x) => x.id)).toEqual(['0']);
   });
 
   it('caps polyphony at 24 by stealing the oldest voice', () => {

@@ -16,11 +16,12 @@ export interface EnvelopeSettings {
 export const MIN_RAMP_MS = 3;
 export const effMs = (ms: number) => Math.max(MIN_RAMP_MS, ms);
 
-export function levelAt(env: EnvelopeSettings, tMs: number): number {
+/** Level while held, `tMs` since note-on. `fromLevel` is where the attack starts (non-zero on a re-strike). */
+export function levelAt(env: EnvelopeSettings, tMs: number, fromLevel = 0): number {
   const a = effMs(env.attack);
   const d = effMs(env.decay);
-  if (tMs <= 0) return 0;
-  if (tMs < a) return shapeCurve(0, 1, tMs / a, CURVE_AMOUNT[env.attackCurve]);
+  if (tMs <= 0) return fromLevel;
+  if (tMs < a) return shapeCurve(fromLevel, 1, tMs / a, CURVE_AMOUNT[env.attackCurve]);
   if (tMs < a + d) return shapeCurve(1, env.sustain, (tMs - a) / d, CURVE_AMOUNT[env.decayCurve]);
   return env.sustain;
 }
