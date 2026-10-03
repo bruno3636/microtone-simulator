@@ -77,7 +77,7 @@ describe('store', () => {
     const saved = JSON.parse(localStorage.getItem('ejis-settings')!);
     expect(saved.state.volume).toBe(0.42);
     expect(saved.state.held).toBeUndefined();
-    expect(saved.version).toBe(2);
+    expect(saved.version).toBe(3);
   });
 
   describe('brightness decay + instrument presets', () => {
@@ -124,6 +124,33 @@ describe('store', () => {
       s().applyPreset('piano');
       s().setBrightnessTau(300);
       expect(s().brightnessTau).toBe(300);
+      expect(s().preset).toBe('custom');
+    });
+  });
+
+  describe('preset roster', () => {
+    it('drops STRINGS and offers the measured wind and brass presets', () => {
+      expect(Object.keys(SYNTH_PRESETS)).not.toContain('strings');
+      for (const id of ['flute', 'clarinet', 'trombone', 'trumpet'] as const) {
+        expect(SYNTH_PRESETS[id].harmonics.tweaks[1]).toBeGreaterThan(0);
+        expect(SYNTH_PRESETS[id].dark).toBeUndefined();
+      }
+    });
+    it('clarinet has the weak even harmonics of a cylindrical bore', () => {
+      const t = SYNTH_PRESETS.clarinet.harmonics.tweaks;
+      expect(t[2]).toBeLessThan(t[3] / 5);
+      expect(t[4]).toBeLessThan(t[5] / 5);
+    });
+    it('organ is a principal chorus: octave and fifth harmonics stand out from their neighbours', () => {
+      const t = SYNTH_PRESETS.organ.harmonics.tweaks;
+      expect(t[4]).toBeGreaterThan(t[5]);
+      expect(t[6]).toBeGreaterThan(t[7]);
+      expect(t[8]).toBeGreaterThan(t[7]);
+      expect(t[12]).toBeGreaterThan(t[11]);
+    });
+    it('saved settings that still name the removed STRINGS preset show as CUSTOM', async () => {
+      localStorage.setItem('ejis-settings', JSON.stringify({ state: { ...JSON.parse(localStorage.getItem('ejis-settings') ?? '{"state":{}}').state, preset: 'strings' }, version: 2 }));
+      await useStore.persist.rehydrate();
       expect(s().preset).toBe('custom');
     });
   });

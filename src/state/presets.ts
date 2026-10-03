@@ -1,10 +1,13 @@
 import type { HarmonicSettings } from '../audio/harmonics';
 import type { EnvelopeSettings } from '../audio/envelope';
 import {
-  CELLO, GUITAR_ATTACK, GUITAR_SUSTAIN, GUITAR_TAU_MS, PIANO_ATTACK, PIANO_SUSTAIN, PIANO_TAU_MS, VIOLIN,
+  CELLO, CLARINET, FLUTE, GUITAR_ATTACK, GUITAR_SUSTAIN, GUITAR_TAU_MS, ORGAN_CHORUS, PIANO_ATTACK, PIANO_SUSTAIN,
+  PIANO_TAU_MS, TROMBONE, TRUMPET, VIOLIN,
 } from './spectra';
 
-export type PresetId = 'sine' | 'organ' | 'strings' | 'pluck' | 'piano' | 'guitar' | 'violin' | 'cello' | 'custom';
+export type PresetId =
+  | 'sine' | 'organ' | 'pluck' | 'piano' | 'guitar' | 'violin' | 'cello'
+  | 'flute' | 'clarinet' | 'trombone' | 'trumpet' | 'custom';
 
 export interface SynthPreset {
   label: string;
@@ -39,14 +42,10 @@ export const SYNTH_PRESETS: Record<Exclude<PresetId, 'custom'>, SynthPreset> = {
     envelope: { attack: 10, decay: 200, sustain: 1, release: 300, attackCurve: 'lin', decayCurve: 'exp', releaseCurve: 'exp' },
   },
   organ: {
+    // pipe organ principal chorus, see spectra.ts; flue-pipe speech ≈40 ms, flat sustain
     label: 'Organ',
-    harmonics: { count: 8, start: 1, end: 0.6, curve: -0.3, filter: 'all', tweaks: { 2: 0.9, 4: 0.7, 8: 0.5 } },
-    envelope: { attack: 15, decay: 50, sustain: 1, release: 120, attackCurve: 'lin', decayCurve: 'lin', releaseCurve: 'exp' },
-  },
-  strings: {
-    label: 'Strings',
-    harmonics: { count: 24, start: 1, end: 0.05, curve: 0.7, filter: 'all', tweaks: {} },
-    envelope: { attack: 350, decay: 300, sustain: 0.85, release: 900, attackCurve: 'log', decayCurve: 'exp', releaseCurve: 'exp' },
+    harmonics: measured(ORGAN_CHORUS),
+    envelope: { attack: 40, decay: 60, sustain: 1, release: 120, attackCurve: 'log', decayCurve: 'lin', releaseCurve: 'exp' },
   },
   pluck: {
     label: 'Pluck',
@@ -79,5 +78,26 @@ export const SYNTH_PRESETS: Record<Exclude<PresetId, 'custom'>, SynthPreset> = {
     label: 'Cello',
     harmonics: measured(CELLO),
     envelope: { attack: 130, decay: 150, sustain: 0.9, release: 300, attackCurve: 'log', decayCurve: 'exp', releaseCurve: 'exp' },
+  },
+  // Winds and brass from SHARC (see spectra.ts): sustained tones, onset times typical of each instrument.
+  flute: {
+    label: 'Flute',
+    harmonics: measured(FLUTE),
+    envelope: { attack: 80, decay: 100, sustain: 0.95, release: 150, attackCurve: 'log', decayCurve: 'exp', releaseCurve: 'exp' },
+  },
+  clarinet: {
+    label: 'Clarinet',
+    harmonics: measured(CLARINET),
+    envelope: { attack: 40, decay: 80, sustain: 0.95, release: 120, attackCurve: 'log', decayCurve: 'exp', releaseCurve: 'exp' },
+  },
+  trombone: {
+    label: 'Trombone',
+    harmonics: measured(TROMBONE),
+    envelope: { attack: 60, decay: 120, sustain: 0.9, release: 160, attackCurve: 'log', decayCurve: 'exp', releaseCurve: 'exp' },
+  },
+  trumpet: {
+    label: 'Trumpet',
+    harmonics: measured(TRUMPET),
+    envelope: { attack: 35, decay: 100, sustain: 0.9, release: 140, attackCurve: 'log', decayCurve: 'exp', releaseCurve: 'exp' },
   },
 };

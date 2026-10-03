@@ -220,14 +220,15 @@ Editor UI: an SVG graph. The x axis is time; the sustain portion is drawn as a f
 
 ### 4.4 Presets
 
-Segmented bar: **SINE · ORGAN · STRINGS · PLUCK · CUSTOM**. A preset sets harmonics and envelope
-together; any later edit flips the selection to CUSTOM.
+Segmented bar: **SINE · ORGAN · PLUCK · PIANO · GUITAR · VIOLIN · CELLO · FLUTE · CLARINET ·
+TROMBONE · TRUMPET · CUSTOM** (wraps on narrow screens). A preset sets harmonics, envelope and
+brightness decay together; any later edit flips the selection to CUSTOM. SINE and PLUCK are
+synthetic; every other preset uses a measured spectrum (§4.7). (STRINGS was removed 2026-10-03;
+saved settings that name it migrate to CUSTOM.)
 
 | Preset | Harmonics | Envelope (A/D/S/R, curves) |
 |---|---|---|
 | SINE | count 1 | 10 / 200 / 100 % / 300, LIN/EXP/EXP |
-| ORGAN | count 8, start 1, end 0.6, curve −0.3, ALL, tweaks {2: 0.9, 4: 0.7, 8: 0.5} | 15 / 50 / 100 % / 120, LIN/LIN/EXP |
-| STRINGS | count 24, start 1, end 0.05, curve 0.7, ALL | 350 / 300 / 85 % / 900, LOG/EXP/EXP |
 | PLUCK | count 32, start 1, end 0.02, curve 0.85, ALL | 3 / 1200 / 0 % / 500, LIN/EXP/EXP |
 
 ### 4.5 Other synth controls
@@ -264,10 +265,17 @@ PIANO, GUITAR, VIOLIN and CELLO use measured harmonic spectra, stored as per-har
 | CELLO | SHARC `cello_vibrato`, median of 27 notes C2–D4 | off |
 | PIANO | Univ. of Iowa MIS, Steinway, `Piano.mf.{C3,C4,A4}`, both channels: attack = 30–200 ms window, sustain = 0.8–1.2 s window, partial search allowing inharmonicity | on, τ = 1220 ms (fitted) |
 | GUITAR | Univ. of Iowa MIS, `Guitar.mf.sulE.E2B2` + `sulA.C3B3`, 16 clean notes, same windows | on, τ = 570 ms (fitted) |
+| ORGAN | Principal chorus 8′ + 4′ + 2⅔′ + 2′: each rank uses C. E. Pykett's measured Open Diapason spectral envelope (−6 dB/oct to harmonic 4.5, then −23 dB/oct); rank k feeds harmonics k, 2k, 3k…; ranks add in power at 0 / −3 / −6 / −6 dB | off |
+| FLUTE | SHARC `flute_vibrato`, median of 25 notes C4–C6 | off |
+| CLARINET | SHARC `Bb_clarinet`, median of 21 notes D3–A#4 (chalumeau/throat register) | off |
+| TROMBONE | SHARC `trombone`, median of 26 notes E2–F4 | off |
+| TRUMPET | SHARC `C_trumpet`, median of 31 notes F#3–C6 | off |
 
 Envelopes: piano and guitar decay to silence while held, with the decay length chosen so the
-measured median time to −20 dB (≈0.9 s) is matched by the EXP decay curve; bowed strings sustain.
-Inharmonicity (piano) and vibrato (violin/cello) are intentionally not reproduced: the synth keeps
+measured median time to −20 dB (≈0.9 s) is matched by the EXP decay curve; bowed strings, winds,
+brass and organ sustain, with onset times typical of each (organ ≈40 ms, flute 80, clarinet 40,
+trombone 60, trumpet 35, violin 90, cello 130 ms).
+Inharmonicity (piano) and vibrato (violin/cello/flute) are intentionally not reproduced: the synth keeps
 exact integer harmonics and no pitch modulation, so beating and consonance stay readable.
 
 ## 5. Visualizer

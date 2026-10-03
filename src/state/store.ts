@@ -206,14 +206,19 @@ export const useStore = create<StoreState>()(
     }),
     {
       name: 'ejis-settings',
-      // v2 added darkHarmonics + brightnessTau; missing keys fall back to the initial state on merge
-      version: 2,
+      // v2 added darkHarmonics + brightnessTau (missing keys fall back to the initial state on merge);
+      // v3 removed the STRINGS preset
+      version: 3,
       storage: createJSONStorage(() => safeStorage),
       partialize: ({ held: _held, ...rest }) => {
         void _held;
         return Object.fromEntries(Object.entries(rest).filter(([, v]) => typeof v !== 'function')) as Partial<StoreState>;
       },
-      migrate: (persisted) => persisted as StoreState,
+      migrate: (persisted) => {
+        const p = persisted as Partial<StoreState>;
+        if (p.preset && !(p.preset in SYNTH_PRESETS)) p.preset = 'custom';
+        return p as StoreState;
+      },
     },
   ),
 );
