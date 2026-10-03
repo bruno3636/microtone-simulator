@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildDegree, DEGREE_SOURCES, SPELLED_NOTES } from '../src/tuning/degreeInput';
+import { buildDegree, DEGREE_SOURCES, SPELLED_NOTES, spelledInterval } from '../src/tuning/degreeInput';
 import { evalRatio } from '../src/tuning/ratios';
 
 const value = (s: string | null) => (s == null ? null : evalRatio(s));
@@ -64,5 +64,12 @@ describe('buildDegree (insert degree from a typed value)', () => {
     expect(buildDegree({ source: 'frequency', hz: 660, rootHz: 440 })).toBe('660 / 440');
     expect(value(buildDegree({ source: 'frequency', hz: 523.251, rootHz: 440 }))).toBeCloseTo(523.251 / 440, 12);
     expect(buildDegree({ source: 'frequency', hz: 0, rootHz: 440 })).toBeNull();
+  });
+  it('note pickers list interval names (spelled for Pythagorean / meantone)', () => {
+    expect(SPELLED_NOTES.map(spelledInterval)).toEqual([
+      'Perfect unison', 'Augmented unison', 'Minor 2nd', 'Major 2nd', 'Augmented 2nd', 'Minor 3rd', 'Major 3rd',
+      'Perfect 4th', 'Augmented 4th', 'Diminished 5th', 'Perfect 5th', 'Augmented 5th', 'Minor 6th', 'Major 6th',
+      'Augmented 6th', 'Minor 7th', 'Major 7th',
+    ]);
   });
 });

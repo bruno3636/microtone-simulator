@@ -1,5 +1,5 @@
-import { simplify } from 'mathjs';
-import { evalRatio, mod, splitCents, splitLabel } from './ratios';
+import { evalRatio, mod, parseEdo, splitCents, splitLabel } from './ratios';
+import { intervalBetween } from './intervals';
 
 /** `cents`: size of the interval in cents, e.g. "315.6¢". */
 export interface InterRatio { lo: number; hi: number; exact: string; cents: string }
@@ -21,6 +21,23 @@ export function toFraction(v: number): string | null {
   return null;
 }
 
+/** EDO steps of two notes in the same EDO (the root "1" is step 0 of any EDO), or null. */
+function sameEdo(a: string, b: string): { steps: number; divisions: number } | null {
+  const pa = parseEdo(a);
+  const pb = parseEdo(b);
+  const n = pa?.divisions ?? pb?.divisions;
+  if (n == null) return null;
+  const ka = pa ? (pa.divisions === n ? pa.step : null) : a.trim() === '1' ? 0 : null;
+  const kb = pb ? (pb.divisions === n ? pb.step : null) : b.trim() === '1' ? 0 : null;
+  return ka == null || kb == null ? null : { steps: kb - ka, divisions: n };
+}
+
+/**
+ * Pairs of shown/held degrees, each described by the most meaningful form for its sources:
+ * the musical interval (both from the same Pythagorean / meantone / well temperament), the
+ * distance in EDO steps (both from the same EDO), the just ratio ± cents (tempered JI), a fraction
+ * (rational), or the ratio to 4 decimals (irrational) — plus the size in cents.
+ */
 export function interScaleRatios(notes: string[], degrees: number[]): InterRatio[][] {
   const len = notes.length;
   const ds = [...new Set(degrees.map((d) => mod(d, len)))].sort((a, b) => a - b);
@@ -32,25 +49,26 @@ export function interScaleRatios(notes: string[], degrees: number[]): InterRatio
       const hi = evalRatio(notes[ds[j]]);
       if (lo == null || hi == null) continue;
       const v = hi / lo;
-      const a = splitCents(notes[ds[i]]);
-      const b = splitCents(notes[ds[j]]);
-      let exact: string | null;
-      if (a.cents != null || b.cents != null) {
+      const la = splitLabel(notes[ds[i]]);
+      const lb = splitLabel(notes[ds[j]]);
+      const named = la.tag && lb.tag ? intervalBetween(la.tag, lb.tag) : null;
+      const edo = named ? null : sameEdo(la.body, lb.body);
+      const a = splitCents(la.body);
+      const b = splitCents(lb.body);
+      let exact: string;
+      if (named) {
+        exact = named;
+      } else if (edo) {
+        exact = `${edo.steps} steps (${edo.divisions}EDO)`;
+      } else if (a.cents != null || b.cents != null) {
         // tempered JI: the just ratio between the ratio parts, plus the cents difference
         const ra = evalRatio(a.ratio);
         const rb = evalRatio(b.ratio);
         const dc = (b.cents ?? 0) - (a.cents ?? 0);
-        const just = ra && rb ? (toFraction(rb / ra) ?? (rb / ra).toFixed(3)) : '—';
+        const just = ra && rb ? (toFraction(rb / ra) ?? (rb / ra).toFixed(4)) : '—';
         exact = Math.abs(dc) < 0.05 ? just : `${just} ${dc > 0 ? '+' : '-'}${Math.abs(dc).toFixed(1)}c`;
       } else {
-        exact = toFraction(v);
-      }
-      if (exact == null) {
-        try {
-          exact = simplify(`(${splitLabel(notes[ds[j]]).body}) / (${splitLabel(notes[ds[i]]).body})`).toString().replace(/\s+/g, '');
-        } catch {
-          exact = '—';
-        }
+        exact = toFraction(v) ?? v.toFixed(4);
       }
       row.push({ lo: ds[i], hi: ds[j], exact, cents: `${(1200 * Math.log2(v)).toFixed(1)}¢` });
     }

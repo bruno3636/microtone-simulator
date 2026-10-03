@@ -1,4 +1,4 @@
-import { intervalByFifths, intervalBySemitones, withLabel } from './intervals';
+import { noteTag, withLabel } from './intervals';
 
 export interface TuningVariant { label: string; notes: string[] }
 export interface Tuning {
@@ -37,9 +37,11 @@ export function meantoneDegree(num: number, den: number, n: number): string {
   return octaves === 0 ? `${fifthExpr}${pow}` : `${fifthExpr}${pow} * 2^(${octaves})`;
 }
 
-/** 12-note meantone on the chain E♭ … G♯, each note tagged with its interval name. */
-const meantoneNotes = (num: number, den: number) =>
-  FIFTHS_FROM_C.map((n) => withLabel(intervalByFifths(n), meantoneDegree(num, den, n)));
+/** 12-note meantone on the chain E♭ … G♯, each note tagged with its variant and fifths position. */
+const meantoneNotes = (variant: string) => {
+  const [num, den] = MEANTONE_FRACTIONS[variant];
+  return FIFTHS_FROM_C.map((n) => withLabel(noteTag('meantone', variant, n), meantoneDegree(num, den, n)));
+};
 
 const PURE_FIFTH = 1200 * Math.log2(3 / 2);
 const PYTHAGOREAN_COMMA = 1200 * Math.log2(531441 / 524288);
@@ -51,7 +53,7 @@ const SCHISMA = PYTHAGOREAN_COMMA - SYNTONIC_COMMA;
  * the circle C–G–D–A–E–B–F♯–C♯–G♯–D♯–A♯–F(–C); the narrowings sum to a Pythagorean comma so the
  * circle closes. Notes are given in cents to 3 decimals (≤ 0.0005 cent error).
  */
-function wellNotes(narrowing: Partial<Record<number, number>>): string[] {
+function wellNotes(variant: string, narrowing: Partial<Record<number, number>>): string[] {
   const chain = [0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5]; // chromatic index of each note up the circle
   const cents = new Array<number>(12).fill(0);
   let c = 0;
@@ -59,7 +61,7 @@ function wellNotes(narrowing: Partial<Record<number, number>>): string[] {
     c += PURE_FIFTH - (narrowing[i - 1] ?? 0);
     cents[chain[i]] = ((c % 1200) + 1200) % 1200;
   }
-  return cents.map((x, i) => withLabel(intervalBySemitones(i), i === 0 ? '1' : `2^(${x.toFixed(3)}/1200)`));
+  return cents.map((x, i) => withLabel(noteTag('well', variant, i), i === 0 ? '1' : `2^(${x.toFixed(3)}/1200)`));
 }
 
 const range = (from: number, to: number, cents: number) =>
@@ -90,29 +92,29 @@ export const TUNINGS: Record<string, Tuning> = {
     label: 'Pythagorean', scalable: true,
     // chain G♭ … B: fifths from C of each chromatic note, for the interval names
     notes: ['1', '2^8 / 3^5', '3^2 / 2^3', '2^5 / 3^3', '3^4 / 2^6', '2^2 / 3', '2^10 / 3^6', '3 / 2', '2^7 / 3^4', '3^3 / 2^4', '2^4 / 3^2', '3^5 / 2^7']
-      .map((expr, i) => withLabel(intervalByFifths([0, -5, 2, -3, 4, -1, -6, 1, -4, 3, -2, 5][i]), expr)),
+      .map((expr, i) => withLabel(noteTag('pythagorean', null, [0, -5, 2, -3, 4, -1, -6, 1, -4, 3, -2, 5][i]), expr)),
   },
   meantone: {
     label: 'Meantone', scalable: true, defaultVariant: 'quarter',
     variants: {
-      third: { label: '⅓-comma (pure minor thirds)', notes: meantoneNotes(...MEANTONE_FRACTIONS.third) },
-      quarter: { label: '¼-comma (pure major thirds)', notes: meantoneNotes(...MEANTONE_FRACTIONS.quarter) },
-      fifth: { label: '⅕-comma', notes: meantoneNotes(...MEANTONE_FRACTIONS.fifth) },
-      sixth: { label: '⅙-comma', notes: meantoneNotes(...MEANTONE_FRACTIONS.sixth) },
-      twoSevenths: { label: '2/7-comma (Zarlino)', notes: meantoneNotes(...MEANTONE_FRACTIONS.twoSevenths) },
+      third: { label: '⅓-comma (pure minor thirds)', notes: meantoneNotes('third') },
+      quarter: { label: '¼-comma (pure major thirds)', notes: meantoneNotes('quarter') },
+      fifth: { label: '⅕-comma', notes: meantoneNotes('fifth') },
+      sixth: { label: '⅙-comma', notes: meantoneNotes('sixth') },
+      twoSevenths: { label: '2/7-comma (Zarlino)', notes: meantoneNotes('twoSevenths') },
     },
   },
   well_temperament: {
     label: 'Well temperament', scalable: true, defaultVariant: 'werckmeister3',
     variants: {
       // C–G, G–D, D–A and B–F♯ narrowed by ¼ Pythagorean comma
-      werckmeister3: { label: 'Werckmeister III', notes: wellNotes({ 0: PYTHAGOREAN_COMMA / 4, 1: PYTHAGOREAN_COMMA / 4, 2: PYTHAGOREAN_COMMA / 4, 5: PYTHAGOREAN_COMMA / 4 }) },
+      werckmeister3: { label: 'Werckmeister III', notes: wellNotes('werckmeister3', { 0: PYTHAGOREAN_COMMA / 4, 1: PYTHAGOREAN_COMMA / 4, 2: PYTHAGOREAN_COMMA / 4, 5: PYTHAGOREAN_COMMA / 4 }) },
       // C–G–D–A–E narrowed by ¼ syntonic comma (C–E pure 5/4), F♯–C♯ by a schisma
-      kirnberger3: { label: 'Kirnberger III', notes: wellNotes({ ...range(0, 3, SYNTONIC_COMMA / 4), 6: SCHISMA }) },
+      kirnberger3: { label: 'Kirnberger III', notes: wellNotes('kirnberger3', { ...range(0, 3, SYNTONIC_COMMA / 4), 6: SCHISMA }) },
       // F–C–G–D–A–E–B narrowed by ⅙ Pythagorean comma
-      vallotti: { label: 'Vallotti', notes: wellNotes({ 11: PYTHAGOREAN_COMMA / 6, ...range(0, 4, PYTHAGOREAN_COMMA / 6) }) },
+      vallotti: { label: 'Vallotti', notes: wellNotes('vallotti', { 11: PYTHAGOREAN_COMMA / 6, ...range(0, 4, PYTHAGOREAN_COMMA / 6) }) },
       // C–G–D–A–E–B–F♯ narrowed by ⅙ Pythagorean comma (Young's second temperament, 1799)
-      young: { label: 'Young (1799)', notes: wellNotes(range(0, 5, PYTHAGOREAN_COMMA / 6)) },
+      young: { label: 'Young (1799)', notes: wellNotes('young', range(0, 5, PYTHAGOREAN_COMMA / 6)) },
     },
   },
 };

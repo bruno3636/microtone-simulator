@@ -1,12 +1,18 @@
 import { evaluate } from 'mathjs';
 import { TUNINGS, SCALES, tuningNotes } from './presets';
+import { parseTag, tagName, type NoteTag } from './intervals';
 
 export const mod = (n: number, m: number) => ((n % m) + m) % m;
 
-/** Split an interval-name tag off a note: "Major 3rd|5/4" → { label: 'Major 3rd', body: '5/4' }. */
-export function splitLabel(expr: string): { label: string | null; body: string } {
+/**
+ * Split the tag off a named note. New tags record family/variant/position ("meantone.quarter:4|…")
+ * and the label is derived from them; older plain-name tags ("Major 3rd|…") are kept as the label.
+ */
+export function splitLabel(expr: string): { label: string | null; tag: NoteTag | null; body: string } {
   const m = /^\s*([^|]*?)\s*\|\s*(.*)$/.exec(String(expr));
-  return m && m[1] ? { label: m[1], body: m[2] } : { label: null, body: String(expr).trim() };
+  if (!m || !m[1]) return { label: null, tag: null, body: String(expr).trim() };
+  const tag = parseTag(m[1]);
+  return { label: tag ? tagName(tag) : m[1], tag, body: m[2] };
 }
 
 const CENTS_SUFFIX = /^(.*?)\s*([+-])\s*(\d+(?:\.\d*)?|\.\d+)\s*(?:c|¢|cents?)\s*$/i;

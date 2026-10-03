@@ -16,7 +16,7 @@ export function InterScaleRatios() {
     <span className="mono px-1.5" style={{ background: degreeColor(i, dark), color: '#111' }}>f{i + 1}</span>
   );
   return (
-    <Section title="Inter-note ratios" open={open} onToggle={() => toggleOpen('ratios')}>
+    <Section title="Inter-Note Ratio" open={open} onToggle={() => toggleOpen('ratios')}>
       {rows.length === 0 ? (
         <p className="label normal-case tracking-normal">Show (~) or play at least two pitches.</p>
       ) : (

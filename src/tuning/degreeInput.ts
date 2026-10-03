@@ -1,5 +1,5 @@
 import { MEANTONE_FRACTIONS, meantoneDegree, tuningNotes } from './presets';
-import { intervalByFifths, withLabel } from './intervals';
+import { intervalByFifths, noteTag, withLabel } from './intervals';
 import { evalRatio, joinCents } from './ratios';
 
 /** Ways to type in a new scale degree (the "insert degree" popover). */
@@ -48,6 +48,9 @@ export const SPELLED_NOTES: { name: string; fifths: number }[] = [
   { name: 'B', fifths: 5 },
 ];
 
+/** Interval name shown in the note picker for a spelled note. */
+export const spelledInterval = (n: { fifths: number }) => intervalByFifths(n.fifths);
+
 const fifthsOf = (spelling: string | undefined) => SPELLED_NOTES.find((n) => n.name === spelling)?.fifths;
 
 /** `n` pure fifths from the root as an exact ratio 3^a / 2^b, reduced into the octave. */
@@ -75,12 +78,12 @@ export function buildDegree(i: DegreeInput): string | null {
       return i.steps === 0 ? '1' : `2^(${i.steps}/${i.divisions})`;
     case 'pythagorean': {
       const n = fifthsOf(i.spelling);
-      return n == null ? null : withLabel(intervalByFifths(n), pythagorean(n));
+      return n == null ? null : withLabel(noteTag('pythagorean', null, n), pythagorean(n));
     }
     case 'meantone': {
       const n = fifthsOf(i.spelling);
       const f = MEANTONE_FRACTIONS[i.variant ?? 'quarter'];
-      return n == null || !f ? null : withLabel(intervalByFifths(n), meantoneDegree(f[0], f[1], n));
+      return n == null || !f ? null : withLabel(noteTag('meantone', i.variant ?? 'quarter', n), meantoneDegree(f[0], f[1], n));
     }
     case 'well':
       // a closed circle: enharmonic notes coincide, so 12 names suffice

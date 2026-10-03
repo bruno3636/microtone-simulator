@@ -379,7 +379,9 @@ Behavior matches the original unless noted.
   Pitch sources can be mixed in one collection; each card's second row follows its note's source:
   **Interval** (read-only name, e.g. "Major 3rd", "Augmented unison", "Tritone") for notes picked by
   name — Pythagorean, meantone, well temperament, via the insert popover or those tunings'
-  templates — which are stored tagged as `Major 3rd|expr` (`splitLabel`; the maths ignores the tag;
+  templates — which are stored tagged with family, variant and position, e.g.
+  `meantone.quarter:4|expr` (`splitLabel`/`parseTag`; the maths ignores the tag; older plain-name
+  tags still display;
   names come from the chain of fifths for Pythagorean/meantone and from semitones for well
   temperament); **Step** for EDO steps; **Ratio** for everything else.
   Any pitch card whose note is an EDO step (`2^(k/N)`) shows a **Step [k] / N** row in place of
@@ -401,8 +403,8 @@ Behavior matches the original unless noted.
   Custom EDO are always chromatic.
 - **Insert degree popover** (`src/tuning/degreeInput.ts`): choose a value type and type the value —
   Just intonation (ratio), Tempered JI (ratio ± cents), 12EDO (steps), Custom EDO (steps of N),
-  Pythagorean (note), Meantone (variant + note), Well temperament (variant + note), with the root
-  as C. Pythagorean and meantone list 17 spelled notes (C C♯ D♭ D D♯ E♭ E F F♯ G♭ G G♯ A♭ A A♯ B♭ B),
+  Pythagorean (interval), Meantone (variant + interval), Well temperament (variant + interval) —
+  the pickers list interval names above the root (spelled for Pythagorean/meantone). Pythagorean and meantone list 17 spelled notes (C C♯ D♭ D D♯ E♭ E F F♯ G♭ G G♯ A♭ A A♯ B♭ B),
   each placed by its position on the chain of fifths, so enharmonic pairs are distinct pitches
   (Pythagorean C♯ 2187/2048 vs D♭ 256/243); well temperament keeps 12 names (closed circle).
   **Cents** (stored as
@@ -433,8 +435,11 @@ Behavior matches the original unless noted.
 - **Keyboard maps:** `scale` and `chords` presets, editable per degree. Comma-separated keys,
   and a digit suffix selects the octave (`f2` = one octave up), the same as the original. Degrees
   can be added and removed.
-- **Inter-note ratios** (renamed from inter-scale ratios): for shown/held degrees, each pair's
-  simplified ratio (mathjs `simplify`) and its size in cents (0.1¢). Collapsible section.
+- **Inter-Note Ratio** section: for shown/held degrees, each pair is described by the most meaningful
+  form for its sources, plus its size in cents (0.1¢): the musical interval when both notes come
+  from the same Pythagorean / meantone / well temperament (same variant), the distance in steps
+  ("4 steps (12EDO)") when both are steps of the same EDO (root 1 = step 0), the just ratio ± cents
+  for tempered JI, a fraction when rational, else the ratio to 4 decimals. Collapsible section.
 - **Removed:** the MIDI tab and the `@tonejs/midi` dependency.
 - **Fixed from the original:** degree colors cycle past 12 degrees instead of breaking;
   typing in inputs doesn't play notes; held keys don't retrigger; the title typo is fixed.

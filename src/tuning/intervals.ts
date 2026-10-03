@@ -19,3 +19,26 @@ export const intervalBySemitones = (n: number): string => BY_SEMITONES[((n % 12)
 
 /** A note expression tagged with its interval name: "Major 3rd|expr" (the maths ignores the tag). */
 export const withLabel = (label: string, expr: string) => `${label}|${expr}`;
+
+/** Where a named note came from: its tuning family, variant, and position (fifths from the root,
+ *  or semitones for well temperament). Stored as the note's tag, e.g. "meantone.quarter:4". */
+export type NoteFamily = 'pythagorean' | 'meantone' | 'well';
+export interface NoteTag { family: NoteFamily; variant: string | null; pos: number }
+
+export const noteTag = (family: NoteFamily, variant: string | null, pos: number) =>
+  `${family}${variant ? `.${variant}` : ''}:${pos}`;
+
+export function parseTag(tag: string): NoteTag | null {
+  const m = /^(pythagorean|meantone|well)(?:\.([A-Za-z0-9]+))?:(-?\d+)$/.exec(tag.trim());
+  return m ? { family: m[1] as NoteFamily, variant: m[2] ?? null, pos: Number(m[3]) } : null;
+}
+
+/** Interval name of a tagged note above the root. */
+export const tagName = (t: NoteTag) => (t.family === 'well' ? intervalBySemitones(t.pos) : intervalByFifths(t.pos));
+
+/** Musical interval from note a up to note b, when both come from the same tuning family and variant. */
+export function intervalBetween(a: NoteTag, b: NoteTag): string | null {
+  if (a.family !== b.family || a.variant !== b.variant) return null;
+  if (a.family === 'well') return intervalBySemitones(b.pos - a.pos);
+  return BY_FIFTHS[b.pos - a.pos] ?? null;
+}

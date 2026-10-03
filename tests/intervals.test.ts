@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { intervalByFifths, intervalBySemitones } from '../src/tuning/intervals';
+import { intervalByFifths, intervalBySemitones, parseTag, tagName, intervalBetween } from '../src/tuning/intervals';
 import { splitLabel, evalRatio, isPure, splitCents } from '../src/tuning/ratios';
 import { tuningNotes } from '../src/tuning/presets';
 import { buildDegree } from '../src/tuning/degreeInput';
@@ -27,15 +27,15 @@ describe('interval names', () => {
 
 describe('labelled notes ("Major 3rd|5/4")', () => {
   it('splits the label from the expression; the maths ignores it', () => {
-    expect(splitLabel('Major 3rd|5/4')).toEqual({ label: 'Major 3rd', body: '5/4' });
-    expect(splitLabel('5/4')).toEqual({ label: null, body: '5/4' });
+    expect(splitLabel('Major 3rd|5/4')).toMatchObject({ label: 'Major 3rd', body: '5/4' }); // older plain-name tag
+    expect(splitLabel('5/4')).toMatchObject({ label: null, body: '5/4' });
     expect(evalRatio('Major 3rd|5/4')).toBe(1.25);
     expect(isPure('Major 3rd|5/4')).toBe(true);
     expect(splitCents('Major 3rd|5/4 -2c')).toEqual({ ratio: '5/4', cents: -2 });
   });
   it('note-picker sources are labelled with their interval', () => {
     const py = (spelling: string) => buildDegree({ source: 'pythagorean', spelling })!;
-    expect(splitLabel(py('C♯'))).toEqual({ label: 'Augmented unison', body: '3^7 / 2^11' });
+    expect(splitLabel(py('C♯'))).toMatchObject({ label: 'Augmented unison', body: '3^7 / 2^11' });
     expect(splitLabel(py('D♭')).label).toBe('Minor 2nd');
     expect(splitLabel(py('C')).label).toBe('Perfect unison');
     expect(splitLabel(buildDegree({ source: 'meantone', variant: 'quarter', spelling: 'E' })!).label).toBe('Major 3rd');
@@ -51,7 +51,46 @@ describe('labelled notes ("Major 3rd|5/4")', () => {
   });
   it('inter-note ratios work with labelled notes', () => {
     const rows = interScaleRatios(['Perfect unison|1', 'Major 3rd|5/4', 'Perfect 5th|3/2'], [0, 1, 2]);
-    expect(rows[0][0].exact).toBe('5/4');
+    expect(rows[0][0].exact).toBe('5/4'); // plain-name tags carry no family: ratios as usual
     expect(rows[1][0].exact).toBe('6/5');
+  });
+});
+
+describe('note tags (family, variant, position)', () => {
+  it('parse and name', () => {
+    expect(parseTag('meantone.quarter:4')).toEqual({ family: 'meantone', variant: 'quarter', pos: 4 });
+    expect(parseTag('pythagorean:-5')).toEqual({ family: 'pythagorean', variant: null, pos: -5 });
+    expect(parseTag('Major 3rd')).toBeNull();
+    expect(tagName(parseTag('well.vallotti:6')!)).toBe('Tritone');
+    expect(tagName(parseTag('pythagorean:7')!)).toBe('Augmented unison');
+  });
+  it('interval between two notes of the same family and variant', () => {
+    const t = (s: string) => parseTag(s)!;
+    expect(intervalBetween(t('meantone.quarter:4'), t('meantone.quarter:1'))).toBe('Minor 3rd'); // E → G
+    expect(intervalBetween(t('pythagorean:0'), t('pythagorean:-5'))).toBe('Minor 2nd');
+    expect(intervalBetween(t('well.vallotti:4'), t('well.vallotti:11'))).toBe('Perfect 5th'); // 7 semitones
+    expect(intervalBetween(t('well.vallotti:4'), t('well.kirnberger3:11'))).toBeNull(); // different variants
+    expect(intervalBetween(t('meantone.quarter:0'), t('pythagorean:4'))).toBeNull();
+  });
+});
+
+describe('inter-note ratios by source', () => {
+  it('irrational ratios show 4 decimals; rational ones a fraction', () => {
+    const rows = interScaleRatios(['1', '5/4', '1 +13.7c', 'sqrt(2)'], [0, 1, 3]);
+    expect(rows[0][1].exact).toBe('1.4142');
+    expect(rows[0][0].exact).toBe('5/4');
+  });
+  it('two notes of the same EDO show the distance in steps', () => {
+    const rows = interScaleRatios(['1', '2^(4/12)', '2^(7/12)', '2^(5/19)'], [0, 1, 2, 3]);
+    expect(rows[0][0].exact).toBe('4 steps (12EDO)'); // root 1 counts as step 0
+    expect(rows[1][0].exact).toBe('3 steps (12EDO)');
+    expect(rows[1][1].exact).not.toContain('steps'); // 12EDO vs 19EDO: not the same EDO
+  });
+  it('two notes of the same named tuning show the musical interval', () => {
+    const notes = [tuningNotes('meantone', 'quarter')[0], tuningNotes('meantone', 'quarter')[4], tuningNotes('meantone', 'quarter')[7]];
+    const rows = interScaleRatios(notes, [0, 1, 2]);
+    expect(rows[0][0].exact).toBe('Major 3rd');
+    expect(rows[0][1].exact).toBe('Perfect 5th');
+    expect(rows[1][0].exact).toBe('Minor 3rd');
   });
 });

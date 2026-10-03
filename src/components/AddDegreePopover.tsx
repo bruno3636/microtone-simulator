@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../state/store';
-import { NOTE_NAMES, TUNINGS } from '../tuning/presets';
+import { TUNINGS } from '../tuning/presets';
+import { intervalBySemitones } from '../tuning/intervals';
 import { evalRatio } from '../tuning/ratios';
-import { buildDegree, DEGREE_SOURCES, SPELLED_NOTES, type DegreeSourceId } from '../tuning/degreeInput';
+import { buildDegree, DEGREE_SOURCES, SPELLED_NOTES, spelledInterval, type DegreeSourceId } from '../tuning/degreeInput';
 import { NumberField } from './ui';
 
 /** The typed-input source that matches the current tuning, so the popover opens on the familiar one. */
@@ -80,17 +81,17 @@ export function AddDegreePopover({ after, onClose }: { after: number; onClose():
       {source === 'well' && variantSelect('well_temperament', well, setWell)}
       {(source === 'pythagorean' || source === 'meantone') && (
         <label className="flex flex-col gap-1">
-          <span className="label">Note (root = C)</span>
+          <span className="label">Interval above root</span>
           <select className="input" value={spelling} onChange={(e) => setSpelling(e.target.value)}>
-            {SPELLED_NOTES.map((n) => <option key={n.name} value={n.name}>{n.name}</option>)}
+            {SPELLED_NOTES.map((n) => <option key={n.name} value={n.name}>{spelledInterval(n)}</option>)}
           </select>
         </label>
       )}
       {source === 'well' && (
         <label className="flex flex-col gap-1">
-          <span className="label">Note (root = C)</span>
+          <span className="label">Interval above root</span>
           <select className="input" value={note} onChange={(e) => setNote(Number(e.target.value))}>
-            {NOTE_NAMES.map((n, k) => <option key={n} value={k}>{n}</option>)}
+            {Array.from({ length: 12 }, (_, k) => <option key={k} value={k}>{intervalBySemitones(k)}</option>)}
           </select>
         </label>
       )}
