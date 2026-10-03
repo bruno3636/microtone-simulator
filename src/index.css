@@ -1,7 +1,7 @@
 @import 'tailwindcss';
 
 @theme {
-  --font-display: 'Newsreader Variable', Newsreader, serif;
+  --font-display: 'Space Grotesk Variable', 'Space Grotesk', sans-serif;
   --font-body: 'DM Sans Variable', 'DM Sans', sans-serif;
   --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', monospace;
 }
@@ -38,7 +38,7 @@ body { font-family: var(--font-body); margin: 0; -webkit-font-smoothing: antiali
 * { border-radius: 0 !important; }
 
 @layer components {
-  .display { font-family: var(--font-display); font-weight: 400; letter-spacing: -0.01em; }
+  .display { font-family: var(--font-display); font-weight: 500; letter-spacing: -0.01em; }
   .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
   .label { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); }
   .panel { background: var(--bg-raised); border: 1px solid var(--border-subtle); }
