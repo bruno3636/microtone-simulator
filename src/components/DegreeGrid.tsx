@@ -57,28 +57,28 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
       onPointerCancel={release}
       onPointerLeave={release}
     >
-      {/* drag grip: drag to move this pitch; ← / → move it with the keyboard */}
-      <button type="button" className="absolute right-0.5 top-0.5 cursor-grab border-0 bg-transparent px-1 leading-none text-[var(--text-muted)]"
-        style={{ touchAction: 'none' }} title="Drag to move (or ← / →)" aria-label={`Move pitch ${i + 1}`}
-        onPointerDown={(e) => grip.down(i, e)}
-        onPointerMove={grip.move}
-        onPointerUp={grip.up}
-        onPointerCancel={grip.cancel}
-        onKeyDown={(e) => grip.key(i, e)}>⠿</button>
+      {i > 0 && (
+        <button type="button" className="absolute right-0.5 top-0.5 border-0 bg-transparent px-1 leading-none text-[var(--text-muted)] hover:text-[var(--text)]"
+          title="Delete degree" aria-label={`Delete pitch ${i + 1}`} onClick={() => deleteDegree(i)}>×</button>
+      )}
       <div className="flex items-center justify-between gap-1 pr-3">
-        <span className="mono px-2 py-0.5 text-sm" style={{ background: degreeColor(i, dark), color: '#111' }}>{i + 1}</span>
+        {/* the number is the drag handle: drag to move this pitch; ← / → move it with the keyboard */}
+        <button type="button" className="mono cursor-grab border-0 px-2 py-0.5 text-sm"
+          style={{ background: degreeColor(i, dark), color: '#111', touchAction: 'none' }}
+          title="Drag to move (or ← / →)" aria-label={`Move pitch ${i + 1}`}
+          onPointerDown={(e) => grip.down(i, e)}
+          onPointerMove={grip.move}
+          onPointerUp={grip.up}
+          onPointerCancel={grip.cancel}
+          onKeyDown={(e) => grip.key(i, e)}>{i + 1}</button>
         {i > 0 && isPure(note) && <span className="label italic">pure</span>}
         <div className="flex items-center gap-0.5">
           <button type="button" className="btn px-1 py-0.5" aria-pressed={shown} aria-label="Show in visualizer" title="Show in visualizer"
             style={{ color: shown ? 'var(--text)' : 'var(--text-muted)' }} onClick={() => toggleShown(i)}>~</button>
-          {i > 0 && (
-            <button type="button" className="btn px-1 py-0.5" title="Delete degree" onClick={() => deleteDegree(i)}>×</button>
-          )}
           <div className="relative" data-popover>
             <button type="button" className="btn px-1 py-0.5" title="Insert degree after" onClick={() => setAdding(true)}>+</button>
             {adding && <AddDegreePopover after={i} onClose={() => setAdding(false)} />}
           </div>
-
         </div>
       </div>
       <label className="flex items-center gap-2">
@@ -187,7 +187,7 @@ export function DegreeGrid() {
     <section className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between">
         <h2 className="display m-0 text-xl">Pitch Collection</h2>
-        <span className="label">press a card or key to play · drag ⠿ to reorder</span>
+        <span className="label">press a card or key to play · drag a number to reorder</span>
       </div>
       <div className="grid grid-cols-2 gap-2 min-[480px]:grid-cols-3 lg:grid-cols-6">
         {Array.from({ length: count }, (_, i) => <DegreeCard key={i} i={i} dragStyle={dragStyle(i)} grip={grip} />)}
