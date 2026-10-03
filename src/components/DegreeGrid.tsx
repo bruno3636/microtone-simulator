@@ -8,14 +8,25 @@ import { useResolvedTheme } from '../hooks/useTheme';
 import { playDegree, stopDegree } from '../audio/play';
 import { engine } from '../audio/engine';
 
-function DegreeCard({ i }: { i: number }) {
+interface DragState { from: number; over: number }
+
+/** Index of the pitch card under a screen point, or null. */
+function cardAt(x: number, y: number): number | null {
+  const el = document.elementFromPoint(x, y)?.closest('[data-degree]');
+  return el ? Number(el.getAttribute('data-degree')) : null;
+}
+
+function DegreeCard({ i, drag, setDrag }: { i: number; drag: DragState | null; setDrag(d: DragState | null): void }) {
   const dark = useResolvedTheme() === 'dark';
   const note = useStore((s) => s.notes[i]);
   const notes = useStore((s) => s.notes);
   const rootHz = useStore((s) => s.root.freq);
   const held = useStore((s) => s.held.some((d) => ((d % s.notes.length) + s.notes.length) % s.notes.length === i));
   const shown = useStore((s) => s.shown.includes(i));
-  const { setNote, deleteDegree, toggleShown } = useStore.getState();
+  const { setNote, deleteDegree, toggleShown, moveDegree } = useStore.getState();
+  const count = useStore((s) => s.notes.length);
+  const dragging = drag?.from === i;
+  const target = drag != null && drag.over === i && drag.from !== i;
   const [adding, setAdding] = useState(false);
   const pointers = useRef(new Set<number>());
   const valid = evalRatio(note) != null;
@@ -30,10 +41,13 @@ function DegreeCard({ i }: { i: number }) {
 
   return (
     <div
+      data-degree={i}
       className="relative flex cursor-pointer select-none flex-col gap-2 border p-3"
       style={{
-        borderColor: held ? degreeColor(i, dark) : 'var(--border-subtle)',
+        borderColor: target ? 'var(--accent)' : held ? degreeColor(i, dark) : 'var(--border-subtle)',
+        borderStyle: target ? 'dashed' : 'solid',
         background: held ? degreeColor(i, dark, 0.25) : 'var(--bg-raised)',
+        opacity: dragging ? 0.4 : 1,
         touchAction: 'manipulation',
       }}
       onPointerDown={(e) => {
@@ -47,7 +61,34 @@ function DegreeCard({ i }: { i: number }) {
       onPointerLeave={release}
     >
       <div className="flex items-center justify-between gap-1">
-        <span className="mono px-2 py-0.5 text-sm" style={{ background: degreeColor(i, dark), color: '#111' }}>{i + 1}</span>
+        <div className="flex items-center gap-1">
+          {/* drag grip: drag to move this pitch; ← / → move it with the keyboard */}
+          <button type="button" className="cursor-grab border-0 bg-transparent px-0.5 text-[var(--text-muted)]"
+            style={{ touchAction: 'none' }} title="Drag to move (or ← / →)" aria-label={`Move pitch ${i + 1}`}
+            onPointerDown={(e) => {
+              e.currentTarget.setPointerCapture(e.pointerId);
+              setDrag({ from: i, over: i });
+            }}
+            onPointerMove={(e) => {
+              if (!drag || drag.from !== i) return;
+              const over = cardAt(e.clientX, e.clientY);
+              if (over != null && over !== drag.over) setDrag({ from: i, over });
+            }}
+            onPointerUp={() => {
+              if (drag && drag.from === i && drag.over !== i) moveDegree(i, drag.over);
+              setDrag(null);
+            }}
+            onPointerCancel={() => setDrag(null)}
+            onKeyDown={(e) => {
+              const to = e.key === 'ArrowLeft' ? i - 1 : e.key === 'ArrowRight' ? i + 1 : null;
+              if (to == null || to < 0 || to >= count) return;
+              e.preventDefault();
+              moveDegree(i, to);
+              // keep focus on the moved pitch's grip
+              requestAnimationFrame(() => (document.querySelector(`[data-degree="${to}"] button[aria-label^="Move"]`) as HTMLElement | null)?.focus());
+            }}>⠿</button>
+          <span className="mono px-2 py-0.5 text-sm" style={{ background: degreeColor(i, dark), color: '#111' }}>{i + 1}</span>
+        </div>
         {i > 0 && isPure(note) && <span className="label italic">pure</span>}
         <div className="flex items-center gap-1">
           <button type="button" className="btn px-1.5 py-0.5" aria-pressed={shown} aria-label="Show in visualizer" title="Show in visualizer"
@@ -81,14 +122,15 @@ function DegreeCard({ i }: { i: number }) {
 export function DegreeGrid() {
   const count = useStore((s) => s.notes.length);
   const [adding, setAdding] = useState(false);
+  const [drag, setDrag] = useState<DragState | null>(null);
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between">
         <h2 className="display m-0 text-xl">Pitch Collection</h2>
-        <span className="label">press a card or key to play</span>
+        <span className="label">press a card or key to play · drag ⠿ to reorder</span>
       </div>
       <div className="grid grid-cols-2 gap-2 min-[480px]:grid-cols-3 lg:grid-cols-6">
-        {Array.from({ length: count }, (_, i) => <DegreeCard key={i} i={i} />)}
+        {Array.from({ length: count }, (_, i) => <DegreeCard key={i} i={i} drag={drag} setDrag={setDrag} />)}
         <div className="relative" data-popover>
           <button type="button" className="btn h-full min-h-24 w-full text-lg" onClick={() => setAdding(true)}>+</button>
           {adding && <AddDegreePopover after={count - 1} onClose={() => setAdding(false)} />}

@@ -275,4 +275,31 @@ describe('store', () => {
     expect(s().scale).toBe('chromatic');
     expect(s().notes).toHaveLength(12);
   });
+
+  describe('reordering the pitch collection', () => {
+    beforeEach(() => {
+      s().applyTemplate('just_intonation', 'major'); // 1, 9/8, 5/4, 4/3, 3/2, 5/3, 15/8
+    });
+    it('moves a pitch to a new position; the others close up in order', () => {
+      const before = [...s().notes];
+      s().moveDegree(4, 1);
+      expect(s().notes).toEqual([before[0], before[4], before[1], before[2], before[3], before[5], before[6]]);
+      s().moveDegree(1, 4);
+      expect(s().notes).toEqual(before);
+    });
+    it('the visualizer toggle follows the pitch it was set on', () => {
+      s().toggleShown(4); // shown = [0, 4]
+      s().moveDegree(4, 1);
+      expect([...s().shown].sort()).toEqual([0, 1]);
+      s().moveDegree(0, 6); // root moves to the end; everything shifts left
+      expect([...s().shown].sort()).toEqual([0, 6]);
+    });
+    it('ignores out-of-range or no-op moves', () => {
+      const before = [...s().notes];
+      s().moveDegree(2, 2);
+      s().moveDegree(-1, 3);
+      s().moveDegree(2, 99);
+      expect(s().notes).toEqual(before);
+    });
+  });
 });

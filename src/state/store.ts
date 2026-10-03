@@ -55,6 +55,8 @@ interface Actions {
   setNote(i: number, expr: string): void;
   deleteDegree(i: number): void;
   insertDegree(after: number, expr: string): void;
+  /** move the pitch at `from` to position `to`; positions (numbers, colours, keys) stay in order */
+  moveDegree(from: number, to: number): void;
   setRootNote(name: string): void;
   setRootFreq(hz: number): void;
   setKeymap(name: string): void;
@@ -159,6 +161,22 @@ export const useStore = create<StoreState>()(
           const notes = [...s.notes];
           notes.splice(p, 0, expr);
           return { notes, shown: s.shown.map((d) => (d >= p ? d + 1 : d)) };
+        }),
+      moveDegree: (from, to) =>
+        set((s) => {
+          const n = s.notes.length;
+          if (from === to || from < 0 || to < 0 || from >= n || to >= n) return {};
+          const notes = [...s.notes];
+          const [moved] = notes.splice(from, 1);
+          notes.splice(to, 0, moved);
+          // where each old index ends up, so shown (visualizer) flags follow their pitch
+          const newIndex = (i: number) => {
+            if (i === from) return to;
+            if (from < to && i > from && i <= to) return i - 1;
+            if (from > to && i >= to && i < from) return i + 1;
+            return i;
+          };
+          return { notes, shown: s.shown.map(newIndex) };
         }),
       setRootNote: (name) => set({ root: { note: name, freq: NOTE_FREQS[name] ?? get().root.freq } }),
       setRootFreq: (hz) => {
