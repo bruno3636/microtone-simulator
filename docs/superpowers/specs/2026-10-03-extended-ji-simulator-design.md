@@ -343,9 +343,7 @@ Controls above the canvas:
   highest partial, capped at 20 kHz. Y axis is linear amplitude.
 - **Coincident partials** (within 0.5 cent of each other, from different notes) are stacked:
   the line is drawn in segments in each note's color, with a small ◆ marker on top.
-- **Near-misses** (0.5–30 cents apart, both amplitudes ≥ 0.05) are joined by a thin bracket
-  labeled with the beat rate `|f₁ − f₂|` in Hz. At most the 8 strongest pairs are labeled
-  (ranked by `min(a₁, a₂)`) to avoid clutter.
+- Near-miss beat-rate labels were removed (2026-10-03) to keep the display uncluttered.
 - Hovering a line shows a tooltip with note, harmonic number, frequency, and level.
 
 ### 5.4 Live wave

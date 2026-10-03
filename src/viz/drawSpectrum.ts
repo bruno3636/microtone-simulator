@@ -88,24 +88,6 @@ export function drawComputedSpectrum(
     ctx.fillText('◆', cx - 4, y - 4);
   }
 
-  // near-misses: bracket + beat rate
-  ctx.lineWidth = 1;
-  for (const n of found.near) {
-    const xa = x(n.a.freq);
-    const xb = x(n.b.freq);
-    const yt = base - Math.max(len(n.a.amp), len(n.b.amp)) - 10;
-    ctx.strokeStyle = colors.secondary;
-    ctx.beginPath();
-    ctx.moveTo(xa, yt + 5);
-    ctx.lineTo(xa, yt);
-    ctx.lineTo(xb, yt);
-    ctx.lineTo(xb, yt + 5);
-    ctx.stroke();
-    const label = `${n.beatHz.toFixed(2)} Hz`;
-    ctx.fillStyle = colors.secondary;
-    ctx.fillText(label, Math.min(w - ctx.measureText(label).width, Math.max(0, (xa + xb) / 2 - ctx.measureText(label).width / 2)), yt - 4);
-  }
-
   if (hoverX != null) {
     let best: Partial | null = null;
     let bestD = 6;
