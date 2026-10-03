@@ -376,10 +376,15 @@ Behavior matches the original unless noted.
   - **12EDO** — 2^(k/12) (always chromatic).
   - **Custom EDO** — 2^(k/N) with a "Divisions / octave" field, N = 1–96, default 31 (always
     chromatic; saved settings on the old default 19 migrate to 31, persist v6).
-  Pitch sources can be mixed in one collection; each card's second row follows its note's source:
-  **Interval** (read-only name, e.g. "Major 3rd", "Augmented unison", "Tritone") for notes picked by
-  name — Pythagorean, meantone, well temperament, via the insert popover or those tunings'
-  templates — which are stored tagged with family, variant and position, e.g.
+  Pitch sources can be mixed in one collection. Each card shows **Step** for EDO steps, otherwise
+  **Ratio** (named notes show their ratio; editing it drops the name tag), and an **Interval** row:
+  notes picked by name show their exact name ("Augmented unison", "Tritone"); 12EDO steps use
+  semitone names; everything else is named from the nearest reference ratio, octave-reduced, with
+  the cents difference in front ("+13.7¢ Major 3rd"): 1/1 unison, 16/15 minor 2nd, 9/8 major 2nd,
+  6/5 minor 3rd, 5/4 major 3rd, 4/3 perfect 4th, 7/5 diminished 5th, 10/7 augmented 4th, 3/2 perfect
+  5th (added), 8/5 minor 6th, 5/3 major 6th, 16/9 minor 7th, 15/8 major 7th, 2/1 unison (wrap).
+  Notes picked by name — Pythagorean, meantone, well temperament, via the insert popover or those
+  tunings' templates — which are stored tagged with family, variant and position, e.g.
   `meantone.quarter:4|expr` (`splitLabel`/`parseTag`; the maths ignores the tag; older plain-name
   tags still display;
   names come from the chain of fifths for Pythagorean/meantone and from semitones for well
@@ -435,9 +440,10 @@ Behavior matches the original unless noted.
 - **Keyboard maps:** `scale` and `chords` presets, editable per degree. Comma-separated keys,
   and a digit suffix selects the octave (`f2` = one octave up), the same as the original. Degrees
   can be added and removed.
-- **Inter-Note Ratio** section: for shown/held degrees, each pair is described by the most meaningful
-  form for its sources, plus its size in cents (0.1¢): the musical interval when both notes come
-  from the same Pythagorean / meantone / well temperament (same variant), the distance in steps
+- **Inter-Note Ratio** section: for shown/held degrees, each pair shows a ratio form, its size in
+  cents (0.1¢), and a musical-interval column (exact for two notes of the same Pythagorean /
+  meantone / well temperament variant or of 12EDO, otherwise the nearest reference name as on the
+  cards). The ratio form: the distance in steps
   ("4 steps (12EDO)") when both are steps of the same EDO (root 1 = step 0), the just ratio ± cents
   for tempered JI, a fraction when rational, else the ratio to 4 decimals. Collapsible section.
 - **Removed:** the MIDI tab and the `@tonejs/midi` dependency.

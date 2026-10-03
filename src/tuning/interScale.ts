@@ -1,8 +1,11 @@
 import { evalRatio, mod, parseEdo, splitCents, splitLabel } from './ratios';
-import { intervalBetween } from './intervals';
+import { intervalBetween, intervalBySemitones, nameRatio } from './intervals';
 
-/** `cents`: size of the interval in cents, e.g. "315.6¢". */
-export interface InterRatio { lo: number; hi: number; exact: string; cents: string }
+/**
+ * `exact`: the ratio (or EDO steps / just ratio ± cents); `cents`: size in cents, e.g. "315.6¢";
+ * `interval`: the musical interval name.
+ */
+export interface InterRatio { lo: number; hi: number; exact: string; cents: string; interval: string }
 
 /** Best rational p/q with q ≤ 4096 within 1e-10, else null. Continued fractions. */
 export function toFraction(v: number): string | null {
@@ -33,10 +36,9 @@ function sameEdo(a: string, b: string): { steps: number; divisions: number } | n
 }
 
 /**
- * Pairs of shown/held degrees, each described by the most meaningful form for its sources:
- * the musical interval (both from the same Pythagorean / meantone / well temperament), the
- * distance in EDO steps (both from the same EDO), the just ratio ± cents (tempered JI), a fraction
- * (rational), or the ratio to 4 decimals (irrational) — plus the size in cents.
+ * Pairs of shown/held degrees: the distance in EDO steps (both from the same EDO), the just ratio
+ * ± cents (tempered JI), a fraction (rational) or the ratio to 4 decimals (irrational); the size in
+ * cents; and the musical interval as its own column.
  */
 export function interScaleRatios(notes: string[], degrees: number[]): InterRatio[][] {
   const len = notes.length;
@@ -52,13 +54,11 @@ export function interScaleRatios(notes: string[], degrees: number[]): InterRatio
       const la = splitLabel(notes[ds[i]]);
       const lb = splitLabel(notes[ds[j]]);
       const named = la.tag && lb.tag ? intervalBetween(la.tag, lb.tag) : null;
-      const edo = named ? null : sameEdo(la.body, lb.body);
+      const edo = sameEdo(la.body, lb.body);
       const a = splitCents(la.body);
       const b = splitCents(lb.body);
       let exact: string;
-      if (named) {
-        exact = named;
-      } else if (edo) {
+      if (edo) {
         exact = `${edo.steps} steps (${edo.divisions}EDO)`;
       } else if (a.cents != null || b.cents != null) {
         // tempered JI: the just ratio between the ratio parts, plus the cents difference
@@ -70,7 +70,9 @@ export function interScaleRatios(notes: string[], degrees: number[]): InterRatio
       } else {
         exact = toFraction(v) ?? v.toFixed(4);
       }
-      row.push({ lo: ds[i], hi: ds[j], exact, cents: `${(1200 * Math.log2(v)).toFixed(1)}¢` });
+      // musical interval: exact for two notes of the same named tuning or of 12EDO, else the nearest reference
+      const interval = named ?? (edo && edo.divisions === 12 ? intervalBySemitones(edo.steps) : nameRatio(v));
+      row.push({ lo: ds[i], hi: ds[j], exact, cents: `${(1200 * Math.log2(v)).toFixed(1)}¢`, interval });
     }
     rows.push(row);
   }

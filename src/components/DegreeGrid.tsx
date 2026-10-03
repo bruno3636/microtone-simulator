@@ -8,6 +8,7 @@ import { degreeColor } from '../theme';
 import { useResolvedTheme } from '../hooks/useTheme';
 import { playDegree, stopDegree, toggleLatch } from '../audio/play';
 import { keysForDegree } from '../tuning/keymaps';
+import { intervalBySemitones, nameRatio } from '../tuning/intervals';
 import { useFinePointer } from '../hooks/useFinePointer';
 import { engine } from '../audio/engine';
 
@@ -36,8 +37,9 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
   const valid = evalRatio(note) != null;
   // tempered JI degrees carry a cents offset ("5/4 -13.7c"): edit the ratio and the offset separately
   const { ratio, cents } = splitCents(note);
-  // a note picked by name (Pythagorean, meantone, well temperament) carries its interval name
-  const intervalName = splitLabel(note).label;
+  // musical interval: notes picked by name (Pythagorean, meantone, well temperament) carry their exact
+  // name; 12EDO steps use semitone names; anything else is named from the nearest reference ratio
+  const { label: taggedName, body } = splitLabel(note);
   // 12EDO / Custom EDO: edit the step number instead of the ratio expression
   const tuning = useStore((s) => s.tuning);
   const edo = useStore((s) => s.edo);
@@ -51,6 +53,8 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
   const hz = degreeFreq(notes, i, rootHz);
   const ratioValue = evalRatio(note);
   const centsAboveRoot = ratioValue == null ? null : 1200 * Math.log2(ratioValue);
+  const intervalLabel =
+    taggedName ?? (parsed && parsed.divisions === 12 ? intervalBySemitones(parsed.step) : ratioValue == null ? '—' : nameRatio(ratioValue));
 
   const release = (e: RPointerEvent) => {
     if (!pointers.current.delete(e.pointerId)) return;
@@ -111,12 +115,7 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
           </div>
         </div>
       </div>
-      {intervalName ? (
-        <div className="flex items-center justify-between gap-2">
-          <span className="label">Interval</span>
-          <span className="text-sm">{intervalName}</span>
-        </div>
-      ) : step != null && divisions != null ? (
+      {step != null && divisions != null ? (
         <div className="flex items-center justify-between gap-2">
           <span className="label">Step</span>
           <NumberField hideLabel label="EDO step" value={step} min={-999} max={999} suffix={`/ ${divisions}`}
@@ -125,10 +124,15 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
       ) : (
         <label className="flex items-center gap-2">
           <span className="label">Ratio</span>
-          <input className="input mono w-full text-right" value={cents == null ? note : ratio} aria-invalid={!valid}
+          {/* editing a named note's ratio drops its name tag: it becomes a plain ratio */}
+          <input className="input mono w-full text-right" value={cents == null ? body : ratio} aria-invalid={!valid}
             onChange={(e) => setNote(i, cents == null ? e.target.value : joinCents(e.target.value, cents))} />
         </label>
       )}
+      <div className="flex items-center justify-between gap-2">
+        <span className="label">Interval</span>
+        <span className="truncate text-sm">{intervalLabel}</span>
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-x-1 gap-y-1">
         <span className="label">Cents</span>
         <span className="ml-auto flex min-w-0 items-center gap-1">

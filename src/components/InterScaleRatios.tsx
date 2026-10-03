@@ -28,6 +28,7 @@ export function InterScaleRatios() {
                   {chip(x.hi)}<span>/</span>{chip(x.lo)}<span>=</span>
                   <span className="mono">{x.exact}</span><span className="label">≈</span>
                   <span className="mono">{x.cents}</span>
+                  <span className="label normal-case tracking-normal text-[var(--text)]">· {x.interval}</span>
                 </div>
               ))}
             </div>

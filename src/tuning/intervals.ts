@@ -42,3 +42,23 @@ export function intervalBetween(a: NoteTag, b: NoteTag): string | null {
   if (a.family === 'well') return intervalBySemitones(b.pos - a.pos);
   return BY_FIFTHS[b.pos - a.pos] ?? null;
 }
+
+/**
+ * Reference ratios for naming arbitrary ratios (JI, EDO, cents…): the user's list plus the perfect
+ * fifth, and the octave (as unison) so ratios just below 2/1 wrap round.
+ */
+const REFERENCE: [number, string][] = [
+  [1, 'Unison'], [16 / 15, 'Minor 2nd'], [9 / 8, 'Major 2nd'], [6 / 5, 'Minor 3rd'], [5 / 4, 'Major 3rd'],
+  [4 / 3, 'Perfect 4th'], [7 / 5, 'Diminished 5th'], [10 / 7, 'Augmented 4th'], [3 / 2, 'Perfect 5th'],
+  [8 / 5, 'Minor 6th'], [5 / 3, 'Major 6th'], [16 / 9, 'Minor 7th'], [15 / 8, 'Major 7th'], [2, 'Unison'],
+];
+const REFERENCE_CENTS = REFERENCE.map(([r, name]) => [1200 * Math.log2(r), name] as const);
+
+/** Name of the nearest reference interval (octave-reduced), with the cents difference in front: "+13.7¢ Major 3rd". */
+export function nameRatio(ratio: number): string {
+  const c = (((1200 * Math.log2(ratio)) % 1200) + 1200) % 1200;
+  let best = REFERENCE_CENTS[0];
+  for (const ref of REFERENCE_CENTS) if (Math.abs(c - ref[0]) < Math.abs(c - best[0])) best = ref;
+  const d = c - best[0];
+  return Math.abs(d) < 0.05 ? best[1] : `${d > 0 ? '+' : '−'}${Math.abs(d).toFixed(1)}¢ ${best[1]}`;
+}

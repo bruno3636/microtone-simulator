@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { intervalByFifths, intervalBySemitones, parseTag, tagName, intervalBetween } from '../src/tuning/intervals';
+import { intervalByFifths, intervalBySemitones, parseTag, tagName, intervalBetween, nameRatio } from '../src/tuning/intervals';
 import { splitLabel, evalRatio, isPure, splitCents } from '../src/tuning/ratios';
 import { tuningNotes } from '../src/tuning/presets';
 import { buildDegree } from '../src/tuning/degreeInput';
@@ -86,11 +86,40 @@ describe('inter-note ratios by source', () => {
     expect(rows[1][0].exact).toBe('3 steps (12EDO)');
     expect(rows[1][1].exact).not.toContain('steps'); // 12EDO vs 19EDO: not the same EDO
   });
-  it('two notes of the same named tuning show the musical interval', () => {
+  it('named tunings show their ratio again; the musical interval is its own column', () => {
     const notes = [tuningNotes('meantone', 'quarter')[0], tuningNotes('meantone', 'quarter')[4], tuningNotes('meantone', 'quarter')[7]];
     const rows = interScaleRatios(notes, [0, 1, 2]);
-    expect(rows[0][0].exact).toBe('Major 3rd');
-    expect(rows[0][1].exact).toBe('Perfect 5th');
-    expect(rows[1][0].exact).toBe('Minor 3rd');
+    expect(rows[0][0].exact).toBe('5/4'); // quarter-comma major third is pure
+    expect(rows[0][1].exact).toBe('1.4953');
+    expect(rows[0][0].interval).toBe('Major 3rd');
+    expect(rows[0][1].interval).toBe('Perfect 5th');
+    expect(rows[1][0].interval).toBe('Minor 3rd');
+  });
+  it('other pairs are named from the reference ratios with a cents deviation', () => {
+    const rows = interScaleRatios(['1', '5/4', '7/4', '2^(4/12)', '2^(7/12)'], [0, 1, 2, 3, 4]);
+    expect(rows[0][0].interval).toBe('Major 3rd'); // 1 → 5/4
+    expect(rows[0][1].interval).toBe('−27.3¢ Minor 7th'); // 7/4 vs 16/9
+    expect(rows[3][0].interval).toBe('Minor 3rd'); // 12EDO 4 → 7 steps: semitone name
+  });
+});
+
+describe('nameRatio (nearest reference interval, octave-reduced)', () => {
+  it('exact reference ratios get the bare name', () => {
+    expect(nameRatio(1)).toBe('Unison');
+    expect(nameRatio(5 / 4)).toBe('Major 3rd');
+    expect(nameRatio(3 / 2)).toBe('Perfect 5th');
+    expect(nameRatio(7 / 5)).toBe('Diminished 5th');
+    expect(nameRatio(10 / 7)).toBe('Augmented 4th');
+    expect(nameRatio(16 / 9)).toBe('Minor 7th');
+  });
+  it('others get the nearest name with the cents difference in front', () => {
+    expect(nameRatio(2 ** (4 / 12))).toBe('+13.7¢ Major 3rd');
+    expect(nameRatio(7 / 4)).toBe('−27.3¢ Minor 7th');
+    expect(nameRatio(2 ** (18 / 31))).toBe('−5.2¢ Perfect 5th');
+  });
+  it('reduces to one octave, and wraps just-below-octave ratios to unison', () => {
+    expect(nameRatio(5 / 2)).toBe('Major 3rd');
+    expect(nameRatio(3 / 8)).toBe('Perfect 5th');
+    expect(nameRatio(1.99)).toBe('−8.7¢ Unison');
   });
 });
