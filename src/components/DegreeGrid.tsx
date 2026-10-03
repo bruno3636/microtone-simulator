@@ -22,7 +22,7 @@ function AddDegreePopover({ after, onClose }: { after: number; onClose(): void }
   }, [onClose]);
   const degrees = SCALES[scale].filter((n) => n <= TUNINGS[tuning].notes.length);
   return (
-    <div ref={ref} className="panel absolute right-0 top-full z-20 mt-1 flex w-64 flex-col gap-3 p-3"
+    <div ref={ref} className="panel fixed inset-x-4 top-24 z-20 flex flex-col gap-3 p-3 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-1 sm:w-64"
       style={{ borderColor: 'var(--border)' }}>
       <span className="label">Insert degree from preset</span>
       <select className="input" value={tuning} onChange={(e) => { setTuning(e.target.value); setDegree(0); }}>
