@@ -1,7 +1,7 @@
 import { useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent as RPointerEvent } from 'react';
 import { nearestSlot, previewIndex, type SlotRect } from './reorder';
 import { useStore } from '../state/store';
-import { evalRatio, degreeFreq, splitCents, joinCents, parseEdo, edoExpr } from '../tuning/ratios';
+import { evalRatio, degreeFreq, splitCents, joinCents, parseEdo, edoExpr, splitLabel } from '../tuning/ratios';
 import { NumberField } from './ui';
 import { AddDegreePopover } from './AddDegreePopover';
 import { degreeColor } from '../theme';
@@ -36,6 +36,8 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
   const valid = evalRatio(note) != null;
   // tempered JI degrees carry a cents offset ("5/4 -13.7c"): edit the ratio and the offset separately
   const { ratio, cents } = splitCents(note);
+  // a note picked by name (Pythagorean, meantone, well temperament) carries its interval name
+  const intervalName = splitLabel(note).label;
   // 12EDO / Custom EDO: edit the step number instead of the ratio expression
   const tuning = useStore((s) => s.tuning);
   const edo = useStore((s) => s.edo);
@@ -109,7 +111,12 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
           </div>
         </div>
       </div>
-      {step != null && divisions != null ? (
+      {intervalName ? (
+        <div className="flex items-center justify-between gap-2">
+          <span className="label">Interval</span>
+          <span className="text-sm">{intervalName}</span>
+        </div>
+      ) : step != null && divisions != null ? (
         <div className="flex items-center justify-between gap-2">
           <span className="label">Step</span>
           <NumberField hideLabel label="EDO step" value={step} min={-999} max={999} suffix={`/ ${divisions}`}

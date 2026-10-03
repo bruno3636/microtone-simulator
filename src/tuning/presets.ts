@@ -1,3 +1,5 @@
+import { intervalByFifths, intervalBySemitones, withLabel } from './intervals';
+
 export interface TuningVariant { label: string; notes: string[] }
 export interface Tuning {
   label: string;
@@ -35,8 +37,9 @@ export function meantoneDegree(num: number, den: number, n: number): string {
   return octaves === 0 ? `${fifthExpr}${pow}` : `${fifthExpr}${pow} * 2^(${octaves})`;
 }
 
-/** 12-note meantone on the chain E♭ … G♯. */
-const meantoneNotes = (num: number, den: number) => FIFTHS_FROM_C.map((n) => meantoneDegree(num, den, n));
+/** 12-note meantone on the chain E♭ … G♯, each note tagged with its interval name. */
+const meantoneNotes = (num: number, den: number) =>
+  FIFTHS_FROM_C.map((n) => withLabel(intervalByFifths(n), meantoneDegree(num, den, n)));
 
 const PURE_FIFTH = 1200 * Math.log2(3 / 2);
 const PYTHAGOREAN_COMMA = 1200 * Math.log2(531441 / 524288);
@@ -56,7 +59,7 @@ function wellNotes(narrowing: Partial<Record<number, number>>): string[] {
     c += PURE_FIFTH - (narrowing[i - 1] ?? 0);
     cents[chain[i]] = ((c % 1200) + 1200) % 1200;
   }
-  return cents.map((x, i) => (i === 0 ? '1' : `2^(${x.toFixed(3)}/1200)`));
+  return cents.map((x, i) => withLabel(intervalBySemitones(i), i === 0 ? '1' : `2^(${x.toFixed(3)}/1200)`));
 }
 
 const range = (from: number, to: number, cents: number) =>
@@ -85,7 +88,9 @@ export const TUNINGS: Record<string, Tuning> = {
   },
   pythagorean_tuning: {
     label: 'Pythagorean', scalable: true,
-    notes: ['1', '2^8 / 3^5', '3^2 / 2^3', '2^5 / 3^3', '3^4 / 2^6', '2^2 / 3', '2^10 / 3^6', '3 / 2', '2^7 / 3^4', '3^3 / 2^4', '2^4 / 3^2', '3^5 / 2^7'],
+    // chain G♭ … B: fifths from C of each chromatic note, for the interval names
+    notes: ['1', '2^8 / 3^5', '3^2 / 2^3', '2^5 / 3^3', '3^4 / 2^6', '2^2 / 3', '2^10 / 3^6', '3 / 2', '2^7 / 3^4', '3^3 / 2^4', '2^4 / 3^2', '3^5 / 2^7']
+      .map((expr, i) => withLabel(intervalByFifths([0, -5, 2, -3, 4, -1, -6, 1, -4, 3, -2, 5][i]), expr)),
   },
   meantone: {
     label: 'Meantone', scalable: true, defaultVariant: 'quarter',

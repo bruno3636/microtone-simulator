@@ -40,7 +40,7 @@ describe('buildDegree (insert degree from a typed value)', () => {
     expect(value(py('D♭'))).toBeCloseTo(256 / 243, 12); // 90.2¢ limma
     expect(value(py('F♯'))).toBeCloseTo(729 / 512, 12);
     expect(value(py('G♭'))).toBeCloseTo(1024 / 729, 12);
-    expect(py('C')).toBe('1');
+    expect(evalRatio(py('C')!)).toBe(1);
     expect(py('H')).toBeNull();
   });
   it('meantone: sharps and flats are distinct pitches in the chosen variant', () => {

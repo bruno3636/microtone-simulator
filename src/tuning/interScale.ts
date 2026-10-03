@@ -1,5 +1,5 @@
 import { simplify } from 'mathjs';
-import { evalRatio, mod, splitCents } from './ratios';
+import { evalRatio, mod, splitCents, splitLabel } from './ratios';
 
 /** `cents`: size of the interval in cents, e.g. "315.6¢". */
 export interface InterRatio { lo: number; hi: number; exact: string; cents: string }
@@ -47,7 +47,7 @@ export function interScaleRatios(notes: string[], degrees: number[]): InterRatio
       }
       if (exact == null) {
         try {
-          exact = simplify(`(${notes[ds[j]]}) / (${notes[ds[i]]})`).toString().replace(/\s+/g, '');
+          exact = simplify(`(${splitLabel(notes[ds[j]]).body}) / (${splitLabel(notes[ds[i]]).body})`).toString().replace(/\s+/g, '');
         } catch {
           exact = '—';
         }

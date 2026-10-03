@@ -3,12 +3,19 @@ import { TUNINGS, SCALES, tuningNotes } from './presets';
 
 export const mod = (n: number, m: number) => ((n % m) + m) % m;
 
+/** Split an interval-name tag off a note: "Major 3rd|5/4" → { label: 'Major 3rd', body: '5/4' }. */
+export function splitLabel(expr: string): { label: string | null; body: string } {
+  const m = /^\s*([^|]*?)\s*\|\s*(.*)$/.exec(String(expr));
+  return m && m[1] ? { label: m[1], body: m[2] } : { label: null, body: String(expr).trim() };
+}
+
 const CENTS_SUFFIX = /^(.*?)\s*([+-])\s*(\d+(?:\.\d*)?|\.\d+)\s*(?:c|¢|cents?)\s*$/i;
 
 /** Split "5/4 -13.7c" into the ratio part and its cents offset (null when there is none). */
 export function splitCents(expr: string): { ratio: string; cents: number | null } {
-  const m = CENTS_SUFFIX.exec(String(expr));
-  if (!m || m[1].trim() === '') return { ratio: String(expr).trim(), cents: null };
+  const body = splitLabel(expr).body;
+  const m = CENTS_SUFFIX.exec(body);
+  if (!m || m[1].trim() === '') return { ratio: body, cents: null };
   return { ratio: m[1].trim(), cents: (m[2] === '-' ? -1 : 1) * Number(m[3]) };
 }
 

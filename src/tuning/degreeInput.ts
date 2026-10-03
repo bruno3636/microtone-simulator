@@ -1,4 +1,5 @@
 import { MEANTONE_FRACTIONS, meantoneDegree, tuningNotes } from './presets';
+import { intervalByFifths, withLabel } from './intervals';
 import { evalRatio, joinCents } from './ratios';
 
 /** Ways to type in a new scale degree (the "insert degree" popover). */
@@ -74,12 +75,12 @@ export function buildDegree(i: DegreeInput): string | null {
       return i.steps === 0 ? '1' : `2^(${i.steps}/${i.divisions})`;
     case 'pythagorean': {
       const n = fifthsOf(i.spelling);
-      return n == null ? null : pythagorean(n);
+      return n == null ? null : withLabel(intervalByFifths(n), pythagorean(n));
     }
     case 'meantone': {
       const n = fifthsOf(i.spelling);
       const f = MEANTONE_FRACTIONS[i.variant ?? 'quarter'];
-      return n == null || !f ? null : meantoneDegree(f[0], f[1], n);
+      return n == null || !f ? null : withLabel(intervalByFifths(n), meantoneDegree(f[0], f[1], n));
     }
     case 'well':
       // a closed circle: enharmonic notes coincide, so 12 names suffice

@@ -376,6 +376,12 @@ Behavior matches the original unless noted.
   - **12EDO** — 2^(k/12) (always chromatic).
   - **Custom EDO** — 2^(k/N) with a "Divisions / octave" field, N = 1–96, default 31 (always
     chromatic; saved settings on the old default 19 migrate to 31, persist v6).
+  Pitch sources can be mixed in one collection; each card's second row follows its note's source:
+  **Interval** (read-only name, e.g. "Major 3rd", "Augmented unison", "Tritone") for notes picked by
+  name — Pythagorean, meantone, well temperament, via the insert popover or those tunings'
+  templates — which are stored tagged as `Major 3rd|expr` (`splitLabel`; the maths ignores the tag;
+  names come from the chain of fifths for Pythagorean/meantone and from semitones for well
+  temperament); **Step** for EDO steps; **Ratio** for everything else.
   Any pitch card whose note is an EDO step (`2^(k/N)`) shows a **Step [k] / N** row in place of
   Ratio, in every tuning — e.g. a 12EDO step inserted into a JI collection (editing k sets the
   note to 2^(k/N); N comes from the note). In 12EDO and Custom EDO the root "1" shows as step 0;
