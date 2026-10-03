@@ -406,7 +406,10 @@ Behavior matches the original unless noted.
   eye toggle, delete (not on degree 1), and "+" to insert a degree (see below).
   Cards can be reordered: drag the ⠿ grip (top-right corner of each card) onto another card (or focus it and press ← / →). The
   pitch moves; numbers, colours and key bindings stay positional, so they read 1…n in order
-  afterwards; the visualizer toggle follows the moved pitch. **RESET** and **CLEAR** buttons as in the original.
+  afterwards; the visualizer toggle follows the moved pitch.
+  Animated: while dragging, the card follows the pointer and the cards between it and the drop
+  slot slide aside (160 ms); on release it glides into its slot (180 ms); arrow-key moves slide
+  the two cards past each other. Skipped under `prefers-reduced-motion`. **RESET** and **CLEAR** buttons as in the original.
 - **Octaves:** degree index `d` maps to `ratio[d mod len] × 2^floor(d / len)`, the same as the original.
 - **Keyboard maps:** `scale` and `chords` presets, editable per degree. Comma-separated keys,
   and a digit suffix selects the octave (`f2` = one octave up), the same as the original. Degrees
