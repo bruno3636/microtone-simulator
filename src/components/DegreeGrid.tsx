@@ -6,7 +6,9 @@ import { NumberField } from './ui';
 import { AddDegreePopover } from './AddDegreePopover';
 import { degreeColor } from '../theme';
 import { useResolvedTheme } from '../hooks/useTheme';
-import { playDegree, stopDegree } from '../audio/play';
+import { playDegree, stopDegree, toggleLatch } from '../audio/play';
+import { keysForDegree } from '../tuning/keymaps';
+import { useFinePointer } from '../hooks/useFinePointer';
 import { engine } from '../audio/engine';
 
 interface GripHandlers {
@@ -25,6 +27,10 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
   const held = useStore((s) => s.held.some((d) => ((d % s.notes.length) + s.notes.length) % s.notes.length === i));
   const shown = useStore((s) => s.shown.includes(i));
   const { setNote, deleteDegree, toggleShown } = useStore.getState();
+  const latched = useStore((s) => s.latched.includes(i));
+  const keymap = useStore((s) => s.keymaps[s.keymap]);
+  const finePointer = useFinePointer();
+  const keys = finePointer && keymap ? keysForDegree(keymap, i, notes.length) : [];
   const [adding, setAdding] = useState(false);
   const pointers = useRef(new Set<number>());
   const valid = evalRatio(note) != null;
@@ -45,6 +51,9 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
       className="relative flex cursor-pointer select-none flex-col gap-2 border p-3"
       style={{
         borderColor: held ? degreeColor(i, dark) : 'var(--border-subtle)',
+        // sustained (shift-clicked) cards get a heavier border; an inset outline keeps the size fixed
+        outline: latched ? `2px solid ${degreeColor(i, dark)}` : undefined,
+        outlineOffset: latched ? -2 : undefined,
         background: held ? degreeColor(i, dark, 0.25) : 'var(--bg-raised)',
         touchAction: 'manipulation',
         ...dragStyle,
@@ -52,6 +61,11 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
       onPointerDown={(e) => {
         if ((e.target as HTMLElement).closest('input,button,select,[data-popover]')) return;
         engine.resume();
+        // shift-click sustains; clicking a sustained card (with or without shift) releases it
+        if (e.shiftKey || latched) {
+          toggleLatch(i);
+          return;
+        }
         if (pointers.current.size === 0) playDegree(i);
         pointers.current.add(e.pointerId);
       }}
@@ -73,6 +87,13 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
           onPointerUp={grip.up}
           onPointerCancel={grip.cancel}
           onKeyDown={(e) => grip.key(i, e)}>{i + 1}</button>
+        {keys.length > 0 && (
+          <span className="flex min-w-0 flex-wrap gap-0.5" title="Key to play" aria-label={`Key: ${keys.join(', ')}`}>
+            {keys.map((k) => (
+              <kbd key={k} className="mono border border-[var(--border-subtle)] px-1 text-[10px] leading-4 text-[var(--text-secondary)]">{k}</kbd>
+            ))}
+          </span>
+        )}
         <div className="flex items-center gap-0.5">
           <button type="button" className="btn px-1 py-0.5" aria-pressed={shown} aria-label="Show in visualizer" title="Show in visualizer"
             style={{ color: shown ? 'var(--text)' : 'var(--text-muted)' }} onClick={() => toggleShown(i)}>~</button>
@@ -198,7 +219,7 @@ export function DegreeGrid() {
     <section className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between">
         <h2 className="display m-0 text-xl">Pitch Collection</h2>
-        <span className="label">press a card or key to play · drag a number to reorder</span>
+        <span className="label">press a card or key to play · shift-click to sustain · drag a number to reorder</span>
       </div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 min-[880px]:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         {Array.from({ length: count }, (_, i) => <DegreeCard key={i} i={i} dragStyle={dragStyle(i)} grip={grip} />)}

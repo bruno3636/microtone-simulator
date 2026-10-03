@@ -31,6 +31,8 @@ interface Data {
   keymap: string;
   shown: number[];
   held: number[];
+  /** pitches sustained by shift-click (not persisted) */
+  latched: number[];
   harmonics: HarmonicSettings;
   /** sustain spectrum for brightness decay; null = off */
   darkHarmonics: HarmonicSettings | null;
@@ -65,6 +67,7 @@ interface Actions {
   deleteKeyDegree(degree: number): void;
   toggleShown(i: number): void;
   setHeld(degree: number, on: boolean): void;
+  setLatched(degree: number, on: boolean): void;
   setHarmonics(p: Partial<HarmonicSettings>, which?: Spectrum): void;
   setTweak(n: number, v: number | null, which?: Spectrum): void;
   resetTweaks(which?: Spectrum): void;
@@ -115,6 +118,7 @@ export const useStore = create<StoreState>()(
       keymap: 'scale',
       shown: [0],
       held: [],
+      latched: [],
       harmonics: structuredClone(DEFAULT_HARMONICS),
       darkHarmonics: null,
       brightnessTau: 1000,
@@ -200,6 +204,8 @@ export const useStore = create<StoreState>()(
         }),
       toggleShown: (i) =>
         set((s) => ({ shown: s.shown.includes(i) ? s.shown.filter((d) => d !== i) : [...s.shown, i] })),
+      setLatched: (degree, on) =>
+        set((s) => ({ latched: on ? [...new Set([...s.latched, degree])] : s.latched.filter((d) => d !== degree) })),
       setHeld: (degree, on) =>
         set((s) => ({ held: on ? [...new Set([...s.held, degree])] : s.held.filter((d) => d !== degree) })),
       setHarmonics: (p, which = 'attack') =>
@@ -250,8 +256,9 @@ export const useStore = create<StoreState>()(
       // v5 reorganised the tunings (renamed 12EDO/meantone, removed the custom presets)
       version: 5,
       storage: createJSONStorage(() => safeStorage),
-      partialize: ({ held: _held, ...rest }) => {
+      partialize: ({ held: _held, latched: _latched, ...rest }) => {
         void _held;
+        void _latched;
         return Object.fromEntries(Object.entries(rest).filter(([, v]) => typeof v !== 'function')) as Partial<StoreState>;
       },
       migrate: (persisted) => {

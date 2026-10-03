@@ -10,12 +10,27 @@ export function playDegree(degree: number): void {
   s.setHeld(degree, true);
 }
 
+/** Release a held pitch. Sustained (shift-clicked) pitches ignore ordinary releases. */
 export function stopDegree(degree: number): void {
+  if (useStore.getState().latched.includes(degree)) return;
   engine.noteOff(String(degree));
   useStore.getState().setHeld(degree, false);
 }
 
+/** Shift-click: sustain a pitch until it is clicked again. */
+export function toggleLatch(degree: number): void {
+  const s = useStore.getState();
+  if (s.latched.includes(degree)) {
+    s.setLatched(degree, false);
+    stopDegree(degree);
+  } else {
+    playDegree(degree);
+    if (useStore.getState().held.includes(degree)) s.setLatched(degree, true);
+  }
+}
+
+/** Release everything that isn't sustained (window blur, tab hidden). */
 export function stopAll(): void {
-  engine.allNotesOff();
-  for (const d of useStore.getState().held) useStore.getState().setHeld(d, false);
+  const { held, latched } = useStore.getState();
+  for (const d of held) if (!latched.includes(d)) stopDegree(d);
 }

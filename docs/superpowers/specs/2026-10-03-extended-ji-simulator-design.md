@@ -404,6 +404,11 @@ Behavior matches the original unless noted.
   input highlighted with the error color and the note is skipped), cents above the root (0.1¢),
   frequency in Hz,
   eye toggle, delete × in the top-right corner (not on degree 1), and "+" to insert a degree (see below).
+  On computers (hover + fine pointer) each card shows the key(s) that play exactly that pitch
+  (`keysForDegree`, from the current keyboard map); hidden on touch devices.
+  Shift-click sustains a pitch until its card is clicked again (with or without Shift); key
+  releases and window blur don't stop sustained pitches; sustained cards get a 2px outline in their
+  colour (not persisted).
   Cards can be reordered: drag a card's number chip onto another card (or focus it and press ← / →). The
   pitch moves; numbers, colours and key bindings stay positional, so they read 1…n in order
   afterwards; the visualizer toggle follows the moved pitch.

@@ -302,4 +302,16 @@ describe('store', () => {
       expect(s().notes).toEqual(before);
     });
   });
+
+  it('tracks sustained (shift-clicked) pitches without persisting them', () => {
+    s().setLatched(3, true);
+    s().setLatched(5, true);
+    s().setLatched(3, true);
+    expect(s().latched).toEqual([3, 5]);
+    s().setLatched(3, false);
+    expect(s().latched).toEqual([5]);
+    const saved = JSON.parse(localStorage.getItem('ejis-settings')!);
+    expect(saved.state.latched).toBeUndefined();
+    s().setLatched(5, false);
+  });
 });
