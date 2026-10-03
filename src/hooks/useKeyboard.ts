@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { useStore } from '../state/store';
 import { engine } from '../audio/engine';
-import { playDegree, stopDegree, stopAll } from '../audio/play';
+import { playDegree, stopDegree, stopAll, toggleLatch } from '../audio/play';
 import { degreesForKey } from '../tuning/keymaps';
-import { isTextEntry } from './keyTarget';
+import { baseKey, isTextEntry, latchAction } from './keyTarget';
 import { createKeyTracker } from './keyTracker';
 
 
@@ -17,10 +17,18 @@ export function useKeyboard(): void {
     const tracker = createKeyTracker();
     const down = (e: KeyboardEvent) => {
       if (e.repeat || e.metaKey || e.ctrlKey || e.altKey || isTextEntry(e.target as Element | null)) return;
-      const ds = lookup(e.key);
+      const ds = lookup(baseKey(e.key, e.code, e.shiftKey));
       if (ds.length === 0) return;
       engine.resume();
-      tracker.press(e.code, ds).forEach(playDegree);
+      // Shift + key sustains a pitch; any key press releases a sustained one. Those degrees aren't
+      // tracked, so this key's keyup leaves them alone.
+      const { latched } = useStore.getState();
+      const play: number[] = [];
+      for (const d of ds) {
+        if (latchAction(e.shiftKey, latched.includes(d)) === 'play') play.push(d);
+        else toggleLatch(d);
+      }
+      tracker.press(e.code, play).forEach(playDegree);
     };
     // keyup is never filtered by focus, so a note can't get stuck if focus moves mid-press
     // and releases exactly the degrees that key's keydown started (e.key can change with Shift)

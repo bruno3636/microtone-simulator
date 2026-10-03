@@ -407,8 +407,9 @@ Behavior matches the original unless noted.
   On computers (hover + fine pointer) each card's coloured chip shows the key(s) that play exactly
   that pitch (`keysForDegree`, from the current keyboard map, e.g. "A" or "KZY") instead of its
   number; on touch devices, or when no key is mapped, the chip shows the pitch number.
-  Shift-click sustains a pitch until its card is clicked again (with or without Shift); key
-  releases and window blur don't stop sustained pitches; sustained cards get a 2px outline in their
+  Shift-click or Shift + its key sustains a pitch; clicking its card or pressing its key again
+  (with or without Shift) releases it. With Shift held, letter/digit keys are matched by physical
+  key (`baseKey`). Key releases and window blur don't stop sustained pitches; sustained cards get a 2px outline in their
   colour (not persisted).
   Cards can be reordered: drag a card's number chip onto another card (or focus it and press ← / →). The
   pitch moves; numbers, colours and key bindings stay positional, so they read 1…n in order

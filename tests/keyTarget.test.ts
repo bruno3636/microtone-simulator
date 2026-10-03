@@ -29,3 +29,30 @@ describe('isTextEntry', () => {
     expect(isTextEntry(null)).toBe(false);
   });
 });
+
+import { baseKey, latchAction } from '../src/hooks/keyTarget';
+
+describe('baseKey (the unshifted key a keymap entry refers to)', () => {
+  it('uses the physical key when Shift is held', () => {
+    expect(baseKey('A', 'KeyA', true)).toBe('a');
+    expect(baseKey('@', 'Digit2', true)).toBe('2');
+  });
+  it('uses the typed key otherwise', () => {
+    expect(baseKey('a', 'KeyA', false)).toBe('a');
+    expect(baseKey(',', 'Comma', false)).toBe(',');
+    expect(baseKey('<', 'Comma', true)).toBe('<');
+  });
+});
+
+describe('latchAction (shift-sustain from the keyboard)', () => {
+  it('Shift + key sustains a pitch that is not sustained', () => {
+    expect(latchAction(true, false)).toBe('latch');
+  });
+  it('any key press releases a sustained pitch', () => {
+    expect(latchAction(true, true)).toBe('unlatch');
+    expect(latchAction(false, true)).toBe('unlatch');
+  });
+  it('a plain key press plays normally', () => {
+    expect(latchAction(false, false)).toBe('play');
+  });
+});

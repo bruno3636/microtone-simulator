@@ -15,3 +15,20 @@ export function isTextEntry(el: Element | null): boolean {
   }
   return false;
 }
+
+/**
+ * The key a keymap entry refers to. With Shift held, `key` is the shifted character ("A", "@"),
+ * so letters and digits are read from the physical key (`code`) instead.
+ */
+export function baseKey(key: string, code: string, shift: boolean): string {
+  if (!shift) return key;
+  if (/^Key[A-Z]$/.test(code)) return code.slice(3).toLowerCase();
+  if (/^Digit\d$/.test(code)) return code.slice(5);
+  return key;
+}
+
+/** Keyboard shift-sustain: Shift + key sustains; any key press releases a sustained pitch. */
+export function latchAction(shift: boolean, latched: boolean): 'latch' | 'unlatch' | 'play' {
+  if (latched) return 'unlatch';
+  return shift ? 'latch' : 'play';
+}
