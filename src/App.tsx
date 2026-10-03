@@ -8,6 +8,7 @@ import { TuningPanel } from './components/TuningPanel';
 import { DegreeGrid } from './components/DegreeGrid';
 import { KeyboardMap } from './components/KeyboardMap';
 import { InterScaleRatios } from './components/InterScaleRatios';
+import { SynthPanel } from './components/SynthPanel';
 
 export default function App() {
   useResolvedTheme();
@@ -24,7 +25,7 @@ export default function App() {
           <Segmented label="Panel" value={tab} onChange={setTab}
             options={[{ value: 'tuning', label: 'Tuning' }, { value: 'synth', label: 'Synthesizer' }]} />
           <div className="panel p-4">
-            {tab === 'tuning' ? <TuningPanel /> : <>{/* SYNTH_PANEL */}</>}
+            {tab === 'tuning' ? <TuningPanel /> : <SynthPanel />}
           </div>
         </div>
         {/* VISUALIZER */}
