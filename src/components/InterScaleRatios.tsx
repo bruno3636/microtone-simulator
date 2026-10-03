@@ -11,7 +11,7 @@ export function InterScaleRatios() {
   const shown = useStore((s) => s.shown);
   const held = useStore((s) => s.held);
   const toggleOpen = useStore((s) => s.toggleOpen);
-  const rows = open ? interScaleRatios(notes, [...shown, ...held]) : [];
+  const rows = open ? interScaleRatios(notes, [...shown, ...held]).filter((row) => row.length > 0) : [];
   const chip = (i: number) => (
     <span className="mono px-1.5" style={{ background: degreeColor(i, dark), color: '#111' }}>f{i + 1}</span>
   );

@@ -83,7 +83,7 @@ function DegreeCard({ i }: { i: number }) {
         <span className="mono px-2 py-0.5 text-sm" style={{ background: degreeColor(i, dark), color: '#111' }}>{i + 1}</span>
         {i > 0 && isPure(note) && <span className="label italic">pure</span>}
         <div className="flex items-center gap-1">
-          <button type="button" className="btn px-1.5 py-0.5" aria-pressed={shown} title="Show in visualizer"
+          <button type="button" className="btn px-1.5 py-0.5" aria-pressed={shown} aria-label="Show in visualizer" title="Show in visualizer"
             style={{ color: shown ? 'var(--text)' : 'var(--text-muted)' }} onClick={() => toggleShown(i)}>~</button>
           {i > 0 && (
             <button type="button" className="btn px-1.5 py-0.5" title="Delete degree" onClick={() => deleteDegree(i)}>×</button>

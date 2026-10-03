@@ -59,8 +59,9 @@ export function EnvelopeEditor() {
   const svgRef = useRef<SVGSVGElement>(null);
   const drag = useRef<{ handle: Handle; k: number } | null>(null);
   const [voices, setVoices] = useState<VoiceSnapshot[]>([]);
+  const [dragging, setDragging] = useState(false); // re-renders when a drag ends so the scale unfreezes
 
-  const k = drag.current?.k ?? scaleFor(env);
+  const k = dragging && drag.current ? drag.current.k : scaleFor(env);
   const g = geometry(env, k);
 
   // live dots: poll the engine each frame while anything is sounding
@@ -101,6 +102,12 @@ export function EnvelopeEditor() {
   const start = (handle: Handle) => (e: RPointerEvent) => {
     svgRef.current!.setPointerCapture(e.pointerId);
     drag.current = { handle, k: scaleFor(env) };
+    setDragging(true);
+  };
+
+  const endDrag = () => {
+    drag.current = null;
+    setDragging(false);
   };
 
   const handle = (h: Handle, x: number, y: number) => (
@@ -121,8 +128,8 @@ export function EnvelopeEditor() {
       <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full border border-[var(--border-subtle)]"
         style={{ touchAction: 'none' }}
         onPointerMove={onMove}
-        onPointerUp={() => (drag.current = null)}
-        onPointerCancel={() => (drag.current = null)}>
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}>
         {[0.25, 0.5, 0.75].map((l) => (
           <line key={l} x1={PAD} x2={W - PAD} y1={yOf(l)} y2={yOf(l)} stroke="var(--border-subtle)" strokeDasharray="2 4" />
         ))}
