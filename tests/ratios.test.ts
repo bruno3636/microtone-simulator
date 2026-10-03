@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { evalRatio, degreeRatio, degreeFreq, isPure, createFromTemplate, mod, splitCents, joinCents, edoStep, edoExpr } from '../src/tuning/ratios';
+import { evalRatio, degreeRatio, degreeFreq, isPure, createFromTemplate, mod, splitCents, joinCents, edoStep, edoExpr, parseEdo } from '../src/tuning/ratios';
 import { TUNINGS, TUNING_ORDER, tuningNotes } from '../src/tuning/presets';
 
 const cents = (expr: string) => 1200 * Math.log2(evalRatio(expr)!);
@@ -138,5 +138,11 @@ describe('ratios', () => {
     it('Custom EDO defaults to 31 divisions', () => {
       expect(tuningNotes('custom_edo')).toHaveLength(31);
     });
+  });
+  it('parseEdo reads any N-EDO step, tolerating spaces', () => {
+    expect(parseEdo('2^(5/19)')).toEqual({ step: 5, divisions: 19 });
+    expect(parseEdo(' 2 ^ ( 7 / 12 ) ')).toEqual({ step: 7, divisions: 12 });
+    expect(parseEdo('3/2')).toBeNull();
+    expect(edoStep('2 ^ (7 / 12)', 12)).toBe(7);
   });
 });

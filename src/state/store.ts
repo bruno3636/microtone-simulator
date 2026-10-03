@@ -270,7 +270,8 @@ export const useStore = create<StoreState>()(
           meantone_temperament: ['meantone', 'quarter'],
         };
         if (p.tuning && renamed[p.tuning]) [p.tuning, p.tuningVariant] = renamed[p.tuning];
-        if (version < 6 && p.edo === 19) p.edo = 31; // still on the old default
+        // still on the old default — unless Custom EDO is in use, whose saved notes are 19-EDO
+        if (version < 6 && p.edo === 19 && p.tuning !== 'custom_edo') p.edo = 31;
         if (p.tuning && !(p.tuning in TUNINGS)) {
           p.tuning = 'just_intonation';
           p.tuningVariant = '';

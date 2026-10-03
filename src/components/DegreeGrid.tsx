@@ -1,7 +1,7 @@
 import { useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent as RPointerEvent } from 'react';
 import { nearestSlot, previewIndex, type SlotRect } from './reorder';
 import { useStore } from '../state/store';
-import { evalRatio, degreeFreq, splitCents, joinCents, edoStep, edoExpr } from '../tuning/ratios';
+import { evalRatio, degreeFreq, splitCents, joinCents, parseEdo, edoExpr } from '../tuning/ratios';
 import { NumberField } from './ui';
 import { AddDegreePopover } from './AddDegreePopover';
 import { degreeColor } from '../theme';
@@ -39,8 +39,11 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
   // 12EDO / Custom EDO: edit the step number instead of the ratio expression
   const tuning = useStore((s) => s.tuning);
   const edo = useStore((s) => s.edo);
-  const divisions = tuning === 'edo12' ? 12 : tuning === 'custom_edo' ? edo : null;
-  const step = divisions == null ? null : edoStep(note, divisions);
+  const edoTuning = tuning === 'edo12' || tuning === 'custom_edo';
+  // the note's own divisions win, so a leftover note from another EDO still shows as a step
+  const parsed = edoTuning ? (note.trim() === '1' ? { step: 0, divisions: tuning === 'edo12' ? 12 : edo } : parseEdo(note)) : null;
+  const step = parsed?.step ?? null;
+  const divisions = parsed?.divisions ?? null;
   const hz = degreeFreq(notes, i, rootHz);
   const ratioValue = evalRatio(note);
   const centsAboveRoot = ratioValue == null ? null : 1200 * Math.log2(ratioValue);

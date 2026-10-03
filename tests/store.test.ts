@@ -326,4 +326,10 @@ describe('store', () => {
     await useStore.persist.rehydrate();
     expect(s().edo).toBe(22);
   });
+  it('does not move 19 → 31 while Custom EDO is in use (its notes are 19-EDO)', async () => {
+    const prev = JSON.parse(localStorage.getItem('ejis-settings') ?? '{"state":{}}').state;
+    localStorage.setItem('ejis-settings', JSON.stringify({ state: { ...prev, tuning: 'custom_edo', edo: 19 }, version: 5 }));
+    await useStore.persist.rehydrate();
+    expect(s().edo).toBe(19);
+  });
 });

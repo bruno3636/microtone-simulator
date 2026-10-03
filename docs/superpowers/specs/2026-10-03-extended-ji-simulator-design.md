@@ -377,7 +377,9 @@ Behavior matches the original unless noted.
   - **Custom EDO** — 2^(k/N) with a "Divisions / octave" field, N = 1–96, default 31 (always
     chromatic; saved settings on the old default 19 migrate to 31, persist v6).
   In 12EDO and Custom EDO, pitch cards show a **Step [k] / N** row in place of Ratio (editing k sets
-  the note to 2^(k/N)); cards holding anything other than an N-EDO step keep the Ratio field.
+  the note to 2^(k/N)); N is read from the note itself, so a step of another EDO still shows as a
+  step; only non-EDO notes (e.g. an inserted 3/2) keep the Ratio field. The 19 → 31 migration is
+  skipped while Custom EDO is in use.
   - **Pythagorean** — as the original.
   - **Meantone** — variant menu: ⅓-comma (pure minor thirds), ¼-comma (pure major thirds,
     default), ⅕-comma, ⅙-comma, 2/7-comma (Zarlino). Fifth = 3/2 · (80/81)^f; notes on the chain

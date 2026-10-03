@@ -68,12 +68,17 @@ export function createFromTemplate(
   return { notes: SCALES[scale].map((n) => all[n - 1]), scale };
 }
 
+/** Any EDO step written as "2^(k/N)" (spaces allowed), or null. */
+export function parseEdo(expr: string): { step: number; divisions: number } | null {
+  const m = /^2\^\((-?\d+)\/(\d+)\)$/.exec(String(expr).replace(/\s+/g, ''));
+  return m && Number(m[2]) > 0 ? { step: Number(m[1]), divisions: Number(m[2]) } : null;
+}
+
 /** Step k of an N-EDO note ("2^(k/N)", or "1" for step 0); null for anything else. */
 export function edoStep(expr: string, n: number): number | null {
-  const e = String(expr).replace(/\s+/g, '');
-  if (e === '1') return 0;
-  const m = /^2\^\((-?\d+)\/(\d+)\)$/.exec(e);
-  return m && Number(m[2]) === n ? Number(m[1]) : null;
+  if (String(expr).trim() === '1') return 0;
+  const p = parseEdo(expr);
+  return p && p.divisions === n ? p.step : null;
 }
 
 /** N-EDO note for step k. */
