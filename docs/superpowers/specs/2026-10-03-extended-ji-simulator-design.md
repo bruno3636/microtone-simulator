@@ -472,7 +472,7 @@ traces, spectrum lines, and envelope dots.
 
 - Max content width 1200px with a 16px side gutter.
 - Under 768px: tab controls wrap, harmonics and envelope editors stack, the visualizer stays
-  full width, and degree cards are 2 per row (3 at ≥ 480px, 6 at ≥ 1024px).
+  full width, and pitch cards are 2 per row (3 at ≥ 640px, 4 at ≥ 880px, 5 at ≥ 1024px, 6 at ≥ 1280px) so the tempered-JI Cents row fits on one line; on phones under ~395px it wraps inside the card.
 - Master volume is also shown in the header, so it's reachable from either tab.
 
 ## 8. State & persistence

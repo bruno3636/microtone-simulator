@@ -46,7 +46,7 @@ export function NumberField({ label, value, min, max, step = 1, suffix, onChange
     <label className="flex flex-col gap-1">
       <span className={hideLabel ? 'sr-only' : 'label'}>{label}</span>
       <span className="flex items-center gap-1">
-        <input className={`input mono ${hideLabel ? 'w-16 py-0.5 text-right text-xs' : 'w-20'}`} inputMode="decimal" value={text} aria-invalid={invalid}
+        <input className={`input mono ${hideLabel ? 'w-12 px-1 py-0.5 text-right text-xs' : 'w-20'}`} inputMode="decimal" value={text} aria-invalid={invalid}
           step={step}
           onChange={(e) => {
             setText(e.target.value);

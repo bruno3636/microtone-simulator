@@ -87,9 +87,9 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
         <input className="input mono w-full text-right" value={cents == null ? note : ratio} aria-invalid={!valid}
           onChange={(e) => setNote(i, cents == null ? e.target.value : joinCents(e.target.value, cents))} />
       </label>
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-x-1 gap-y-1">
         <span className="label">Cents</span>
-        <span className="flex items-center gap-1.5">
+        <span className="ml-auto flex min-w-0 items-center gap-1">
           {cents != null && (
             // tempered JI: the cents offset sits beside the total it produces
             <>
@@ -98,7 +98,7 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
                 onChange={(c) => setNote(i, joinCents(ratio, c))} />
             </>
           )}
-          <span className="mono text-sm">{centsAboveRoot == null ? '—' : `${centsAboveRoot.toFixed(1)}¢`}</span>
+          <span className={`mono ${cents != null ? 'text-xs' : 'text-sm'}`}>{centsAboveRoot == null ? '—' : `${centsAboveRoot.toFixed(1)}¢`}</span>
         </span>
       </div>
       <div className="flex justify-between">
@@ -200,7 +200,7 @@ export function DegreeGrid() {
         <h2 className="display m-0 text-xl">Pitch Collection</h2>
         <span className="label">press a card or key to play · drag a number to reorder</span>
       </div>
-      <div className="grid grid-cols-2 gap-2 min-[480px]:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 min-[880px]:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         {Array.from({ length: count }, (_, i) => <DegreeCard key={i} i={i} dragStyle={dragStyle(i)} grip={grip} />)}
         <div className="relative" data-popover>
           <button type="button" className="btn h-full min-h-24 w-full text-lg" onClick={() => setAdding(true)}>+</button>
