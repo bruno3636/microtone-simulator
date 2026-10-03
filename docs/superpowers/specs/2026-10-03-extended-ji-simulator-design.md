@@ -371,8 +371,7 @@ Behavior matches the original unless noted.
 - **Tunings** (menu order, `TUNING_ORDER`; revised 2026-10-03):
   - **Just intonation** — 5-limit 12-note JI (as the original).
   - **Tempered JI** — each degree is a just ratio ± a cents offset, written `5/4 -13.7c`
-    (`c`, `¢` or `cents`). Degree cards show the ratio and a separate "± cents" field; the
-    "pure" tag only shows at 0c; inter-scale ratios show the just ratio plus the cents difference.
+    (`c`, `¢` or `cents`). Degree cards show the ratio and a separate "± cents" field; inter-scale ratios show the just ratio plus the cents difference.
   - **Harmonic series** — harmonics 1–12 (always chromatic).
   - **12EDO** — 2^(k/12) (always chromatic).
   - **Custom EDO** — 2^(k/N) with a "Divisions / octave" field, N = 1–96, default 19 (always chromatic).
