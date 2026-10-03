@@ -374,7 +374,7 @@ Behavior matches the original unless noted.
     (`c`, `¢` or `cents`). Degree cards show the ratio and a separate "± cents" field; the
     "pure" tag only shows at 0c; inter-scale ratios show the just ratio plus the cents difference.
   - **Harmonic series** — harmonics 1–12 (always chromatic).
-  - **12EDO** — 2^(k/12).
+  - **12EDO** — 2^(k/12) (always chromatic).
   - **Custom EDO** — 2^(k/N) with a "Divisions / octave" field, N = 1–96, default 19 (always chromatic).
   - **Pythagorean** — as the original.
   - **Meantone** — variant menu: ⅓-comma (pure minor thirds), ¼-comma (pure major thirds,
@@ -386,14 +386,20 @@ Behavior matches the original unless noted.
     (C–G–D–A–E–B–F♯ by ⅙ PC).
   Saved settings with the removed custom presets fall back to Just intonation (persist v5);
   "Equal temperament" migrates to 12EDO and the old meantone to ¼-comma.
-- **Scales:** major, natural minor, harmonic minor, chromatic. Harmonic series and Custom EDO
-  are always chromatic.
+- **Scales:** major, natural minor, harmonic minor, chromatic. Harmonic series, 12EDO and
+  Custom EDO are always chromatic.
+- **Insert degree popover** (`src/tuning/degreeInput.ts`): choose a value type and type the value —
+  Just intonation (ratio), Tempered JI (ratio ± cents), Harmonic series (harmonic number), 12EDO
+  (steps), Custom EDO (steps of N), Pythagorean (fifths from root, exact 3^a/2^b in the octave),
+  Meantone (variant + fifths), Well temperament (variant + note), **Cents** (stored as
+  `1 +Nc`, editable on the card) or **Frequency** (stored as `Hz / rootHz` against the current
+  root). A preview shows the expression, cents and Hz; Add is disabled until the value is valid.
+  The popover opens on the value type matching the current tuning.
 - **Root:** note select (C … B, A = 440 Hz) plus a Hz field. Editing Hz clears the note name
   unless it matches one exactly.
 - **Degree cards:** number + color chip, editable ratio expression (evaluated with mathjs; invalid
   input highlighted with the error color and the note is skipped), frequency in Hz, "pure" tag,
-  eye toggle, delete (not on degree 1), and "+" to insert a degree from a preset
-  (tuning / scale / degree popover). **RESET** and **CLEAR** buttons as in the original.
+  eye toggle, delete (not on degree 1), and "+" to insert a degree (see below). **RESET** and **CLEAR** buttons as in the original.
 - **Octaves:** degree index `d` maps to `ratio[d mod len] × 2^floor(d / len)`, the same as the original.
 - **Keyboard maps:** `scale` and `chords` presets, editable per degree. Comma-separated keys,
   and a digit suffix selects the octave (`f2` = one octave up), the same as the original. Degrees

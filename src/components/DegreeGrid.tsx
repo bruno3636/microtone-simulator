@@ -1,60 +1,12 @@
-import { useEffect, useRef, useState, type PointerEvent as RPointerEvent } from 'react';
+import { useRef, useState, type PointerEvent as RPointerEvent } from 'react';
 import { useStore } from '../state/store';
-import { TUNINGS, TUNING_ORDER, SCALES, tuningNotes } from '../tuning/presets';
 import { evalRatio, degreeFreq, isPure, splitCents, joinCents } from '../tuning/ratios';
 import { NumberField } from './ui';
+import { AddDegreePopover } from './AddDegreePopover';
 import { degreeColor } from '../theme';
 import { useResolvedTheme } from '../hooks/useTheme';
 import { playDegree, stopDegree } from '../audio/play';
 import { engine } from '../audio/engine';
-
-function AddDegreePopover({ after, onClose }: { after: number; onClose(): void }) {
-  const insertDegree = useStore((s) => s.insertDegree);
-  const [tuning, setTuning] = useState('just_intonation');
-  const [variant, setVariant] = useState('');
-  const [scale, setScale] = useState('major');
-  const edo = useStore((s) => s.edo);
-  const [degree, setDegree] = useState(0);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const onDown = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) onClose(); };
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('mousedown', onDown);
-    document.addEventListener('keydown', onKey);
-    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
-  }, [onClose]);
-  const t = TUNINGS[tuning];
-  const all = tuningNotes(tuning, variant, edo);
-  // indexes (1-based) into the tuning's notes: the scale template for 12-note tunings, else every note
-  const degrees = t.scalable ? SCALES[scale].filter((n) => n <= all.length) : all.map((_, k) => k + 1);
-  return (
-    <div ref={ref} className="panel fixed inset-x-4 top-24 z-20 flex flex-col gap-3 p-3 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-1 sm:w-64"
-      style={{ borderColor: 'var(--border)' }}>
-      <span className="label">Insert degree from preset</span>
-      <select className="input" value={tuning} onChange={(e) => { setTuning(e.target.value); setVariant(''); setDegree(0); }}>
-        {TUNING_ORDER.map((k) => <option key={k} value={k}>{TUNINGS[k].label}</option>)}
-      </select>
-      {t.variants && (
-        <select className="input" value={variant || t.defaultVariant} onChange={(e) => { setVariant(e.target.value); setDegree(0); }}>
-          {Object.entries(t.variants).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-        </select>
-      )}
-      {t.scalable && (
-        <select className="input" value={scale} onChange={(e) => { setScale(e.target.value); setDegree(0); }}>
-          {Object.keys(SCALES).map((k) => <option key={k} value={k}>{k}</option>)}
-        </select>
-      )}
-      <select className="input" value={degree} onChange={(e) => setDegree(Number(e.target.value))}>
-        {degrees.map((n, i) => <option key={i} value={i}>{i + 1} — {all[n - 1]}</option>)}
-      </select>
-      <div className="flex justify-end gap-2">
-        <button type="button" className="btn" onClick={onClose}>Cancel</button>
-        <button type="button" className="btn btn-primary"
-          onClick={() => { insertDegree(after, all[degrees[degree] - 1]); onClose(); }}>Add</button>
-      </div>
-    </div>
-  );
-}
 
 function DegreeCard({ i }: { i: number }) {
   const dark = useResolvedTheme() === 'dark';

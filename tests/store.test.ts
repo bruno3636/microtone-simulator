@@ -270,4 +270,9 @@ describe('store', () => {
       expect(s().tuning).toBe('just_intonation');
     });
   });
+  it('12EDO is always chromatic', () => {
+    s().applyTemplate('edo12', 'major');
+    expect(s().scale).toBe('chromatic');
+    expect(s().notes).toHaveLength(12);
+  });
 });

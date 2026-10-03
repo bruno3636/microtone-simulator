@@ -20,17 +20,23 @@ export const edoNotes = (n: number): string[] =>
 /** Circle-of-fifths position of each chromatic note from C (meantone: chain E♭ … G♯). */
 const FIFTHS_FROM_C = [0, 7, 2, -3, 4, -1, 6, 1, 8, 3, -2, 5]; // C C# D Eb E F F# G G# A Bb B
 
-/** 12-note meantone: fifths of 3/2 narrowed by num/den of the syntonic comma (81/80). */
-function meantoneNotes(num: number, den: number): string[] {
+/** Meantone variants as fractions of the syntonic comma (81/80) taken off each fifth. */
+export const MEANTONE_FRACTIONS: Record<string, [number, number]> = {
+  third: [1, 3], quarter: [1, 4], fifth: [1, 5], sixth: [1, 6], twoSevenths: [2, 7],
+};
+
+/** `n` meantone fifths (narrowed by num/den of a syntonic comma) from the root, reduced into the octave. */
+export function meantoneDegree(num: number, den: number, n: number): string {
+  if (n === 0) return '1';
   const fifthExpr = `(3/2 * (80/81)^(${num}/${den}))`;
   const fifth = 1.5 * (80 / 81) ** (num / den);
-  return FIFTHS_FROM_C.map((n) => {
-    if (n === 0) return '1';
-    const octaves = -Math.floor(Math.log2(fifth ** n));
-    const pow = n < 0 ? `^(${n})` : `^${n}`;
-    return octaves === 0 ? `${fifthExpr}${pow}` : `${fifthExpr}${pow} * 2^(${octaves})`;
-  });
+  const octaves = -Math.floor(Math.log2(fifth ** n));
+  const pow = n < 0 ? `^(${n})` : `^${n}`;
+  return octaves === 0 ? `${fifthExpr}${pow}` : `${fifthExpr}${pow} * 2^(${octaves})`;
 }
+
+/** 12-note meantone on the chain E♭ … G♯. */
+const meantoneNotes = (num: number, den: number) => FIFTHS_FROM_C.map((n) => meantoneDegree(num, den, n));
 
 const PURE_FIFTH = 1200 * Math.log2(3 / 2);
 const PYTHAGOREAN_COMMA = 1200 * Math.log2(531441 / 524288);
@@ -71,7 +77,7 @@ export const TUNINGS: Record<string, Tuning> = {
     notes: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
   },
   edo12: {
-    label: '12EDO', scalable: true,
+    label: '12EDO', scalable: false,
     notes: edoNotes(12),
   },
   custom_edo: {
@@ -84,11 +90,11 @@ export const TUNINGS: Record<string, Tuning> = {
   meantone: {
     label: 'Meantone', scalable: true, defaultVariant: 'quarter',
     variants: {
-      third: { label: '⅓-comma (pure minor thirds)', notes: meantoneNotes(1, 3) },
-      quarter: { label: '¼-comma (pure major thirds)', notes: meantoneNotes(1, 4) },
-      fifth: { label: '⅕-comma', notes: meantoneNotes(1, 5) },
-      sixth: { label: '⅙-comma', notes: meantoneNotes(1, 6) },
-      twoSevenths: { label: '2/7-comma (Zarlino)', notes: meantoneNotes(2, 7) },
+      third: { label: '⅓-comma (pure minor thirds)', notes: meantoneNotes(...MEANTONE_FRACTIONS.third) },
+      quarter: { label: '¼-comma (pure major thirds)', notes: meantoneNotes(...MEANTONE_FRACTIONS.quarter) },
+      fifth: { label: '⅕-comma', notes: meantoneNotes(...MEANTONE_FRACTIONS.fifth) },
+      sixth: { label: '⅙-comma', notes: meantoneNotes(...MEANTONE_FRACTIONS.sixth) },
+      twoSevenths: { label: '2/7-comma (Zarlino)', notes: meantoneNotes(...MEANTONE_FRACTIONS.twoSevenths) },
     },
   },
   well_temperament: {
