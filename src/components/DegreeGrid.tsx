@@ -60,46 +60,45 @@ function DegreeCard({ i, drag, setDrag }: { i: number; drag: DragState | null; s
       onPointerCancel={release}
       onPointerLeave={release}
     >
-      <div className="flex items-center justify-between gap-1">
-        <div className="flex items-center gap-1">
-          {/* drag grip: drag to move this pitch; ← / → move it with the keyboard */}
-          <button type="button" className="cursor-grab border-0 bg-transparent px-0.5 text-[var(--text-muted)]"
-            style={{ touchAction: 'none' }} title="Drag to move (or ← / →)" aria-label={`Move pitch ${i + 1}`}
-            onPointerDown={(e) => {
-              e.currentTarget.setPointerCapture(e.pointerId);
-              setDrag({ from: i, over: i });
-            }}
-            onPointerMove={(e) => {
-              if (!drag || drag.from !== i) return;
-              const over = cardAt(e.clientX, e.clientY);
-              if (over != null && over !== drag.over) setDrag({ from: i, over });
-            }}
-            onPointerUp={() => {
-              if (drag && drag.from === i && drag.over !== i) moveDegree(i, drag.over);
-              setDrag(null);
-            }}
-            onPointerCancel={() => setDrag(null)}
-            onKeyDown={(e) => {
-              const to = e.key === 'ArrowLeft' ? i - 1 : e.key === 'ArrowRight' ? i + 1 : null;
-              if (to == null || to < 0 || to >= count) return;
-              e.preventDefault();
-              moveDegree(i, to);
-              // keep focus on the moved pitch's grip
-              requestAnimationFrame(() => (document.querySelector(`[data-degree="${to}"] button[aria-label^="Move"]`) as HTMLElement | null)?.focus());
-            }}>⠿</button>
-          <span className="mono px-2 py-0.5 text-sm" style={{ background: degreeColor(i, dark), color: '#111' }}>{i + 1}</span>
-        </div>
+      {/* drag grip: drag to move this pitch; ← / → move it with the keyboard */}
+      <button type="button" className="absolute right-0.5 top-0.5 cursor-grab border-0 bg-transparent px-1 leading-none text-[var(--text-muted)]"
+        style={{ touchAction: 'none' }} title="Drag to move (or ← / →)" aria-label={`Move pitch ${i + 1}`}
+        onPointerDown={(e) => {
+          e.currentTarget.setPointerCapture(e.pointerId);
+          setDrag({ from: i, over: i });
+        }}
+        onPointerMove={(e) => {
+          if (!drag || drag.from !== i) return;
+          const over = cardAt(e.clientX, e.clientY);
+          if (over != null && over !== drag.over) setDrag({ from: i, over });
+        }}
+        onPointerUp={() => {
+          if (drag && drag.from === i && drag.over !== i) moveDegree(i, drag.over);
+          setDrag(null);
+        }}
+        onPointerCancel={() => setDrag(null)}
+        onKeyDown={(e) => {
+          const to = e.key === 'ArrowLeft' ? i - 1 : e.key === 'ArrowRight' ? i + 1 : null;
+          if (to == null || to < 0 || to >= count) return;
+          e.preventDefault();
+          moveDegree(i, to);
+          // keep focus on the moved pitch's grip
+          requestAnimationFrame(() => (document.querySelector(`[data-degree="${to}"] button[aria-label^="Move"]`) as HTMLElement | null)?.focus());
+        }}>⠿</button>
+      <div className="flex items-center justify-between gap-1 pr-3">
+        <span className="mono px-2 py-0.5 text-sm" style={{ background: degreeColor(i, dark), color: '#111' }}>{i + 1}</span>
         {i > 0 && isPure(note) && <span className="label italic">pure</span>}
-        <div className="flex items-center gap-1">
-          <button type="button" className="btn px-1.5 py-0.5" aria-pressed={shown} aria-label="Show in visualizer" title="Show in visualizer"
+        <div className="flex items-center gap-0.5">
+          <button type="button" className="btn px-1 py-0.5" aria-pressed={shown} aria-label="Show in visualizer" title="Show in visualizer"
             style={{ color: shown ? 'var(--text)' : 'var(--text-muted)' }} onClick={() => toggleShown(i)}>~</button>
           {i > 0 && (
-            <button type="button" className="btn px-1.5 py-0.5" title="Delete degree" onClick={() => deleteDegree(i)}>×</button>
+            <button type="button" className="btn px-1 py-0.5" title="Delete degree" onClick={() => deleteDegree(i)}>×</button>
           )}
           <div className="relative" data-popover>
-            <button type="button" className="btn px-1.5 py-0.5" title="Insert degree after" onClick={() => setAdding(true)}>+</button>
+            <button type="button" className="btn px-1 py-0.5" title="Insert degree after" onClick={() => setAdding(true)}>+</button>
             {adding && <AddDegreePopover after={i} onClose={() => setAdding(false)} />}
           </div>
+
         </div>
       </div>
       <label className="flex items-center gap-2">

@@ -404,7 +404,7 @@ Behavior matches the original unless noted.
 - **Degree cards:** number + color chip, editable ratio expression (evaluated with mathjs; invalid
   input highlighted with the error color and the note is skipped), frequency in Hz, "pure" tag,
   eye toggle, delete (not on degree 1), and "+" to insert a degree (see below).
-  Cards can be reordered: drag the ⠿ grip onto another card (or focus it and press ← / →). The
+  Cards can be reordered: drag the ⠿ grip (top-right corner of each card) onto another card (or focus it and press ← / →). The
   pitch moves; numbers, colours and key bindings stay positional, so they read 1…n in order
   afterwards; the visualizer toggle follows the moved pitch. **RESET** and **CLEAR** buttons as in the original.
 - **Octaves:** degree index `d` maps to `ratio[d mod len] × 2^floor(d / len)`, the same as the original.
