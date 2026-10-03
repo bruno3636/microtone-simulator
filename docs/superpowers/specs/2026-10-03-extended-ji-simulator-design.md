@@ -413,8 +413,8 @@ Behavior matches the original unless noted.
 - **Keyboard maps:** `scale` and `chords` presets, editable per degree. Comma-separated keys,
   and a digit suffix selects the octave (`f2` = one octave up), the same as the original. Degrees
   can be added and removed.
-- **Inter-scale ratios:** for shown/held degrees, each pair's simplified ratio (mathjs `simplify`)
-  and decimal. Collapsible section.
+- **Inter-note ratios** (renamed from inter-scale ratios): for shown/held degrees, each pair's
+  simplified ratio (mathjs `simplify`) and its size in cents (0.1¢). Collapsible section.
 - **Removed:** the MIDI tab and the `@tonejs/midi` dependency.
 - **Fixed from the original:** degree colors cycle past 12 degrees instead of breaking;
   typing in inputs doesn't play notes; held keys don't retrigger; the title typo is fixed.

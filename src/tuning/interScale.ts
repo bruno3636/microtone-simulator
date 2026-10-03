@@ -1,7 +1,8 @@
 import { simplify } from 'mathjs';
 import { evalRatio, mod, splitCents } from './ratios';
 
-export interface InterRatio { lo: number; hi: number; exact: string; decimal: string }
+/** `cents`: size of the interval in cents, e.g. "315.6¢". */
+export interface InterRatio { lo: number; hi: number; exact: string; cents: string }
 
 /** Best rational p/q with q ≤ 4096 within 1e-10, else null. Continued fractions. */
 export function toFraction(v: number): string | null {
@@ -51,7 +52,7 @@ export function interScaleRatios(notes: string[], degrees: number[]): InterRatio
           exact = '—';
         }
       }
-      row.push({ lo: ds[i], hi: ds[j], exact, decimal: v.toFixed(3) });
+      row.push({ lo: ds[i], hi: ds[j], exact, cents: `${(1200 * Math.log2(v)).toFixed(1)}¢` });
     }
     rows.push(row);
   }

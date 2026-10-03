@@ -16,9 +16,9 @@ export function InterScaleRatios() {
     <span className="mono px-1.5" style={{ background: degreeColor(i, dark), color: '#111' }}>f{i + 1}</span>
   );
   return (
-    <Section title="Inter-scale ratios" open={open} onToggle={() => toggleOpen('ratios')}>
+    <Section title="Inter-note ratios" open={open} onToggle={() => toggleOpen('ratios')}>
       {rows.length === 0 ? (
-        <p className="label normal-case tracking-normal">Show (~) or play at least two scale degrees.</p>
+        <p className="label normal-case tracking-normal">Show (~) or play at least two pitches.</p>
       ) : (
         <div className="flex flex-wrap gap-3">
           {rows.map((row, r) => (
@@ -27,7 +27,7 @@ export function InterScaleRatios() {
                 <div key={`${x.lo}-${x.hi}`} className="flex items-center gap-2 text-sm">
                   {chip(x.hi)}<span>/</span>{chip(x.lo)}<span>=</span>
                   <span className="mono">{x.exact}</span><span className="label">≈</span>
-                  <span className="mono">{x.decimal}</span>
+                  <span className="mono">{x.cents}</span>
                 </div>
               ))}
             </div>

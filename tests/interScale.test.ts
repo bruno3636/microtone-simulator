@@ -12,7 +12,7 @@ describe('inter-scale ratios', () => {
     const rows = interScaleRatios(notes, [2, 0, 1]);
     expect(rows).toHaveLength(2);
     expect(rows[0].map((r) => [r.lo, r.hi, r.exact])).toEqual([[0, 1, '5/4'], [0, 2, '3/2']]);
-    expect(rows[1][0]).toMatchObject({ lo: 1, hi: 2, exact: '6/5', decimal: '1.200' });
+    expect(rows[1][0]).toMatchObject({ lo: 1, hi: 2, exact: '6/5', cents: '315.6¢' });
   });
   it('dedupes octave copies and needs at least two degrees', () => {
     expect(interScaleRatios(['1', '3/2'], [0, 2])).toEqual([]);
