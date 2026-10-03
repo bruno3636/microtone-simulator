@@ -88,3 +88,65 @@ export const ORGAN_CHORUS = [
   0.0749, 0.1271, 0.0014, 0.039, 0.0, 0.0752, 0.0207, 0.0052, 0.0, 0.0395, 0.0, 0.0028, 0.0079, 0.0208, 0.0,
   0.0055, 0.0, 0.0125,
 ];
+
+/*
+ * More SHARC medians (same method): oboe 27 notes A#3–C6; bassoon 32 notes A#1–F4;
+ * tuba 26 notes C2–D4; French horn 37 notes D2–D5.
+ */
+
+export const OBOE = [
+  0.6609, 1.0, 0.3158, 0.2851, 0.153, 0.0667, 0.0295, 0.0247, 0.0332, 0.0204, 0.0118, 0.0062, 0.0048, 0.0053,
+  0.0027, 0.0034, 0.0026, 0.0021, 0.0033, 0.0028, 0.0015, 0.0023, 0.0015, 0.0013, 0.0013, 0.0012, 0.0, 0.0013,
+];
+
+export const BASSOON = [
+  0.6458, 1.0, 0.9601, 0.8694, 0.4465, 0.3521, 0.14, 0.0981, 0.0547, 0.0653, 0.0429, 0.0176, 0.0128, 0.0083,
+  0.0078, 0.0075, 0.0056, 0.0038, 0.0039, 0.004, 0.0031, 0.0028, 0.002, 0.0023, 0.0027, 0.0028, 0.0014, 0.0024,
+  0.0017, 0.0016, 0.0021, 0.0013,
+];
+
+export const TUBA = [
+  0.9455, 1.0, 0.5624, 0.2522, 0.1164, 0.09, 0.0525, 0.0218, 0.0171, 0.0123, 0.0104, 0.0056, 0.0036, 0.0019,
+  0.001, 0.0013,
+];
+
+export const FRENCH_HORN = [
+  0.5985, 1.0, 0.9631, 0.7493, 0.4256, 0.232, 0.1435, 0.0904, 0.0349, 0.0124, 0.0086, 0.0062, 0.0052, 0.003,
+  0.0021, 0.0013, 0.0011, 0.0012,
+];
+
+/*
+ * Saxophone: Univ. of Iowa MIS Eb alto sax, `AltoSax.NoVib.mf.{Db3B3,C4B4}`, 23 notes, steady-state
+ * window 0.3–0.8 s after onset, median of per-note normalized spectra.
+ */
+export const ALTO_SAX = [
+  1.0, 0.4752, 0.2156, 0.1354, 0.1063, 0.0728, 0.0644, 0.047, 0.0307, 0.033, 0.032, 0.0198, 0.0153, 0.015,
+  0.0106, 0.0076, 0.0075, 0.0055, 0.0077, 0.0041, 0.0045, 0.0028, 0.0035, 0.0028, 0.0022, 0.0019, 0.002, 0.0013,
+  0.0016, 0.0017, 0.0019,
+];
+
+/*
+ * Harp: VSCO 2 Community Edition (CC0), `KSHarp_{C3,E3,G3,B3,D4,F4,A4,C5,E5}_mf`, both channels
+ * (18 measurements). Harpists pluck near mid-string, so even harmonics are weak.
+ * Harpsichord: Freesound pack "Harpsichord" by pjcohen (CC0), overhead mics, notes sounding D4, E4,
+ * D5, E5 (files are labelled an octave lower), both channels, HQ MP3 previews (analysis capped at
+ * 16 kHz). Plucked near the string end, so the spectrum stays bright.
+ * Both: attack 30–200 ms, sustain 0.8–1.2 s after onset; darken time fitted as for piano/guitar.
+ */
+export const HARP_ATTACK = [
+  1.0, 0.1454, 0.3152, 0.0282, 0.0691, 0.0174, 0.0181, 0.0035, 0.0054, 0.0021, 0.0035, 0.0, 0.0012, 0.0012,
+];
+export const HARP_SUSTAIN = [1.0, 0.0823, 0.0668, 0.0042, 0.0033];
+
+export const HARPSICHORD_ATTACK = [
+  1.0, 0.437, 0.2355, 0.2037, 0.1115, 0.2227, 0.1081, 0.089, 0.0948, 0.1484, 0.1366, 0.104, 0.0544, 0.1213,
+  0.0941, 0.1333, 0.0766, 0.0522, 0.0501, 0.0487, 0.0252, 0.0344, 0.0244, 0.0283, 0.0427, 0.0366, 0.0387, 0.0345,
+  0.0375, 0.0276, 0.0286, 0.0205,
+];
+export const HARPSICHORD_SUSTAIN = [
+  0.8861, 1.0, 0.2439, 0.1722, 0.0904, 0.0531, 0.042, 0.0371, 0.0125, 0.0178, 0.0075, 0.0135, 0.0032, 0.0062,
+  0.006, 0.0082, 0.003, 0.0013, 0.0026, 0.0034, 0.0, 0.0012, 0.0019, 0.0021, 0.0, 0.0012,
+];
+
+export const HARP_TAU_MS = 595;
+export const HARPSICHORD_TAU_MS = 475;

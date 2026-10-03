@@ -226,8 +226,9 @@ Editor UI: an SVG graph. The x axis is time; the sustain portion is drawn as a f
 
 ### 4.4 Presets
 
-Segmented bar: **SINE · ORGAN · PLUCK · PIANO · GUITAR · VIOLIN · CELLO · FLUTE · CLARINET ·
-TROMBONE · TRUMPET · CUSTOM** (wraps on narrow screens). A preset sets harmonics, envelope and
+Segmented bar, grouped by family (`PRESET_ORDER`): **SINE · PLUCK · ORGAN · PIANO · HARPSICHORD ·
+GUITAR · HARP · VIOLIN · CELLO · FLUTE · OBOE · CLARINET · SAXOPHONE · BASSOON · TRUMPET · FRENCH HORN ·
+TROMBONE · TUBA · CUSTOM** (wraps on narrow screens). A preset sets harmonics, envelope and
 brightness decay together; any later edit flips the selection to CUSTOM. SINE and PLUCK are
 synthetic; every other preset uses a measured spectrum (§4.7). (STRINGS was removed 2026-10-03;
 saved settings that name it migrate to CUSTOM.)
@@ -276,6 +277,13 @@ PIANO, GUITAR, VIOLIN and CELLO use measured harmonic spectra, stored as per-har
 | CLARINET | SHARC `Bb_clarinet`, median of 21 notes D3–A#4 (chalumeau/throat register) | off |
 | TROMBONE | SHARC `trombone`, median of 26 notes E2–F4 | off |
 | TRUMPET | SHARC `C_trumpet`, median of 31 notes F#3–C6 | off |
+| OBOE | SHARC `oboe`, median of 27 notes A#3–C6 | off |
+| BASSOON | SHARC `bassoon`, median of 32 notes A#1–F4 | off |
+| TUBA | SHARC `tuba`, median of 26 notes C2–D4 | off |
+| FRENCH HORN | SHARC `French_horn`, median of 37 notes D2–D5 | off |
+| SAXOPHONE | Univ. of Iowa MIS Eb alto sax, `AltoSax.NoVib.mf.{Db3B3,C4B4}`, 23 notes, steady state 0.3–0.8 s | off |
+| HARP | VSCO 2 CE (CC0) `KSHarp_{C3…E5}_mf`, 9 notes × 2 channels, attack/sustain windows as piano | on, τ = 595 ms |
+| HARPSICHORD | Freesound "Harpsichord" pack by pjcohen (CC0), notes sounding D4/E4/D5/E5 (files labelled an octave lower), HQ MP3 previews, analysis capped at 16 kHz | on, τ = 475 ms |
 
 Envelopes: piano and guitar decay to silence while held, with the decay length chosen so the
 measured median time to −20 dB (≈0.9 s) is matched by the EXP decay curve; bowed strings, winds,

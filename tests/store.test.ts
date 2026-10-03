@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useStore } from '../src/state/store';
-import { SYNTH_PRESETS } from '../src/state/presets';
+import { SYNTH_PRESETS, PRESET_ORDER } from '../src/state/presets';
 
 const s = () => useStore.getState();
 
@@ -163,5 +163,31 @@ describe('store', () => {
     }));
     await useStore.persist.rehydrate();
     expect(s().envelope).toMatchObject({ attackCurve: 0, decayCurve: 0.6, releaseCurve: -0.6 });
+  });
+
+  describe('orchestral additions', () => {
+    it('adds sustained oboe, bassoon, tuba, French horn and saxophone from measured spectra', () => {
+      for (const id of ['oboe', 'bassoon', 'tuba', 'horn', 'sax'] as const) {
+        expect(SYNTH_PRESETS[id].harmonics.count).toBeGreaterThan(8);
+        expect(SYNTH_PRESETS[id].dark).toBeUndefined();
+      }
+    });
+    it('harp and harpsichord are plucked: they darken and decay to silence', () => {
+      for (const id of ['harp', 'harpsichord'] as const) {
+        expect(SYNTH_PRESETS[id].dark).toBeDefined();
+        expect(SYNTH_PRESETS[id].tauMs).toBeGreaterThan(0);
+        expect(SYNTH_PRESETS[id].envelope.sustain).toBe(0);
+      }
+    });
+    it('harp (plucked near mid-string) has a weak 2nd harmonic; harpsichord (plucked near the end) stays bright', () => {
+      const harp = SYNTH_PRESETS.harp.harmonics.tweaks;
+      expect(harp[2]).toBeLessThan(harp[3]);
+      expect(SYNTH_PRESETS.harpsichord.harmonics.tweaks[16]).toBeGreaterThan(0.05);
+    });
+    it('the preset bar lists every preset exactly once, grouped by family', () => {
+      expect([...PRESET_ORDER].sort()).toEqual(Object.keys(SYNTH_PRESETS).sort());
+      expect(PRESET_ORDER.indexOf('harpsichord')).toBeLessThan(PRESET_ORDER.indexOf('violin'));
+      expect(PRESET_ORDER.indexOf('tuba')).toBe(PRESET_ORDER.length - 1);
+    });
   });
 });

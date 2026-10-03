@@ -1,13 +1,20 @@
 import type { HarmonicSettings } from '../audio/harmonics';
 import type { EnvelopeSettings } from '../audio/envelope';
 import {
-  CELLO, CLARINET, FLUTE, GUITAR_ATTACK, GUITAR_SUSTAIN, GUITAR_TAU_MS, ORGAN_CHORUS, PIANO_ATTACK, PIANO_SUSTAIN,
-  PIANO_TAU_MS, TROMBONE, TRUMPET, VIOLIN,
+  ALTO_SAX, BASSOON, CELLO, CLARINET, FLUTE, FRENCH_HORN, GUITAR_ATTACK, GUITAR_SUSTAIN, GUITAR_TAU_MS,
+  HARP_ATTACK, HARP_SUSTAIN, HARP_TAU_MS, HARPSICHORD_ATTACK, HARPSICHORD_SUSTAIN, HARPSICHORD_TAU_MS, OBOE,
+  ORGAN_CHORUS, PIANO_ATTACK, PIANO_SUSTAIN, PIANO_TAU_MS, TROMBONE, TRUMPET, TUBA, VIOLIN,
 } from './spectra';
 
 export type PresetId =
-  | 'sine' | 'organ' | 'pluck' | 'piano' | 'guitar' | 'violin' | 'cello'
-  | 'flute' | 'clarinet' | 'trombone' | 'trumpet' | 'custom';
+  | 'sine' | 'pluck' | 'organ' | 'piano' | 'harpsichord' | 'guitar' | 'harp' | 'violin' | 'cello'
+  | 'flute' | 'oboe' | 'clarinet' | 'sax' | 'bassoon' | 'trumpet' | 'horn' | 'trombone' | 'tuba' | 'custom';
+
+/** Preset bar order: synthetic, keyboards, plucked, bowed, woodwinds, brass (high to low). */
+export const PRESET_ORDER: Exclude<PresetId, 'custom'>[] = [
+  'sine', 'pluck', 'organ', 'piano', 'harpsichord', 'guitar', 'harp', 'violin', 'cello',
+  'flute', 'oboe', 'clarinet', 'sax', 'bassoon', 'trumpet', 'horn', 'trombone', 'tuba',
+];
 
 export interface SynthPreset {
   label: string;
@@ -99,5 +106,46 @@ export const SYNTH_PRESETS: Record<Exclude<PresetId, 'custom'>, SynthPreset> = {
     label: 'Trumpet',
     harmonics: measured(TRUMPET),
     envelope: { attack: 35, decay: 100, sustain: 0.9, release: 140, attackCurve: -0.6, decayCurve: 0.6, releaseCurve: 0.6 },
+  },
+  oboe: {
+    label: 'Oboe',
+    harmonics: measured(OBOE),
+    envelope: { attack: 50, decay: 100, sustain: 0.95, release: 120, attackCurve: -0.6, decayCurve: 0.6, releaseCurve: 0.6 },
+  },
+  bassoon: {
+    label: 'Bassoon',
+    harmonics: measured(BASSOON),
+    envelope: { attack: 60, decay: 120, sustain: 0.9, release: 150, attackCurve: -0.6, decayCurve: 0.6, releaseCurve: 0.6 },
+  },
+  sax: {
+    label: 'Saxophone',
+    harmonics: measured(ALTO_SAX),
+    envelope: { attack: 45, decay: 100, sustain: 0.92, release: 130, attackCurve: -0.6, decayCurve: 0.6, releaseCurve: 0.6 },
+  },
+  horn: {
+    label: 'French horn',
+    harmonics: measured(FRENCH_HORN),
+    envelope: { attack: 70, decay: 150, sustain: 0.9, release: 200, attackCurve: -0.6, decayCurve: 0.6, releaseCurve: 0.6 },
+  },
+  tuba: {
+    label: 'Tuba',
+    harmonics: measured(TUBA),
+    envelope: { attack: 80, decay: 150, sustain: 0.9, release: 200, attackCurve: -0.6, decayCurve: 0.6, releaseCurve: 0.6 },
+  },
+  // Plucked: decay length matches the measured median time to −20 dB on the EXP curve
+  // (harp ≈1.0 s, harpsichord ≈1.3 s); the harpsichord's damper cuts the release short.
+  harp: {
+    label: 'Harp',
+    harmonics: measured(HARP_ATTACK),
+    dark: measured(HARP_SUSTAIN),
+    tauMs: HARP_TAU_MS,
+    envelope: { attack: 3, decay: 2200, sustain: 0, release: 300, attackCurve: 0, decayCurve: 0.6, releaseCurve: 0.6 },
+  },
+  harpsichord: {
+    label: 'Harpsichord',
+    harmonics: measured(HARPSICHORD_ATTACK),
+    dark: measured(HARPSICHORD_SUSTAIN),
+    tauMs: HARPSICHORD_TAU_MS,
+    envelope: { attack: 2, decay: 2900, sustain: 0, release: 100, attackCurve: 0, decayCurve: 0.6, releaseCurve: 0.6 },
   },
 };

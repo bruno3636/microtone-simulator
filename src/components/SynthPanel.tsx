@@ -1,11 +1,11 @@
 import { useStore } from '../state/store';
-import { SYNTH_PRESETS, type PresetId } from '../state/presets';
+import { PRESET_ORDER, SYNTH_PRESETS, type PresetId } from '../state/presets';
 import { HarmonicsEditor } from './HarmonicsEditor';
 import { EnvelopeEditor } from './EnvelopeEditor';
 import { Segmented, Slider } from './ui';
 
 const OPTIONS: { value: PresetId; label: string }[] = [
-  ...Object.entries(SYNTH_PRESETS).map(([value, p]) => ({ value: value as PresetId, label: p.label })),
+  ...PRESET_ORDER.map((id) => ({ value: id as PresetId, label: SYNTH_PRESETS[id].label })),
   { value: 'custom', label: 'Custom' },
 ];
 
