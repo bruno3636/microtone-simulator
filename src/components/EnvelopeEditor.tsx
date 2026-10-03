@@ -137,18 +137,18 @@ export function EnvelopeEditor() {
         {handle('decay', g.x2, yOf(env.sustain))}
         {handle('release', g.x4, yOf(0))}
       </svg>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex min-w-0 flex-col gap-2">
           <NumberField label="Attack" suffix="ms" value={env.attack} min={0} max={MAX.attack} onChange={(v) => setEnvelope({ attack: v })} />
           <Segmented<CurveKind> label="Attack curve" value={env.attackCurve} options={CURVES} onChange={(c) => setEnvelope({ attackCurve: c })} />
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="flex min-w-0 flex-col gap-2">
           <NumberField label="Decay" suffix="ms" value={env.decay} min={0} max={MAX.decay} onChange={(v) => setEnvelope({ decay: v })} />
           <Segmented<CurveKind> label="Decay curve" value={env.decayCurve} options={CURVES} onChange={(c) => setEnvelope({ decayCurve: c })} />
         </div>
         <NumberField label="Sustain" suffix="%" value={Math.round(env.sustain * 100)} min={0} max={100}
           onChange={(v) => setEnvelope({ sustain: v / 100 })} />
-        <div className="flex flex-col gap-2">
+        <div className="flex min-w-0 flex-col gap-2">
           <NumberField label="Release" suffix="ms" value={env.release} min={0} max={MAX.release} onChange={(v) => setEnvelope({ release: v })} />
           <Segmented<CurveKind> label="Release curve" value={env.releaseCurve} options={CURVES} onChange={(c) => setEnvelope({ releaseCurve: c })} />
         </div>

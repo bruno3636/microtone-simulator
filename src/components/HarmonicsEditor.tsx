@@ -40,6 +40,8 @@ export function HarmonicsEditor() {
       <div className="flex flex-wrap items-end gap-4">
         <NumberField label="Count" value={h.count} min={1} max={MAX_HARMONICS}
           onChange={(v) => setHarmonics({ count: Math.round(v) })} />
+        <Slider label="Count" value={h.count} min={1} max={MAX_HARMONICS} step={1} format={(v) => String(v)}
+          onChange={(v) => setHarmonics({ count: Math.round(v) })} />
         <Slider label="Start" value={h.start} min={0} max={1} step={0.01} format={(v) => v.toFixed(2)}
           onChange={(v) => setHarmonics({ start: v })} />
         <Slider label="End" value={h.end} min={0} max={1} step={0.01} format={(v) => v.toFixed(2)}
