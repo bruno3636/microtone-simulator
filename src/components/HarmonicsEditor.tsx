@@ -81,11 +81,12 @@ export function HarmonicsEditor() {
           onPointerMove={(e) => { if (e.currentTarget.hasPointerCapture(e.pointerId)) paint(e); }}
           onPointerUp={() => { last.current = null; }}
           onDoubleClick={(e) => setTweak(hit(e as unknown as RPointerEvent).n, null, which)}>
-          {ghost?.map((a, i) => (
+          {ghost?.map((v, i) => { const a = Math.abs(v); return (
             <rect key={`g${i}`} x={i + 0.05} y={1 - a} width={0.9} height={a} fill="none"
               stroke="var(--text-muted)" strokeWidth={1} strokeDasharray="2 2" vectorEffect="non-scaling-stroke" />
-          ))}
-          {amps.map((a, i) => {
+          ); })}
+          {amps.map((v, i) => {
+            const a = Math.abs(v); // bars show magnitude; a negative value is a phase-inverted harmonic
             const tweaked = h.tweaks[i + 1] != null;
             const pad = count > 32 ? 0.1 : 0.15;
             return (

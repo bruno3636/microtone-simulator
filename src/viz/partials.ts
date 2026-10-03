@@ -13,7 +13,7 @@ export function buildPartials(notes: NoteInput[], amps: number[], maxHz = 20000,
       const freq = k * n.freq;
       if (freq > maxHz) break;
       const amp = n.level * (w * (amps[k - 1] ?? 0) + (1 - w) * (darkAmps?.[k - 1] ?? 0));
-      if (amp > 0) out.push({ noteId: n.id, degree: n.degree, harmonic: k, freq, amp });
+      if (amp !== 0) out.push({ noteId: n.id, degree: n.degree, harmonic: k, freq, amp: Math.abs(amp) });
     }
   }
   return out;

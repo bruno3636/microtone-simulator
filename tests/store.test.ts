@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useStore } from '../src/state/store';
 import { SYNTH_PRESETS, PRESET_ORDER } from '../src/state/presets';
+import { computeAmplitudes } from '../src/audio/harmonics';
+import { buildWavetable, normalizeRms } from '../src/audio/timbre';
 
 const s = () => useStore.getState();
 
@@ -198,5 +200,44 @@ describe('store', () => {
     expect(t[12]).toBeGreaterThan(t[13]);
     expect(PRESET_ORDER).toContain('voice');
     expect(SYNTH_PRESETS.voice.dark).toBeUndefined();
+  });
+
+  describe('classic waveforms', () => {
+    const wave = (id: 'saw' | 'square' | 'triangle') => {
+      const h = SYNTH_PRESETS[id].harmonics;
+      return buildWavetable(normalizeRms(computeAmplitudes(h)), 1024);
+    };
+    it('saw: every harmonic at 1/k, alternating sign (rising ramp)', () => {
+      const t = SYNTH_PRESETS.saw.harmonics.tweaks;
+      expect(SYNTH_PRESETS.saw.harmonics.count).toBe(64);
+      expect(t[1]).toBeCloseTo(1);
+      expect(t[2]).toBeCloseTo(-1 / 2);
+      expect(t[7]).toBeCloseTo(1 / 7);
+    });
+    it('square: odd harmonics only at 1/k', () => {
+      const t = SYNTH_PRESETS.square.harmonics.tweaks;
+      expect(t[2]).toBe(0);
+      expect(t[3]).toBeCloseTo(1 / 3);
+      expect(t[64]).toBe(0);
+    });
+    it('triangle: odd harmonics at 1/k² with alternating sign', () => {
+      const t = SYNTH_PRESETS.triangle.harmonics.tweaks;
+      expect(t[2]).toBe(0);
+      expect(t[3]).toBeCloseTo(-1 / 9);
+      expect(t[5]).toBeCloseTo(1 / 25);
+    });
+    it('the waveforms have the right shapes', () => {
+      const tri = wave('triangle');
+      expect(tri[128] / tri[256]).toBeCloseTo(0.5, 1); // straight ramp up to the peak at 1/4 period
+      const sq = wave('square');
+      expect(Math.abs(sq[200] - sq[300]) / sq[256]).toBeLessThan(0.05); // flat top
+      expect(sq[712]).toBeCloseTo(-sq[200], 1); // half-wave symmetry
+      const saw = wave('saw');
+      expect(saw[250] - saw[100]).toBeCloseTo(saw[400] - saw[250], 1); // constant slope (rising ramp)
+      expect(saw[250]).toBeGreaterThan(saw[100]);
+    });
+    it('appear first in the preset bar after sine', () => {
+      expect(PRESET_ORDER.slice(0, 4)).toEqual(['sine', 'saw', 'square', 'triangle']);
+    });
   });
 });

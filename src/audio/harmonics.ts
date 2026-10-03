@@ -21,12 +21,13 @@ export function computeAmplitudes(s: HarmonicSettings): number[] {
   const out: number[] = [];
   for (let n = 1; n <= count; n++) {
     const t = count === 1 ? 0 : (n - 1) / (count - 1);
-    let a = s.tweaks[n] ?? shapeCurve(s.start, s.end, t, s.curve);
-    a = clamp(a, 0, 1);
+    // a tweak may be negative: a phase-inverted harmonic (e.g. the triangle wave's alternating signs)
+    const tweak = s.tweaks[n];
+    let a = tweak != null ? clamp(tweak, -1, 1) : clamp(shapeCurve(s.start, s.end, t, s.curve), 0, 1);
     if (n > 1 && ((s.filter === 'odd' && n % 2 === 0) || (s.filter === 'even' && n % 2 === 1))) a = 0;
     out.push(a);
   }
-  if (out.every((a) => a <= 0)) {
+  if (!out.some((a) => a !== 0)) {
     out.fill(0);
     out[0] = 1;
   }

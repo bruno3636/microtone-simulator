@@ -40,4 +40,11 @@ describe('computeAmplitudes', () => {
   it('falls back to a sine when everything is zero', () => {
     expect(computeAmplitudes({ ...base, count: 4, start: 0, end: 0 })).toEqual([1, 0, 0, 0]);
   });
+  it('keeps the sign of a negative tweak (phase-inverted harmonic), clamped to [-1, 1]', () => {
+    const a = computeAmplitudes({ ...base, count: 3, tweaks: { 1: 1, 2: -0.5, 3: -4 } });
+    expect(a).toEqual([1, -0.5, -1]);
+  });
+  it('does not treat negative harmonics as silence', () => {
+    expect(computeAmplitudes({ ...base, count: 2, start: 0, end: 0, tweaks: { 2: -0.3 } })).toEqual([0, -0.3]);
+  });
 });

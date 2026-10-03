@@ -43,4 +43,8 @@ describe('partials', () => {
     expect(p[1].amp).toBeCloseTo(0.5 * (0.25 * 0.8 + 0.75 * 0));
     expect(p[2].amp).toBeCloseTo(0.5 * (0.75 * 0.4));
   });
+  it('a phase-inverted harmonic still shows its magnitude in the spectrum', () => {
+    const p = buildPartials([{ id: '0', degree: 0, freq: 100, level: 1 }], [1, 0, -0.25]);
+    expect(p.map((x) => [x.harmonic, x.amp])).toEqual([[1, 1], [3, 0.25]]);
+  });
 });

@@ -7,12 +7,12 @@ import {
 } from './spectra';
 
 export type PresetId =
-  | 'sine' | 'pluck' | 'organ' | 'piano' | 'harpsichord' | 'guitar' | 'harp' | 'violin' | 'cello' | 'voice'
+  | 'sine' | 'saw' | 'square' | 'triangle' | 'pluck' | 'organ' | 'piano' | 'harpsichord' | 'guitar' | 'harp' | 'violin' | 'cello' | 'voice'
   | 'flute' | 'oboe' | 'clarinet' | 'sax' | 'bassoon' | 'trumpet' | 'horn' | 'trombone' | 'tuba' | 'custom';
 
 /** Preset bar order: synthetic, keyboards, plucked, bowed, voice, woodwinds, brass (high to low). */
 export const PRESET_ORDER: Exclude<PresetId, 'custom'>[] = [
-  'sine', 'pluck', 'organ', 'piano', 'harpsichord', 'guitar', 'harp', 'violin', 'cello', 'voice',
+  'sine', 'saw', 'square', 'triangle', 'pluck', 'organ', 'piano', 'harpsichord', 'guitar', 'harp', 'violin', 'cello', 'voice',
   'flute', 'oboe', 'clarinet', 'sax', 'bassoon', 'trumpet', 'horn', 'trombone', 'tuba',
 ];
 
@@ -24,6 +24,24 @@ export interface SynthPreset {
   dark?: HarmonicSettings;
   tauMs?: number;
 }
+
+/**
+ * A classic waveform's Fourier series as harmonic settings (band-limited to `count` harmonics).
+ * Signed values are phase-inverted harmonics, needed for the waveform's shape (not its sound).
+ */
+function series(count: number, level: (k: number) => number): HarmonicSettings {
+  const levels = Array.from({ length: count }, (_, i) => level(i + 1));
+  return {
+    count,
+    start: Math.abs(levels[0]),
+    end: Math.abs(levels[count - 1]),
+    curve: 0,
+    filter: 'all',
+    tweaks: Object.fromEntries(levels.map((v, i) => [i + 1, v])),
+  };
+}
+
+const SYNTH_ENVELOPE: EnvelopeSettings = { attack: 5, decay: 100, sustain: 1, release: 120, attackCurve: 0, decayCurve: 0.6, releaseCurve: 0.6 };
 
 /** A measured spectrum as harmonic settings: every harmonic set explicitly as a tweak. */
 function measured(levels: number[]): HarmonicSettings {
@@ -47,6 +65,24 @@ export const SYNTH_PRESETS: Record<Exclude<PresetId, 'custom'>, SynthPreset> = {
     label: 'Sine',
     harmonics: { count: 1, start: 1, end: 1, curve: 0, filter: 'all', tweaks: {} },
     envelope: { attack: 10, decay: 200, sustain: 1, release: 300, attackCurve: 0, decayCurve: 0.6, releaseCurve: 0.6 },
+  },
+  // Classic waveforms, exact Fourier series. Saw: every harmonic at 1/k with alternating sign
+  // (rising ramp). Square: odd harmonics at 1/k. Triangle: odd harmonics at 1/k² with
+  // alternating sign; it falls below −60 dB after harmonic 31.
+  saw: {
+    label: 'Saw',
+    harmonics: series(64, (k) => (k % 2 ? 1 : -1) / k),
+    envelope: { ...SYNTH_ENVELOPE },
+  },
+  square: {
+    label: 'Square',
+    harmonics: series(64, (k) => (k % 2 ? 1 / k : 0)),
+    envelope: { ...SYNTH_ENVELOPE },
+  },
+  triangle: {
+    label: 'Triangle',
+    harmonics: series(32, (k) => (k % 2 ? (k % 4 === 1 ? 1 : -1) / (k * k) : 0)),
+    envelope: { ...SYNTH_ENVELOPE },
   },
   organ: {
     // pipe organ principal chorus, see spectra.ts; flue-pipe speech ≈40 ms, flat sustain

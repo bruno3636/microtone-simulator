@@ -226,17 +226,25 @@ Editor UI: an SVG graph. The x axis is time; the sustain portion is drawn as a f
 
 ### 4.4 Presets
 
-Segmented bar, grouped by family (`PRESET_ORDER`): **SINE · PLUCK · ORGAN · PIANO · HARPSICHORD ·
+Segmented bar, grouped by family (`PRESET_ORDER`): **SINE · SAW · SQUARE · TRIANGLE · PLUCK · ORGAN · PIANO · HARPSICHORD ·
 GUITAR · HARP · VIOLIN · CELLO · VOICE · FLUTE · OBOE · CLARINET · SAXOPHONE · BASSOON · TRUMPET · FRENCH HORN ·
 TROMBONE · TUBA · CUSTOM** (wraps on narrow screens). A preset sets harmonics, envelope and
-brightness decay together; any later edit flips the selection to CUSTOM. SINE and PLUCK are
-synthetic; every other preset uses a measured spectrum (§4.7). (STRINGS was removed 2026-10-03;
+brightness decay together; any later edit flips the selection to CUSTOM. SINE, SAW, SQUARE,
+TRIANGLE and PLUCK are synthetic; every other preset uses a measured spectrum (§4.7). (STRINGS was removed 2026-10-03;
 saved settings that name it migrate to CUSTOM.)
 
 | Preset | Harmonics | Envelope (A/D/S/R, curves) |
 |---|---|---|
 | SINE | count 1 | 10 / 200 / 100 % / 300, LIN/EXP/EXP |
+| SAW | exact Fourier series: 64 harmonics at (−1)^(k+1)/k (rising ramp) | 5 / 100 / 100 % / 120 |
+| SQUARE | 64 harmonics, odd only, at 1/k | 5 / 100 / 100 % / 120 |
+| TRIANGLE | 32 harmonics, odd only, at ±1/k² with alternating sign | 5 / 100 / 100 % / 120 |
 | PLUCK | count 32, start 1, end 0.02, curve 0.85, ALL | 3 / 1200 / 0 % / 500, LIN/EXP/EXP |
+
+Harmonic tweaks may be negative (−1 … 1): a phase-inverted harmonic. Sign doesn't change the
+sound of a steady tone but does change the waveform's shape (needed for TRIANGLE and the rising
+SAW). Bars, the spectrum view and normalization use magnitudes; dragging a bar sets a positive
+level.
 
 ### 4.5 Other synth controls
 
