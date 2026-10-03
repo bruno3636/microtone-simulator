@@ -98,7 +98,7 @@ describe('inter-note ratios by source', () => {
   it('other pairs are named from the reference ratios with a cents deviation', () => {
     const rows = interScaleRatios(['1', '5/4', '7/4', '2^(4/12)', '2^(7/12)'], [0, 1, 2, 3, 4]);
     expect(rows[0][0].interval).toBe('Major 3rd'); // 1 → 5/4
-    expect(rows[0][1].interval).toBe('−27.3¢ Minor 7th'); // 7/4 vs 16/9
+    expect(rows[0][1].interval).toBe('Subminor 7th'); // 7/4 is now a reference
     expect(rows[3][0].interval).toBe('Minor 3rd'); // 12EDO 4 → 7 steps: semitone name
   });
 });
@@ -114,12 +114,23 @@ describe('nameRatio (nearest reference interval, octave-reduced)', () => {
   });
   it('others get the nearest name with the cents difference in front', () => {
     expect(nameRatio(2 ** (4 / 12))).toBe('+13.7¢ Major 3rd');
-    expect(nameRatio(7 / 4)).toBe('−27.3¢ Minor 7th');
+    expect(nameRatio(15 / 14)).toBe('+7.7¢ Minor 2nd'); // 119.4¢ vs 16/15 at 111.7¢
     expect(nameRatio(2 ** (18 / 31))).toBe('−5.2¢ Perfect 5th');
   });
-  it('reduces to one octave, and wraps just-below-octave ratios to unison', () => {
+  it('reduces to one octave; near-octave ratios are named from the octave', () => {
     expect(nameRatio(5 / 2)).toBe('Major 3rd');
     expect(nameRatio(3 / 8)).toBe('Perfect 5th');
-    expect(nameRatio(1.99)).toBe('−8.7¢ Unison');
+    expect(nameRatio(1.99)).toBe('−8.7¢ Octave');
+    expect(nameRatio(2)).toBe('Octave');
+    expect(nameRatio(4)).toBe('Octave');
+    expect(nameRatio(1.005)).toBe('+8.6¢ Unison');
+  });
+  it('includes the 7- and 11-limit references', () => {
+    const exact: [number, string][] = [
+      [8 / 7, 'Supermajor 2nd'], [7 / 6, 'Subminor 3rd'], [11 / 9, 'Neutral 3rd'], [9 / 7, 'Supermajor 3rd'],
+      [21 / 16, 'Narrow 4th'], [11 / 8, 'Wide 4th'], [16 / 11, 'Narrow 5th'], [32 / 21, 'Wide 5th'],
+      [14 / 9, 'Subminor 6th'], [18 / 11, 'Neutral 6th'], [12 / 7, 'Supermajor 6th'], [7 / 4, 'Subminor 7th'],
+    ];
+    for (const [r, name] of exact) expect(nameRatio(r)).toBe(name);
   });
 });

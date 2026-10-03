@@ -381,8 +381,11 @@ Behavior matches the original unless noted.
   notes picked by name show their exact name ("Augmented unison", "Tritone"); 12EDO steps use
   semitone names; everything else is named from the nearest reference ratio, octave-reduced, with
   the cents difference in front ("+13.7¢ Major 3rd"): 1/1 unison, 16/15 minor 2nd, 9/8 major 2nd,
-  6/5 minor 3rd, 5/4 major 3rd, 4/3 perfect 4th, 7/5 diminished 5th, 10/7 augmented 4th, 3/2 perfect
-  5th (added), 8/5 minor 6th, 5/3 major 6th, 16/9 minor 7th, 15/8 major 7th, 2/1 unison (wrap).
+  8/7 supermajor 2nd, 7/6 subminor 3rd, 6/5 minor 3rd, 11/9 neutral 3rd, 5/4 major 3rd, 9/7
+  supermajor 3rd, 21/16 narrow 4th, 4/3 perfect 4th, 11/8 wide 4th, 7/5 diminished 5th, 10/7
+  augmented 4th, 16/11 narrow 5th, 3/2 perfect 5th, 32/21 wide 5th, 14/9 subminor 6th, 8/5 minor
+  6th, 18/11 neutral 6th, 5/3 major 6th, 12/7 supermajor 6th, 7/4 subminor 7th, 16/9 minor 7th,
+  15/8 major 7th, 2/1 octave (ratios nearer 2/1 than 1/1 are named from it; exact octaves = "Octave").
   Notes picked by name — Pythagorean, meantone, well temperament, via the insert popover or those
   tunings' templates — which are stored tagged with family, variant and position, e.g.
   `meantone.quarter:4|expr` (`splitLabel`/`parseTag`; the maths ignores the tag; older plain-name
