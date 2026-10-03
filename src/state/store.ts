@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware';
 import type { HarmonicSettings } from '../audio/harmonics';
 import { curveAmount, type EnvelopeSettings } from '../audio/envelope';
-import { DEFAULT_KEYMAPS, NOTE_FREQS } from '../tuning/presets';
+import { DEFAULT_KEYMAPS, NOTE_FREQS, TUNINGS } from '../tuning/presets';
 import { createFromTemplate } from '../tuning/ratios';
 import { DEFAULT_ENVELOPE, DEFAULT_HARMONICS, SYNTH_PRESETS, type PresetId } from './presets';
 import type { ThemeMode } from '../theme';
@@ -20,6 +20,10 @@ export interface VizSettings {
 interface Data {
   tab: 'tuning' | 'synth';
   tuning: string;
+  /** variant of the tuning (meantone fraction, well temperament); '' when it has none */
+  tuningVariant: string;
+  /** divisions per octave for Custom EDO */
+  edo: number;
   scale: string;
   notes: string[];
   root: { note: string; freq: number };
@@ -44,6 +48,8 @@ interface Data {
 interface Actions {
   setTab(t: Data['tab']): void;
   applyTemplate(tuning: string, scale: string): void;
+  setTuningVariant(variant: string): void;
+  setEdo(n: number): void;
   resetNotes(): void;
   clearNotes(): void;
   setNote(i: number, expr: string): void;
@@ -98,6 +104,8 @@ export const useStore = create<StoreState>()(
     (set, get) => ({
       tab: 'tuning',
       tuning: 'just_intonation',
+      tuningVariant: '',
+      edo: 19,
       scale: initialTemplate.scale,
       notes: initialTemplate.notes,
       root: { note: 'A', freq: NOTE_FREQS.A },
@@ -118,8 +126,21 @@ export const useStore = create<StoreState>()(
 
       setTab: (tab) => set({ tab }),
       applyTemplate: (tuning, scale) => {
-        const t = createFromTemplate(tuning, scale);
-        set({ tuning, scale: t.scale, notes: t.notes, shown: [0] });
+        const s = get();
+        // switching tuning resets the variant to that tuning's default
+        const variant = tuning === s.tuning && s.tuningVariant ? s.tuningVariant : (TUNINGS[tuning]?.defaultVariant ?? '');
+        const t = createFromTemplate(tuning, scale, variant, s.edo);
+        set({ tuning, tuningVariant: variant, scale: t.scale, notes: t.notes, shown: [0] });
+      },
+      setTuningVariant: (variant) => {
+        const s = get();
+        const t = createFromTemplate(s.tuning, s.scale, variant, s.edo);
+        set({ tuningVariant: variant, scale: t.scale, notes: t.notes, shown: [0] });
+      },
+      setEdo: (n) => {
+        const edo = Math.min(96, Math.max(1, Math.round(n)));
+        set({ edo });
+        if (TUNINGS[get().tuning]?.edo) get().applyTemplate(get().tuning, get().scale);
       },
       resetNotes: () => get().applyTemplate(get().tuning, get().scale),
       clearNotes: () => set({ notes: ['1'], shown: [0] }),
@@ -207,8 +228,9 @@ export const useStore = create<StoreState>()(
     {
       name: 'ejis-settings',
       // v2 added darkHarmonics + brightnessTau (missing keys fall back to the initial state on merge);
-      // v3 removed the STRINGS preset; v4 made envelope curves continuous amounts
-      version: 4,
+      // v3 removed the STRINGS preset; v4 made envelope curves continuous amounts;
+      // v5 reorganised the tunings (renamed 12EDO/meantone, removed the custom presets)
+      version: 5,
       storage: createJSONStorage(() => safeStorage),
       partialize: ({ held: _held, ...rest }) => {
         void _held;
@@ -217,6 +239,15 @@ export const useStore = create<StoreState>()(
       migrate: (persisted) => {
         const p = persisted as Partial<StoreState>;
         if (p.preset && !(p.preset in SYNTH_PRESETS)) p.preset = 'custom';
+        const renamed: Record<string, [string, string]> = {
+          equal_temperament: ['edo12', ''],
+          meantone_temperament: ['meantone', 'quarter'],
+        };
+        if (p.tuning && renamed[p.tuning]) [p.tuning, p.tuningVariant] = renamed[p.tuning];
+        if (p.tuning && !(p.tuning in TUNINGS)) {
+          p.tuning = 'just_intonation';
+          p.tuningVariant = '';
+        }
         if (p.envelope) {
           const e = p.envelope;
           p.envelope = { ...e, attackCurve: curveAmount(e.attackCurve), decayCurve: curveAmount(e.decayCurve), releaseCurve: curveAmount(e.releaseCurve) };

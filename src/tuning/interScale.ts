@@ -1,5 +1,5 @@
 import { simplify } from 'mathjs';
-import { evalRatio, mod } from './ratios';
+import { evalRatio, mod, splitCents } from './ratios';
 
 export interface InterRatio { lo: number; hi: number; exact: string; decimal: string }
 
@@ -31,7 +31,19 @@ export function interScaleRatios(notes: string[], degrees: number[]): InterRatio
       const hi = evalRatio(notes[ds[j]]);
       if (lo == null || hi == null) continue;
       const v = hi / lo;
-      let exact = toFraction(v);
+      const a = splitCents(notes[ds[i]]);
+      const b = splitCents(notes[ds[j]]);
+      let exact: string | null;
+      if (a.cents != null || b.cents != null) {
+        // tempered JI: the just ratio between the ratio parts, plus the cents difference
+        const ra = evalRatio(a.ratio);
+        const rb = evalRatio(b.ratio);
+        const dc = (b.cents ?? 0) - (a.cents ?? 0);
+        const just = ra && rb ? (toFraction(rb / ra) ?? (rb / ra).toFixed(3)) : '—';
+        exact = Math.abs(dc) < 0.05 ? just : `${just} ${dc > 0 ? '+' : '-'}${Math.abs(dc).toFixed(1)}c`;
+      } else {
+        exact = toFraction(v);
+      }
       if (exact == null) {
         try {
           exact = simplify(`(${notes[ds[j]]}) / (${notes[ds[i]]})`).toString().replace(/\s+/g, '');

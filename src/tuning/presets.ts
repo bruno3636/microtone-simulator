@@ -1,35 +1,123 @@
-export interface Tuning { label: string; scalable: boolean; notes: string[] }
+export interface TuningVariant { label: string; notes: string[] }
+export interface Tuning {
+  label: string;
+  /** 12-note tunings accept the major/minor scale templates; others are always chromatic */
+  scalable: boolean;
+  /** fixed notes; absent for variant tunings and custom EDO */
+  notes?: string[];
+  variants?: Record<string, TuningVariant>;
+  defaultVariant?: string;
+  /** notes generated from the "divisions per octave" setting */
+  edo?: boolean;
+}
+
+const JI_RATIOS = ['1', '16/15', '9/8', '6/5', '5/4', '4/3', '45/32', '3/2', '8/5', '5/3', '9/5', '15/8'];
+
+/** N-EDO: k/N of an octave per step. */
+export const edoNotes = (n: number): string[] =>
+  Array.from({ length: n }, (_, k) => (k === 0 ? '1' : `2^(${k}/${n})`));
+
+/** Circle-of-fifths position of each chromatic note from C (meantone: chain E♭ … G♯). */
+const FIFTHS_FROM_C = [0, 7, 2, -3, 4, -1, 6, 1, 8, 3, -2, 5]; // C C# D Eb E F F# G G# A Bb B
+
+/** 12-note meantone: fifths of 3/2 narrowed by num/den of the syntonic comma (81/80). */
+function meantoneNotes(num: number, den: number): string[] {
+  const fifthExpr = `(3/2 * (80/81)^(${num}/${den}))`;
+  const fifth = 1.5 * (80 / 81) ** (num / den);
+  return FIFTHS_FROM_C.map((n) => {
+    if (n === 0) return '1';
+    const octaves = -Math.floor(Math.log2(fifth ** n));
+    const pow = n < 0 ? `^(${n})` : `^${n}`;
+    return octaves === 0 ? `${fifthExpr}${pow}` : `${fifthExpr}${pow} * 2^(${octaves})`;
+  });
+}
+
+const PURE_FIFTH = 1200 * Math.log2(3 / 2);
+const PYTHAGOREAN_COMMA = 1200 * Math.log2(531441 / 524288);
+const SYNTONIC_COMMA = 1200 * Math.log2(81 / 80);
+const SCHISMA = PYTHAGOREAN_COMMA - SYNTONIC_COMMA;
+
+/**
+ * Well temperament from its tempered fifths. `narrowing[i]` (cents) is subtracted from fifth i of
+ * the circle C–G–D–A–E–B–F♯–C♯–G♯–D♯–A♯–F(–C); the narrowings sum to a Pythagorean comma so the
+ * circle closes. Notes are given in cents to 3 decimals (≤ 0.0005 cent error).
+ */
+function wellNotes(narrowing: Partial<Record<number, number>>): string[] {
+  const chain = [0, 7, 2, 9, 4, 11, 6, 1, 8, 3, 10, 5]; // chromatic index of each note up the circle
+  const cents = new Array<number>(12).fill(0);
+  let c = 0;
+  for (let i = 1; i < 12; i++) {
+    c += PURE_FIFTH - (narrowing[i - 1] ?? 0);
+    cents[chain[i]] = ((c % 1200) + 1200) % 1200;
+  }
+  return cents.map((x, i) => (i === 0 ? '1' : `2^(${x.toFixed(3)}/1200)`));
+}
+
+const range = (from: number, to: number, cents: number) =>
+  Object.fromEntries(Array.from({ length: to - from + 1 }, (_, k) => [from + k, cents]));
 
 export const TUNINGS: Record<string, Tuning> = {
   just_intonation: {
     label: 'Just intonation', scalable: true,
     notes: ['1', '1 + 1/15', '1 + 1/8', '1 + 1/5', '1 + 1/4', '1 + 1/3', '1 + 13/32', '1 + 1/2', '1 + 3/5', '1 + 2/3', '1 + 4/5', '1 + 7/8'],
   },
-  equal_temperament: {
-    label: 'Equal temperament', scalable: true,
-    notes: ['1', '2^(1/12)', '2^(2/12)', '2^(3/12)', '2^(4/12)', '2^(5/12)', '2^(6/12)', '2^(7/12)', '2^(8/12)', '2^(9/12)', '2^(10/12)', '2^(11/12)'],
-  },
-  pythagorean_tuning: {
-    label: 'Pythagorean', scalable: true,
-    notes: ['1', '2^8 / 3^5', '3^2 / 2^3', '2^5 / 3^3', '3^4 / 2^6', '2^2 / 3', '2^10 / 3^6', '3 / 2', '2^7 / 3^4', '3^3 / 2^4', '2^4 / 3^2', '3^5 / 2^7'],
-  },
-  meantone_temperament: {
-    label: 'Meantone', scalable: true,
-    notes: ['1', '5/16 * nthRoot(5^3, 4)', '1/2 * sqrt(5)', '4/5 * nthRoot(5,4)', '1 + 1/4', '2/5 * nthRoot(5^3,4)', '5/8 * sqrt(5)', 'nthRoot(5,4)', '25/16', '1/2 * nthRoot(5^3,4)', '4/5 * sqrt(5)', '5/4 * nthRoot(5,4)'],
+  tempered_ji: {
+    // each degree is a just ratio ± a cents offset, e.g. "5/4 -13.7c"
+    label: 'Tempered JI', scalable: true,
+    notes: JI_RATIOS.map((r) => `${r} +0c`),
   },
   harmonic_series: {
     label: 'Harmonic series', scalable: false,
     notes: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
   },
-  custom_equal_scale: {
-    label: 'Custom equal (7)', scalable: false,
-    notes: ['1', '1 + 1/7', '1 + 2/7', '1 + 3/7', '1 + 4/7', '1 + 5/7', '1 + 6/7'],
+  edo12: {
+    label: '12EDO', scalable: true,
+    notes: edoNotes(12),
   },
-  custom_spooky: {
-    label: 'Custom spooky', scalable: false,
-    notes: ['1/1', '1.6', '1.87'],
+  custom_edo: {
+    label: 'Custom EDO', scalable: false, edo: true,
+  },
+  pythagorean_tuning: {
+    label: 'Pythagorean', scalable: true,
+    notes: ['1', '2^8 / 3^5', '3^2 / 2^3', '2^5 / 3^3', '3^4 / 2^6', '2^2 / 3', '2^10 / 3^6', '3 / 2', '2^7 / 3^4', '3^3 / 2^4', '2^4 / 3^2', '3^5 / 2^7'],
+  },
+  meantone: {
+    label: 'Meantone', scalable: true, defaultVariant: 'quarter',
+    variants: {
+      third: { label: '⅓-comma (pure minor thirds)', notes: meantoneNotes(1, 3) },
+      quarter: { label: '¼-comma (pure major thirds)', notes: meantoneNotes(1, 4) },
+      fifth: { label: '⅕-comma', notes: meantoneNotes(1, 5) },
+      sixth: { label: '⅙-comma', notes: meantoneNotes(1, 6) },
+      twoSevenths: { label: '2/7-comma (Zarlino)', notes: meantoneNotes(2, 7) },
+    },
+  },
+  well_temperament: {
+    label: 'Well temperament', scalable: true, defaultVariant: 'werckmeister3',
+    variants: {
+      // C–G, G–D, D–A and B–F♯ narrowed by ¼ Pythagorean comma
+      werckmeister3: { label: 'Werckmeister III', notes: wellNotes({ 0: PYTHAGOREAN_COMMA / 4, 1: PYTHAGOREAN_COMMA / 4, 2: PYTHAGOREAN_COMMA / 4, 5: PYTHAGOREAN_COMMA / 4 }) },
+      // C–G–D–A–E narrowed by ¼ syntonic comma (C–E pure 5/4), F♯–C♯ by a schisma
+      kirnberger3: { label: 'Kirnberger III', notes: wellNotes({ ...range(0, 3, SYNTONIC_COMMA / 4), 6: SCHISMA }) },
+      // F–C–G–D–A–E–B narrowed by ⅙ Pythagorean comma
+      vallotti: { label: 'Vallotti', notes: wellNotes({ 11: PYTHAGOREAN_COMMA / 6, ...range(0, 4, PYTHAGOREAN_COMMA / 6) }) },
+      // C–G–D–A–E–B–F♯ narrowed by ⅙ Pythagorean comma (Young's second temperament, 1799)
+      young: { label: 'Young (1799)', notes: wellNotes(range(0, 5, PYTHAGOREAN_COMMA / 6)) },
+    },
   },
 };
+
+/** Tuning menu order. */
+export const TUNING_ORDER = [
+  'just_intonation', 'tempered_ji', 'harmonic_series', 'edo12', 'custom_edo', 'pythagorean_tuning', 'meantone', 'well_temperament',
+];
+
+/** The notes of a tuning: its variant's (default if unknown), N-EDO for custom EDO, else its fixed notes. */
+export function tuningNotes(tuning: string, variant?: string, edo = 19): string[] {
+  const t = TUNINGS[tuning] ?? TUNINGS.just_intonation;
+  if (t.edo) return edoNotes(Math.max(1, Math.round(edo)));
+  if (t.variants) return (t.variants[variant ?? ''] ?? t.variants[t.defaultVariant!]).notes;
+  return t.notes!;
+}
 
 export const SCALES: Record<string, number[]> = {
   major: [1, 3, 5, 6, 8, 10, 12],

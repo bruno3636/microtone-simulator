@@ -1,14 +1,12 @@
 import { useRef, type ChangeEvent } from 'react';
 import { useStore } from '../state/store';
-import { TUNINGS, SCALES, NOTE_NAMES } from '../tuning/presets';
+import { TUNINGS, TUNING_ORDER, SCALES, NOTE_NAMES } from '../tuning/presets';
 import { NumberField } from './ui';
-
-const scalable = Object.entries(TUNINGS).filter(([, t]) => t.scalable);
-const fixed = Object.entries(TUNINGS).filter(([, t]) => !t.scalable);
 
 export function TuningPanel() {
   const s = useStore();
-  const canScale = TUNINGS[s.tuning].scalable;
+  const tuning = TUNINGS[s.tuning] ?? TUNINGS.just_intonation;
+  const canScale = tuning.scalable;
   // After a pointer-driven change, blur the select so note keys keep working (keyboard users keep focus).
   const pointer = useRef(false);
   const pick = (apply: (v: string) => void) => (e: ChangeEvent<HTMLSelectElement>) => {
@@ -22,11 +20,20 @@ export function TuningPanel() {
       <label className="flex flex-col gap-1">
         <span className="label">Tuning</span>
         <select {...sel} value={s.tuning} onChange={pick((v) => s.applyTemplate(v, s.scale))}>
-          {scalable.map(([k, t]) => <option key={k} value={k}>{t.label}</option>)}
-          <option disabled>────────</option>
-          {fixed.map(([k, t]) => <option key={k} value={k}>{t.label}</option>)}
+          {TUNING_ORDER.map((k) => <option key={k} value={k}>{TUNINGS[k].label}</option>)}
         </select>
       </label>
+      {tuning.variants && (
+        <label className="flex flex-col gap-1">
+          <span className="label">Variant</span>
+          <select {...sel} value={s.tuningVariant || tuning.defaultVariant} onChange={pick(s.setTuningVariant)}>
+            {Object.entries(tuning.variants).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+          </select>
+        </label>
+      )}
+      {tuning.edo && (
+        <NumberField label="Divisions / octave" value={s.edo} min={1} max={96} onChange={s.setEdo} />
+      )}
       <label className="flex flex-col gap-1">
         <span className="label">Scale</span>
         <select {...sel} value={s.scale} onChange={pick((v) => s.applyTemplate(s.tuning, v))}>

@@ -1,12 +1,29 @@
 import { evaluate } from 'mathjs';
-import { TUNINGS, SCALES } from './presets';
+import { TUNINGS, SCALES, tuningNotes } from './presets';
 
 export const mod = (n: number, m: number) => ((n % m) + m) % m;
 
+const CENTS_SUFFIX = /^(.*?)\s*([+-])\s*(\d+(?:\.\d*)?|\.\d+)\s*(?:c|¢|cents?)\s*$/i;
+
+/** Split "5/4 -13.7c" into the ratio part and its cents offset (null when there is none). */
+export function splitCents(expr: string): { ratio: string; cents: number | null } {
+  const m = CENTS_SUFFIX.exec(String(expr));
+  if (!m || m[1].trim() === '') return { ratio: String(expr).trim(), cents: null };
+  return { ratio: m[1].trim(), cents: (m[2] === '-' ? -1 : 1) * Number(m[3]) };
+}
+
+/** "5/4" + −13.7 → "5/4 -13.7c" (offset rounded to 0.1 cent). */
+export function joinCents(ratio: string, cents: number): string {
+  const c = Math.round(cents * 10) / 10;
+  return `${ratio.trim()} ${c < 0 ? '-' : '+'}${Math.abs(c)}c`;
+}
+
+/** Evaluate a ratio expression, optionally followed by a cents offset ("3/2 -2c"). */
 export function evalRatio(expr: string): number | null {
   if (expr == null || String(expr).trim() === '') return null;
   try {
-    const v = evaluate(String(expr));
+    const { ratio, cents } = splitCents(expr);
+    const v = evaluate(ratio) * 2 ** ((cents ?? 0) / 1200);
     return typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null;
   } catch {
     return null;
@@ -25,11 +42,16 @@ export function degreeFreq(notes: string[], degree: number, rootHz: number): num
   return r == null ? null : r * rootHz;
 }
 
-const PURE = TUNINGS.just_intonation.notes.map((n) => evalRatio(n)!);
+const PURE = TUNINGS.just_intonation.notes!.map((n) => evalRatio(n)!);
 
-/** True when the ratio is an integer multiple of a just-intonation interval (same rule as the original). */
+/**
+ * True when the ratio is an integer multiple of a just-intonation interval (same rule as the
+ * original). A tempered degree ("5/4 -13.7c") is only pure when its offset is zero.
+ */
 export function isPure(expr: string): boolean {
-  const r = evalRatio(expr);
+  const { ratio, cents } = splitCents(expr);
+  if (cents) return false;
+  const r = evalRatio(ratio);
   if (r == null) return false;
   return PURE.some((p) => {
     const q = r / p;
@@ -37,9 +59,11 @@ export function isPure(expr: string): boolean {
   });
 }
 
-export function createFromTemplate(tuning: string, scale: string): { notes: string[]; scale: string } {
-  const t = TUNINGS[tuning];
-  const s = t.scalable ? scale : 'chromatic';
-  const idx = SCALES[s].slice(0, t.notes.length);
-  return { notes: idx.map((n) => t.notes[n - 1]), scale: s };
+export function createFromTemplate(
+  tuning: string, scale: string, variant?: string, edo?: number,
+): { notes: string[]; scale: string } {
+  const t = TUNINGS[tuning] ?? TUNINGS.just_intonation;
+  const all = tuningNotes(tuning, variant, edo);
+  if (!t.scalable) return { notes: all, scale: 'chromatic' };
+  return { notes: SCALES[scale].map((n) => all[n - 1]), scale };
 }

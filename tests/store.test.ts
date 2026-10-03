@@ -79,7 +79,7 @@ describe('store', () => {
     const saved = JSON.parse(localStorage.getItem('ejis-settings')!);
     expect(saved.state.volume).toBe(0.42);
     expect(saved.state.held).toBeUndefined();
-    expect(saved.version).toBe(4);
+    expect(saved.version).toBe(5);
   });
 
   describe('brightness decay + instrument presets', () => {
@@ -238,6 +238,36 @@ describe('store', () => {
     });
     it('appear first in the preset bar after sine', () => {
       expect(PRESET_ORDER.slice(0, 4)).toEqual(['sine', 'saw', 'square', 'triangle']);
+    });
+  });
+
+  describe('tuning variants and custom EDO', () => {
+    it('meantone defaults to ¼-comma; changing the variant rebuilds the notes', () => {
+      s().applyTemplate('meantone', 'chromatic');
+      expect(s().tuningVariant).toBe('quarter');
+      const quarterG = s().notes[7];
+      s().setTuningVariant('third');
+      expect(s().tuningVariant).toBe('third');
+      expect(s().notes[7]).not.toBe(quarterG);
+    });
+    it('custom EDO uses the chosen number of divisions', () => {
+      s().applyTemplate('custom_edo', 'major');
+      expect(s().scale).toBe('chromatic');
+      expect(s().notes).toHaveLength(s().edo);
+      s().setEdo(31);
+      expect(s().notes).toHaveLength(31);
+    });
+    it('saved settings with removed or renamed tunings migrate', async () => {
+      const prev = JSON.parse(localStorage.getItem('ejis-settings') ?? '{"state":{}}').state;
+      localStorage.setItem('ejis-settings', JSON.stringify({ state: { ...prev, tuning: 'equal_temperament' }, version: 4 }));
+      await useStore.persist.rehydrate();
+      expect(s().tuning).toBe('edo12');
+      localStorage.setItem('ejis-settings', JSON.stringify({ state: { ...prev, tuning: 'meantone_temperament' }, version: 4 }));
+      await useStore.persist.rehydrate();
+      expect(s()).toMatchObject({ tuning: 'meantone', tuningVariant: 'quarter' });
+      localStorage.setItem('ejis-settings', JSON.stringify({ state: { ...prev, tuning: 'custom_spooky' }, version: 4 }));
+      await useStore.persist.rehydrate();
+      expect(s().tuning).toBe('just_intonation');
     });
   });
 });

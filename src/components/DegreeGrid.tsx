@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type PointerEvent as RPointerEvent } from 'react';
 import { useStore } from '../state/store';
-import { TUNINGS, SCALES } from '../tuning/presets';
-import { evalRatio, degreeFreq, isPure } from '../tuning/ratios';
+import { TUNINGS, TUNING_ORDER, SCALES, tuningNotes } from '../tuning/presets';
+import { evalRatio, degreeFreq, isPure, splitCents, joinCents } from '../tuning/ratios';
+import { NumberField } from './ui';
 import { degreeColor } from '../theme';
 import { useResolvedTheme } from '../hooks/useTheme';
 import { playDegree, stopDegree } from '../audio/play';
@@ -10,7 +11,9 @@ import { engine } from '../audio/engine';
 function AddDegreePopover({ after, onClose }: { after: number; onClose(): void }) {
   const insertDegree = useStore((s) => s.insertDegree);
   const [tuning, setTuning] = useState('just_intonation');
+  const [variant, setVariant] = useState('');
   const [scale, setScale] = useState('major');
+  const edo = useStore((s) => s.edo);
   const [degree, setDegree] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -20,24 +23,34 @@ function AddDegreePopover({ after, onClose }: { after: number; onClose(): void }
     document.addEventListener('keydown', onKey);
     return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
   }, [onClose]);
-  const degrees = SCALES[scale].filter((n) => n <= TUNINGS[tuning].notes.length);
+  const t = TUNINGS[tuning];
+  const all = tuningNotes(tuning, variant, edo);
+  // indexes (1-based) into the tuning's notes: the scale template for 12-note tunings, else every note
+  const degrees = t.scalable ? SCALES[scale].filter((n) => n <= all.length) : all.map((_, k) => k + 1);
   return (
     <div ref={ref} className="panel fixed inset-x-4 top-24 z-20 flex flex-col gap-3 p-3 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-1 sm:w-64"
       style={{ borderColor: 'var(--border)' }}>
       <span className="label">Insert degree from preset</span>
-      <select className="input" value={tuning} onChange={(e) => { setTuning(e.target.value); setDegree(0); }}>
-        {Object.entries(TUNINGS).map(([k, t]) => <option key={k} value={k}>{t.label}</option>)}
+      <select className="input" value={tuning} onChange={(e) => { setTuning(e.target.value); setVariant(''); setDegree(0); }}>
+        {TUNING_ORDER.map((k) => <option key={k} value={k}>{TUNINGS[k].label}</option>)}
       </select>
-      <select className="input" value={scale} onChange={(e) => { setScale(e.target.value); setDegree(0); }}>
-        {Object.keys(SCALES).map((k) => <option key={k} value={k}>{k}</option>)}
-      </select>
+      {t.variants && (
+        <select className="input" value={variant || t.defaultVariant} onChange={(e) => { setVariant(e.target.value); setDegree(0); }}>
+          {Object.entries(t.variants).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+        </select>
+      )}
+      {t.scalable && (
+        <select className="input" value={scale} onChange={(e) => { setScale(e.target.value); setDegree(0); }}>
+          {Object.keys(SCALES).map((k) => <option key={k} value={k}>{k}</option>)}
+        </select>
+      )}
       <select className="input" value={degree} onChange={(e) => setDegree(Number(e.target.value))}>
-        {degrees.map((n, i) => <option key={i} value={i}>{i + 1} — {TUNINGS[tuning].notes[n - 1]}</option>)}
+        {degrees.map((n, i) => <option key={i} value={i}>{i + 1} — {all[n - 1]}</option>)}
       </select>
       <div className="flex justify-end gap-2">
         <button type="button" className="btn" onClick={onClose}>Cancel</button>
         <button type="button" className="btn btn-primary"
-          onClick={() => { insertDegree(after, TUNINGS[tuning].notes[degrees[degree] - 1]); onClose(); }}>Add</button>
+          onClick={() => { insertDegree(after, all[degrees[degree] - 1]); onClose(); }}>Add</button>
       </div>
     </div>
   );
@@ -54,6 +67,8 @@ function DegreeCard({ i }: { i: number }) {
   const [adding, setAdding] = useState(false);
   const pointers = useRef(new Set<number>());
   const valid = evalRatio(note) != null;
+  // tempered JI degrees carry a cents offset ("5/4 -13.7c"): edit the ratio and the offset separately
+  const { ratio, cents } = splitCents(note);
   const hz = degreeFreq(notes, i, rootHz);
 
   const release = (e: RPointerEvent) => {
@@ -96,9 +111,13 @@ function DegreeCard({ i }: { i: number }) {
       </div>
       <label className="flex items-center gap-2">
         <span className="label">Ratio</span>
-        <input className="input mono w-full text-right" value={note} aria-invalid={!valid}
-          onChange={(e) => setNote(i, e.target.value)} />
+        <input className="input mono w-full text-right" value={cents == null ? note : ratio} aria-invalid={!valid}
+          onChange={(e) => setNote(i, cents == null ? e.target.value : joinCents(e.target.value, cents))} />
       </label>
+      {cents != null && (
+        <NumberField label="± cents" value={cents} min={-1200} max={1200} step={0.1}
+          onChange={(c) => setNote(i, joinCents(ratio, c))} />
+      )}
       <div className="flex justify-between">
         <span className="label">Freq</span>
         <span className="mono text-sm">{hz == null ? '—' : `${hz.toFixed(2)} Hz`}</span>

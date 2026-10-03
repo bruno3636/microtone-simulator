@@ -368,10 +368,26 @@ Controls above the canvas:
 
 Behavior matches the original unless noted.
 
-- **Tunings:** just intonation, equal temperament, Pythagorean, meantone (scalable); harmonic
-  series, custom equal (7), custom spooky (not scalable). Same ratio strings as the original.
-- **Scales:** major, natural minor, harmonic minor, chromatic. Non-scalable tunings force
-  chromatic.
+- **Tunings** (menu order, `TUNING_ORDER`; revised 2026-10-03):
+  - **Just intonation** — 5-limit 12-note JI (as the original).
+  - **Tempered JI** — each degree is a just ratio ± a cents offset, written `5/4 -13.7c`
+    (`c`, `¢` or `cents`). Degree cards show the ratio and a separate "± cents" field; the
+    "pure" tag only shows at 0c; inter-scale ratios show the just ratio plus the cents difference.
+  - **Harmonic series** — harmonics 1–12 (always chromatic).
+  - **12EDO** — 2^(k/12).
+  - **Custom EDO** — 2^(k/N) with a "Divisions / octave" field, N = 1–96, default 19 (always chromatic).
+  - **Pythagorean** — as the original.
+  - **Meantone** — variant menu: ⅓-comma (pure minor thirds), ¼-comma (pure major thirds,
+    default), ⅕-comma, ⅙-comma, 2/7-comma (Zarlino). Fifth = 3/2 · (80/81)^f; notes on the chain
+    E♭ … G♯.
+  - **Well temperament** — variant menu built from each temperament's tempered fifths (narrowings
+    sum to a Pythagorean comma): Werckmeister III (C–G–D–A and B–F♯ by ¼ PC), Kirnberger III
+    (C–G–D–A–E by ¼ SC, F♯–C♯ by a schisma), Vallotti (F–C–G–D–A–E–B by ⅙ PC), Young 1799
+    (C–G–D–A–E–B–F♯ by ⅙ PC).
+  Saved settings with the removed custom presets fall back to Just intonation (persist v5);
+  "Equal temperament" migrates to 12EDO and the old meantone to ¼-comma.
+- **Scales:** major, natural minor, harmonic minor, chromatic. Harmonic series and Custom EDO
+  are always chromatic.
 - **Root:** note select (C … B, A = 440 Hz) plus a Hz field. Editing Hz clears the note name
   unless it matches one exactly.
 - **Degree cards:** number + color chip, editable ratio expression (evaluated with mathjs; invalid

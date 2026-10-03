@@ -17,4 +17,10 @@ describe('inter-scale ratios', () => {
   it('dedupes octave copies and needs at least two degrees', () => {
     expect(interScaleRatios(['1', '3/2'], [0, 2])).toEqual([]);
   });
+  it('tempered JI pairs show the just ratio plus the cents difference', () => {
+    const rows = interScaleRatios(['1 +0c', '5/4 -13.7c', '3/2 +2c'], [0, 1, 2]);
+    expect(rows[0][0].exact).toBe('5/4 -13.7c');
+    expect(rows[1][0].exact).toBe('6/5 +15.7c');
+    expect(rows[0][1].exact).toBe('3/2 +2.0c');
+  });
 });
