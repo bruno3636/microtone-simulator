@@ -7,7 +7,7 @@ import { NumberField } from './ui';
 
 /** The typed-input source that matches the current tuning, so the popover opens on the familiar one. */
 const SOURCE_FOR_TUNING: Record<string, DegreeSourceId> = {
-  just_intonation: 'ji', tempered_ji: 'tempered_ji', harmonic_series: 'harmonic', edo12: 'edo12',
+  just_intonation: 'ji', tempered_ji: 'tempered_ji', harmonic_series: 'ji', edo12: 'edo12',
   custom_edo: 'custom_edo', pythagorean_tuning: 'pythagorean', meantone: 'meantone', well_temperament: 'well',
 };
 
@@ -16,10 +16,8 @@ export function AddDegreePopover({ after, onClose }: { after: number; onClose():
   const [source, setSource] = useState<DegreeSourceId>(SOURCE_FOR_TUNING[tuning] ?? 'ji');
   const [ratio, setRatio] = useState('3/2');
   const [cents, setCents] = useState(0);
-  const [harmonic, setHarmonic] = useState(7);
   const [steps, setSteps] = useState(7);
   const [divisions, setDivisions] = useState(edo);
-  const [fifths, setFifths] = useState(1);
   const [meantone, setMeantone] = useState(tuning === 'meantone' && tuningVariant ? tuningVariant : 'quarter');
   const [well, setWell] = useState(tuning === 'well_temperament' && tuningVariant ? tuningVariant : 'werckmeister3');
   const [note, setNote] = useState(7);
@@ -35,7 +33,7 @@ export function AddDegreePopover({ after, onClose }: { after: number; onClose():
   }, [onClose]);
 
   const variant = source === 'meantone' ? meantone : source === 'well' ? well : undefined;
-  const built = buildDegree({ source, ratio, cents, harmonic, steps, divisions, fifths, variant, note, hz, rootHz: root.freq });
+  const built = buildDegree({ source, ratio, cents, steps, divisions, variant, note, hz, rootHz: root.freq });
   const value = built == null ? null : evalRatio(built);
   const add = () => {
     if (built == null) return;
@@ -71,7 +69,6 @@ export function AddDegreePopover({ after, onClose }: { after: number; onClose():
       {(source === 'tempered_ji' || source === 'cents') && (
         <NumberField label={source === 'cents' ? 'Cents above root' : '± cents'} value={cents} min={-2400} max={2400} step={0.1} onChange={setCents} />
       )}
-      {source === 'harmonic' && <NumberField label="Harmonic" value={harmonic} min={1} max={64} onChange={setHarmonic} />}
       {(source === 'edo12' || source === 'custom_edo') && (
         <div className="flex gap-3">
           <NumberField label="Steps" value={steps} min={-96} max={96} onChange={setSteps} />
@@ -79,19 +76,14 @@ export function AddDegreePopover({ after, onClose }: { after: number; onClose():
         </div>
       )}
       {source === 'meantone' && variantSelect('meantone', meantone, setMeantone)}
-      {(source === 'pythagorean' || source === 'meantone') && (
-        <NumberField label="Fifths from root (− = down)" value={fifths} min={-11} max={11} onChange={setFifths} />
-      )}
-      {source === 'well' && (
-        <>
-          {variantSelect('well_temperament', well, setWell)}
-          <label className="flex flex-col gap-1">
-            <span className="label">Note (root = C)</span>
-            <select className="input" value={note} onChange={(e) => setNote(Number(e.target.value))}>
-              {NOTE_NAMES.map((n, k) => <option key={n} value={k}>{n}</option>)}
-            </select>
-          </label>
-        </>
+      {source === 'well' && variantSelect('well_temperament', well, setWell)}
+      {(source === 'pythagorean' || source === 'meantone' || source === 'well') && (
+        <label className="flex flex-col gap-1">
+          <span className="label">Note (root = C)</span>
+          <select className="input" value={note} onChange={(e) => setNote(Number(e.target.value))}>
+            {NOTE_NAMES.map((n, k) => <option key={n} value={k}>{n}</option>)}
+          </select>
+        </label>
       )}
       {source === 'frequency' && <NumberField label="Frequency" suffix="Hz" value={hz} min={1} max={20000} step={0.01} onChange={setHz} />}
 

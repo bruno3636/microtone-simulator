@@ -389,12 +389,13 @@ Behavior matches the original unless noted.
 - **Scales:** major, natural minor, harmonic minor, chromatic. Harmonic series, 12EDO and
   Custom EDO are always chromatic.
 - **Insert degree popover** (`src/tuning/degreeInput.ts`): choose a value type and type the value —
-  Just intonation (ratio), Tempered JI (ratio ± cents), Harmonic series (harmonic number), 12EDO
-  (steps), Custom EDO (steps of N), Pythagorean (fifths from root, exact 3^a/2^b in the octave),
-  Meantone (variant + fifths), Well temperament (variant + note), **Cents** (stored as
+  Just intonation (ratio), Tempered JI (ratio ± cents), 12EDO (steps), Custom EDO (steps of N),
+  Pythagorean (note), Meantone (variant + note), Well temperament (variant + note) — notes are
+  picked C–B with the root as C — **Cents** (stored as
   `1 +Nc`, editable on the card) or **Frequency** (stored as `Hz / rootHz` against the current
   root). A preview shows the expression, cents and Hz; Add is disabled until the value is valid.
-  The popover opens on the value type matching the current tuning.
+  The popover opens on the value type matching the current tuning (Just intonation for the
+  harmonic series).
 - **Root:** note select (C … B, A = 440 Hz) plus a Hz field. Editing Hz clears the note name
   unless it matches one exactly.
 - **Degree cards:** number + color chip, editable ratio expression (evaluated with mathjs; invalid

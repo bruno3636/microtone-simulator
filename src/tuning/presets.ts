@@ -21,12 +21,12 @@ export const edoNotes = (n: number): string[] =>
 const FIFTHS_FROM_C = [0, 7, 2, -3, 4, -1, 6, 1, 8, 3, -2, 5]; // C C# D Eb E F F# G G# A Bb B
 
 /** Meantone variants as fractions of the syntonic comma (81/80) taken off each fifth. */
-export const MEANTONE_FRACTIONS: Record<string, [number, number]> = {
+const MEANTONE_FRACTIONS: Record<string, [number, number]> = {
   third: [1, 3], quarter: [1, 4], fifth: [1, 5], sixth: [1, 6], twoSevenths: [2, 7],
 };
 
 /** `n` meantone fifths (narrowed by num/den of a syntonic comma) from the root, reduced into the octave. */
-export function meantoneDegree(num: number, den: number, n: number): string {
+function meantoneDegree(num: number, den: number, n: number): string {
   if (n === 0) return '1';
   const fifthExpr = `(3/2 * (80/81)^(${num}/${den}))`;
   const fifth = 1.5 * (80 / 81) ** (num / den);
