@@ -1,0 +1,65 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-display: 'Newsreader Variable', Newsreader, serif;
+  --font-body: 'DM Sans Variable', 'DM Sans', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', monospace;
+}
+
+:root,
+[data-theme='light'] {
+  --bg: #fffef8;
+  --bg-raised: #fff;
+  --border: oklch(22% 0.012 85);
+  --border-subtle: #e0ddd4;
+  --text: oklch(22% 0.018 85);
+  --text-secondary: #777;
+  --text-muted: #aaa;
+  --accent: oklch(22% 0.026 85);
+  --error: #9c5b51;
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --bg: #111;
+  --bg-raised: #1a1a1a;
+  --border: #2a2a2a;
+  --border-subtle: #222;
+  --text: #e5e5e5;
+  --text-secondary: #888;
+  --text-muted: #555;
+  --accent: #e5e5e5;
+  --error: #e85450;
+  color-scheme: dark;
+}
+
+html, body { background: var(--bg); color: var(--text); }
+body { font-family: var(--font-body); margin: 0; -webkit-font-smoothing: antialiased; }
+* { border-radius: 0 !important; }
+
+@layer components {
+  .display { font-family: var(--font-display); font-weight: 400; letter-spacing: -0.01em; }
+  .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .label { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); }
+  .panel { background: var(--bg-raised); border: 1px solid var(--border-subtle); }
+  .btn {
+    border: 1px solid var(--border-subtle); background: transparent; color: var(--text);
+    padding: 0.375rem 0.75rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em;
+    cursor: pointer; transition: border-color 0.15s, background 0.15s;
+  }
+  .btn:hover { border-color: var(--border); }
+  .btn-primary { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .seg { display: inline-flex; border: 1px solid var(--border-subtle); }
+  .seg-item {
+    padding: 0.375rem 0.75rem; font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--text-secondary); background: transparent; border: 0; cursor: pointer;
+  }
+  .seg-item[data-active='true'] { background: var(--accent); color: var(--bg); }
+  .input {
+    background: var(--bg); color: var(--text); border: 1px solid var(--border-subtle);
+    padding: 0.25rem 0.5rem; font-size: 0.8125rem;
+  }
+  .input:focus { outline: none; border-color: var(--border); }
+  .input[aria-invalid='true'] { border-color: var(--error); color: var(--error); }
+  input[type='range'] { accent-color: var(--accent); }
+}
