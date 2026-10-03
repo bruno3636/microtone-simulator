@@ -1,3 +1,4 @@
+import { useRef, type ChangeEvent } from 'react';
 import { useStore } from '../state/store';
 import { TUNINGS, SCALES, NOTE_NAMES } from '../tuning/presets';
 import { NumberField } from './ui';
@@ -8,11 +9,19 @@ const fixed = Object.entries(TUNINGS).filter(([, t]) => !t.scalable);
 export function TuningPanel() {
   const s = useStore();
   const canScale = TUNINGS[s.tuning].scalable;
+  // After a pointer-driven change, blur the select so note keys keep working (keyboard users keep focus).
+  const pointer = useRef(false);
+  const pick = (apply: (v: string) => void) => (e: ChangeEvent<HTMLSelectElement>) => {
+    apply(e.target.value);
+    if (pointer.current) e.currentTarget.blur();
+    pointer.current = false;
+  };
+  const sel = { className: 'input', onPointerDown: () => { pointer.current = true; }, onKeyDown: () => { pointer.current = false; } };
   return (
     <div className="flex flex-wrap items-end gap-4">
       <label className="flex flex-col gap-1">
         <span className="label">Tuning</span>
-        <select className="input" value={s.tuning} onChange={(e) => s.applyTemplate(e.target.value, s.scale)}>
+        <select {...sel} value={s.tuning} onChange={pick((v) => s.applyTemplate(v, s.scale))}>
           {scalable.map(([k, t]) => <option key={k} value={k}>{t.label}</option>)}
           <option disabled>────────</option>
           {fixed.map(([k, t]) => <option key={k} value={k}>{t.label}</option>)}
@@ -20,7 +29,7 @@ export function TuningPanel() {
       </label>
       <label className="flex flex-col gap-1">
         <span className="label">Scale</span>
-        <select className="input" value={s.scale} onChange={(e) => s.applyTemplate(s.tuning, e.target.value)}>
+        <select {...sel} value={s.scale} onChange={pick((v) => s.applyTemplate(s.tuning, v))}>
           {Object.keys(SCALES).map((k) => (
             <option key={k} value={k} disabled={!canScale && k !== 'chromatic'}>{k}</option>
           ))}
@@ -28,7 +37,7 @@ export function TuningPanel() {
       </label>
       <label className="flex flex-col gap-1">
         <span className="label">Root</span>
-        <select className="input" value={s.root.note} onChange={(e) => s.setRootNote(e.target.value)}>
+        <select {...sel} value={s.root.note} onChange={pick(s.setRootNote)}>
           {NOTE_NAMES.map((n) => <option key={n} value={n}>{n}</option>)}
           <option value="">—</option>
         </select>
@@ -37,7 +46,7 @@ export function TuningPanel() {
         suffix="Hz" onChange={s.setRootFreq} />
       <label className="flex flex-col gap-1">
         <span className="label">Keyboard</span>
-        <select className="input" value={s.keymap} onChange={(e) => s.setKeymap(e.target.value)}>
+        <select {...sel} value={s.keymap} onChange={pick(s.setKeymap)}>
           {Object.keys(s.keymaps).map((k) => <option key={k} value={k}>{k}</option>)}
         </select>
       </label>

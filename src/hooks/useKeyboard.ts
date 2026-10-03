@@ -3,11 +3,9 @@ import { useStore } from '../state/store';
 import { engine } from '../audio/engine';
 import { playDegree, stopDegree, stopAll } from '../audio/play';
 import { degreesForKey } from '../tuning/keymaps';
+import { isTextEntry } from './keyTarget';
+import { createKeyTracker } from './keyTracker';
 
-const isTyping = (e: KeyboardEvent) => {
-  const t = e.target as HTMLElement | null;
-  return !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
-};
 
 const lookup = (key: string) => {
   const s = useStore.getState();
@@ -16,24 +14,31 @@ const lookup = (key: string) => {
 
 export function useKeyboard(): void {
   useEffect(() => {
+    const tracker = createKeyTracker();
     const down = (e: KeyboardEvent) => {
-      if (e.repeat || e.metaKey || e.ctrlKey || e.altKey || isTyping(e)) return;
+      if (e.repeat || e.metaKey || e.ctrlKey || e.altKey || isTextEntry(e.target as Element | null)) return;
       const ds = lookup(e.key);
       if (ds.length === 0) return;
       engine.resume();
-      ds.forEach(playDegree);
+      tracker.press(e.code, ds).forEach(playDegree);
     };
     // keyup is never filtered by focus, so a note can't get stuck if focus moves mid-press
-    const up = (e: KeyboardEvent) => lookup(e.key).forEach(stopDegree);
-    const onHide = () => { if (document.hidden) stopAll(); };
+    // and releases exactly the degrees that key's keydown started (e.key can change with Shift)
+    const up = (e: KeyboardEvent) => {
+      const tracked = tracker.release(e.code);
+      if (tracked) tracked.forEach(stopDegree);
+      else lookup(e.key).filter((d) => !tracker.isActive(d)).forEach(stopDegree);
+    };
+    const releaseAll = () => { tracker.clear(); stopAll(); };
+    const onHide = () => { if (document.hidden) releaseAll(); };
     window.addEventListener('keydown', down);
     window.addEventListener('keyup', up);
-    window.addEventListener('blur', stopAll);
+    window.addEventListener('blur', releaseAll);
     document.addEventListener('visibilitychange', onHide);
     return () => {
       window.removeEventListener('keydown', down);
       window.removeEventListener('keyup', up);
-      window.removeEventListener('blur', stopAll);
+      window.removeEventListener('blur', releaseAll);
       document.removeEventListener('visibilitychange', onHide);
     };
   }, []);
