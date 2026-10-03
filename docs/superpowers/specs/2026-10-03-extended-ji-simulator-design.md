@@ -376,9 +376,10 @@ Behavior matches the original unless noted.
   - **12EDO** — 2^(k/12) (always chromatic).
   - **Custom EDO** — 2^(k/N) with a "Divisions / octave" field, N = 1–96, default 31 (always
     chromatic; saved settings on the old default 19 migrate to 31, persist v6).
-  In 12EDO and Custom EDO, pitch cards show a **Step [k] / N** row in place of Ratio (editing k sets
-  the note to 2^(k/N)); N is read from the note itself, so a step of another EDO still shows as a
-  step; only non-EDO notes (e.g. an inserted 3/2) keep the Ratio field. The 19 → 31 migration is
+  Any pitch card whose note is an EDO step (`2^(k/N)`) shows a **Step [k] / N** row in place of
+  Ratio, in every tuning — e.g. a 12EDO step inserted into a JI collection (editing k sets the
+  note to 2^(k/N); N comes from the note). In 12EDO and Custom EDO the root "1" shows as step 0;
+  non-EDO notes keep the Ratio field. The 19 → 31 migration is
   skipped while Custom EDO is in use.
   - **Pythagorean** — as the original.
   - **Meantone** — variant menu: ⅓-comma (pure minor thirds), ¼-comma (pure major thirds,

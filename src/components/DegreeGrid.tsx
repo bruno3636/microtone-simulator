@@ -40,8 +40,10 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
   const tuning = useStore((s) => s.tuning);
   const edo = useStore((s) => s.edo);
   const edoTuning = tuning === 'edo12' || tuning === 'custom_edo';
-  // the note's own divisions win, so a leftover note from another EDO still shows as a step
-  const parsed = edoTuning ? (note.trim() === '1' ? { step: 0, divisions: tuning === 'edo12' ? 12 : edo } : parseEdo(note)) : null;
+  // any note written as an EDO step shows Step k / N (N from the note), whatever the tuning —
+  // e.g. a 12EDO step inserted into a just-intonation collection; the root "1" counts as step 0
+  // only in an EDO tuning
+  const parsed = parseEdo(note) ?? (edoTuning && note.trim() === '1' ? { step: 0, divisions: tuning === 'edo12' ? 12 : edo } : null);
   const step = parsed?.step ?? null;
   const divisions = parsed?.divisions ?? null;
   const hz = degreeFreq(notes, i, rootHz);
