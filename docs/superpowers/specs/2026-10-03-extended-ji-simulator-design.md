@@ -18,7 +18,7 @@ The MIDI tab is removed. Visuals match trichordtrainer.com.
 
 ## 2. Stack & project layout
 
-- Vite + React 18 + TypeScript + Tailwind CSS v4, Zustand (with `persist`), mathjs, Vitest.
+- Vite + React 19 + TypeScript + Tailwind CSS v4, Zustand (with `persist`), mathjs, Vitest.
 - Fonts self-hosted via `@fontsource-variable/newsreader`, `@fontsource-variable/dm-sans`,
   `@fontsource-variable/jetbrains-mono`.
 - Builds to static files in `dist/` with `base: './'` so it can be hosted anywhere (GitHub Pages included).
@@ -137,7 +137,8 @@ the Synthesizer tab and defaults to **0 (fully dry)**.
 
 - `keydown` with `event.repeat` is ignored (no machine-gun retriggers).
 - Keys are ignored while focus is in an input, select, or textarea, so typing a ratio never plays
-  notes (the original had this bug).
+  notes (the original had this bug). Exception: after a pointer change, selects blur so note keys
+  keep working; range/checkbox/button inputs never block note keys.
 - On window `blur` or tab hide, all notes are released (no stuck notes).
 - Pointer playing: `pointerdown` on a degree card plays it and `pointerup`/`pointercancel`/
   `pointerleave` releases it. Multi-touch plays chords. Pressing the card's inputs/buttons
@@ -202,7 +203,8 @@ LIN/EXP/LOG map to curve amounts 0 / +0.6 / −0.6 in the shared rule.
 Pure functions:
 - `levelAt(env, tHeld)`: level during attack/decay/sustain.
 - `releaseLevelAt(env, fromLevel, tReleased)`: level during release.
-- `sampleSegment(from, to, durationMs, curve, points)`: `Float32Array` for `setValueCurveAtTime`.
+- `sampleSegment(from, to, curve, points)`: `Float32Array` of curve samples. The engine itself schedules
+  32-point linear ramps per §3.3 rather than `setValueCurveAtTime`.
 
 Editor UI: an SVG graph. The x axis is time; the sustain portion is drawn as a fixed-width plateau.
 - Draggable handles: attack peak (x = attack), decay end (x = decay, y = sustain), release
