@@ -67,3 +67,14 @@ export function createFromTemplate(
   if (!t.scalable) return { notes: all, scale: 'chromatic' };
   return { notes: SCALES[scale].map((n) => all[n - 1]), scale };
 }
+
+/** Step k of an N-EDO note ("2^(k/N)", or "1" for step 0); null for anything else. */
+export function edoStep(expr: string, n: number): number | null {
+  const e = String(expr).replace(/\s+/g, '');
+  if (e === '1') return 0;
+  const m = /^2\^\((-?\d+)\/(\d+)\)$/.exec(e);
+  return m && Number(m[2]) === n ? Number(m[1]) : null;
+}
+
+/** N-EDO note for step k. */
+export const edoExpr = (k: number, n: number) => (k === 0 ? '1' : `2^(${k}/${n})`);

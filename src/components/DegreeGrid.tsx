@@ -1,7 +1,7 @@
 import { useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent as RPointerEvent } from 'react';
 import { nearestSlot, previewIndex, type SlotRect } from './reorder';
 import { useStore } from '../state/store';
-import { evalRatio, degreeFreq, splitCents, joinCents } from '../tuning/ratios';
+import { evalRatio, degreeFreq, splitCents, joinCents, edoStep, edoExpr } from '../tuning/ratios';
 import { NumberField } from './ui';
 import { AddDegreePopover } from './AddDegreePopover';
 import { degreeColor } from '../theme';
@@ -36,6 +36,11 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
   const valid = evalRatio(note) != null;
   // tempered JI degrees carry a cents offset ("5/4 -13.7c"): edit the ratio and the offset separately
   const { ratio, cents } = splitCents(note);
+  // 12EDO / Custom EDO: edit the step number instead of the ratio expression
+  const tuning = useStore((s) => s.tuning);
+  const edo = useStore((s) => s.edo);
+  const divisions = tuning === 'edo12' ? 12 : tuning === 'custom_edo' ? edo : null;
+  const step = divisions == null ? null : edoStep(note, divisions);
   const hz = degreeFreq(notes, i, rootHz);
   const ratioValue = evalRatio(note);
   const centsAboveRoot = ratioValue == null ? null : 1200 * Math.log2(ratioValue);
@@ -99,11 +104,19 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
           </div>
         </div>
       </div>
-      <label className="flex items-center gap-2">
-        <span className="label">Ratio</span>
-        <input className="input mono w-full text-right" value={cents == null ? note : ratio} aria-invalid={!valid}
-          onChange={(e) => setNote(i, cents == null ? e.target.value : joinCents(e.target.value, cents))} />
-      </label>
+      {step != null && divisions != null ? (
+        <div className="flex items-center justify-between gap-2">
+          <span className="label">Step</span>
+          <NumberField hideLabel label="EDO step" value={step} min={-999} max={999} suffix={`/ ${divisions}`}
+            onChange={(k) => setNote(i, edoExpr(Math.round(k), divisions))} />
+        </div>
+      ) : (
+        <label className="flex items-center gap-2">
+          <span className="label">Ratio</span>
+          <input className="input mono w-full text-right" value={cents == null ? note : ratio} aria-invalid={!valid}
+            onChange={(e) => setNote(i, cents == null ? e.target.value : joinCents(e.target.value, cents))} />
+        </label>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-x-1 gap-y-1">
         <span className="label">Cents</span>
         <span className="ml-auto flex min-w-0 items-center gap-1">

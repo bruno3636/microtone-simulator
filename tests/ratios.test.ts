@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { evalRatio, degreeRatio, degreeFreq, isPure, createFromTemplate, mod, splitCents, joinCents } from '../src/tuning/ratios';
+import { evalRatio, degreeRatio, degreeFreq, isPure, createFromTemplate, mod, splitCents, joinCents, edoStep, edoExpr } from '../src/tuning/ratios';
 import { TUNINGS, TUNING_ORDER, tuningNotes } from '../src/tuning/presets';
 
 const cents = (expr: string) => 1200 * Math.log2(evalRatio(expr)!);
@@ -116,6 +116,27 @@ describe('ratios', () => {
       expect(n).toHaveLength(12);
       expect(n[7]).toBe('3/2 +0c');
       expect(evalRatio(n[4])).toBe(1.25);
+    });
+  });
+
+  describe('EDO steps (Step / N row)', () => {
+    it('reads the step of an N-EDO note', () => {
+      expect(edoStep('2^(7/12)', 12)).toBe(7);
+      expect(edoStep('1', 31)).toBe(0);
+      expect(edoStep('2^(31/31)', 31)).toBe(31);
+      expect(edoStep('2^(-3/31)', 31)).toBe(-3);
+    });
+    it('is null for other notes or another division', () => {
+      expect(edoStep('2^(7/12)', 31)).toBeNull();
+      expect(edoStep('3/2', 12)).toBeNull();
+    });
+    it('writes a step back as an expression', () => {
+      expect(edoExpr(0, 31)).toBe('1');
+      expect(edoExpr(18, 31)).toBe('2^(18/31)');
+      expect(evalRatio(edoExpr(18, 31))).toBeCloseTo(2 ** (18 / 31), 12);
+    });
+    it('Custom EDO defaults to 31 divisions', () => {
+      expect(tuningNotes('custom_edo')).toHaveLength(31);
     });
   });
 });

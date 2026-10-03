@@ -79,7 +79,7 @@ describe('store', () => {
     const saved = JSON.parse(localStorage.getItem('ejis-settings')!);
     expect(saved.state.volume).toBe(0.42);
     expect(saved.state.held).toBeUndefined();
-    expect(saved.version).toBe(5);
+    expect(saved.version).toBe(6);
   });
 
   describe('brightness decay + instrument presets', () => {
@@ -313,5 +313,17 @@ describe('store', () => {
     const saved = JSON.parse(localStorage.getItem('ejis-settings')!);
     expect(saved.state.latched).toBeUndefined();
     s().setLatched(5, false);
+  });
+  it('Custom EDO starts at 31 divisions', () => {
+    expect(useStore.getInitialState().edo).toBe(31);
+  });
+  it('saved settings still on the old 19-division default move to 31', async () => {
+    const prev = JSON.parse(localStorage.getItem('ejis-settings') ?? '{"state":{}}').state;
+    localStorage.setItem('ejis-settings', JSON.stringify({ state: { ...prev, edo: 19 }, version: 5 }));
+    await useStore.persist.rehydrate();
+    expect(s().edo).toBe(31);
+    localStorage.setItem('ejis-settings', JSON.stringify({ state: { ...prev, edo: 22 }, version: 5 }));
+    await useStore.persist.rehydrate();
+    expect(s().edo).toBe(22);
   });
 });

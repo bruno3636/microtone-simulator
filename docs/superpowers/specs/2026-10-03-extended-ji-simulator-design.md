@@ -374,7 +374,10 @@ Behavior matches the original unless noted.
     (`c`, `¢` or `cents`). Degree cards show the ratio, and the "± cents" offset input sits on the Cents row beside the total; inter-scale ratios show the just ratio plus the cents difference.
   - **Harmonic series** — harmonics 1–12 (always chromatic).
   - **12EDO** — 2^(k/12) (always chromatic).
-  - **Custom EDO** — 2^(k/N) with a "Divisions / octave" field, N = 1–96, default 19 (always chromatic).
+  - **Custom EDO** — 2^(k/N) with a "Divisions / octave" field, N = 1–96, default 31 (always
+    chromatic; saved settings on the old default 19 migrate to 31, persist v6).
+  In 12EDO and Custom EDO, pitch cards show a **Step [k] / N** row in place of Ratio (editing k sets
+  the note to 2^(k/N)); cards holding anything other than an N-EDO step keep the Ratio field.
   - **Pythagorean** — as the original.
   - **Meantone** — variant menu: ⅓-comma (pure minor thirds), ¼-comma (pure major thirds,
     default), ⅕-comma, ⅙-comma, 2/7-comma (Zarlino). Fifth = 3/2 · (80/81)^f; notes on the chain

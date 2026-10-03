@@ -110,7 +110,7 @@ export const useStore = create<StoreState>()(
       tab: 'tuning',
       tuning: 'just_intonation',
       tuningVariant: '',
-      edo: 19,
+      edo: 31,
       scale: initialTemplate.scale,
       notes: initialTemplate.notes,
       root: { note: 'A', freq: NOTE_FREQS.A },
@@ -253,15 +253,16 @@ export const useStore = create<StoreState>()(
       name: 'ejis-settings',
       // v2 added darkHarmonics + brightnessTau (missing keys fall back to the initial state on merge);
       // v3 removed the STRINGS preset; v4 made envelope curves continuous amounts;
-      // v5 reorganised the tunings (renamed 12EDO/meantone, removed the custom presets)
-      version: 5,
+      // v5 reorganised the tunings (renamed 12EDO/meantone, removed the custom presets);
+      // v6 changed the Custom EDO default from 19 to 31
+      version: 6,
       storage: createJSONStorage(() => safeStorage),
       partialize: ({ held: _held, latched: _latched, ...rest }) => {
         void _held;
         void _latched;
         return Object.fromEntries(Object.entries(rest).filter(([, v]) => typeof v !== 'function')) as Partial<StoreState>;
       },
-      migrate: (persisted) => {
+      migrate: (persisted, version) => {
         const p = persisted as Partial<StoreState>;
         if (p.preset && !(p.preset in SYNTH_PRESETS)) p.preset = 'custom';
         const renamed: Record<string, [string, string]> = {
@@ -269,6 +270,7 @@ export const useStore = create<StoreState>()(
           meantone_temperament: ['meantone', 'quarter'],
         };
         if (p.tuning && renamed[p.tuning]) [p.tuning, p.tuningVariant] = renamed[p.tuning];
+        if (version < 6 && p.edo === 19) p.edo = 31; // still on the old default
         if (p.tuning && !(p.tuning in TUNINGS)) {
           p.tuning = 'just_intonation';
           p.tuningVariant = '';

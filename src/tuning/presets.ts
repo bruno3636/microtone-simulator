@@ -118,7 +118,7 @@ export const TUNING_ORDER = [
 ];
 
 /** The notes of a tuning: its variant's (default if unknown), N-EDO for custom EDO, else its fixed notes. */
-export function tuningNotes(tuning: string, variant?: string, edo = 19): string[] {
+export function tuningNotes(tuning: string, variant?: string, edo = 31): string[] {
   const t = TUNINGS[tuning] ?? TUNINGS.just_intonation;
   if (t.edo) return edoNotes(Math.max(1, Math.round(edo)));
   if (t.variants) return (t.variants[variant ?? ''] ?? t.variants[t.defaultVariant!]).notes;
