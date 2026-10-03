@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware';
 import type { HarmonicSettings } from '../audio/harmonics';
-import type { EnvelopeSettings } from '../audio/envelope';
+import { curveAmount, type EnvelopeSettings } from '../audio/envelope';
 import { DEFAULT_KEYMAPS, NOTE_FREQS } from '../tuning/presets';
 import { createFromTemplate } from '../tuning/ratios';
 import { DEFAULT_ENVELOPE, DEFAULT_HARMONICS, SYNTH_PRESETS, type PresetId } from './presets';
@@ -207,8 +207,8 @@ export const useStore = create<StoreState>()(
     {
       name: 'ejis-settings',
       // v2 added darkHarmonics + brightnessTau (missing keys fall back to the initial state on merge);
-      // v3 removed the STRINGS preset
-      version: 3,
+      // v3 removed the STRINGS preset; v4 made envelope curves continuous amounts
+      version: 4,
       storage: createJSONStorage(() => safeStorage),
       partialize: ({ held: _held, ...rest }) => {
         void _held;
@@ -217,6 +217,10 @@ export const useStore = create<StoreState>()(
       migrate: (persisted) => {
         const p = persisted as Partial<StoreState>;
         if (p.preset && !(p.preset in SYNTH_PRESETS)) p.preset = 'custom';
+        if (p.envelope) {
+          const e = p.envelope;
+          p.envelope = { ...e, attackCurve: curveAmount(e.attackCurve), decayCurve: curveAmount(e.decayCurve), releaseCurve: curveAmount(e.releaseCurve) };
+        }
         return p as StoreState;
       },
     },

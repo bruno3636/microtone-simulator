@@ -3,7 +3,7 @@ import { levelAt, releaseLevelAt, sampleSegment, effMs, type EnvelopeSettings } 
 
 const env: EnvelopeSettings = {
   attack: 100, decay: 200, sustain: 0.5, release: 400,
-  attackCurve: 'lin', decayCurve: 'lin', releaseCurve: 'lin',
+  attackCurve: 0, decayCurve: 0, releaseCurve: 0,
 };
 
 describe('envelope', () => {
@@ -36,7 +36,7 @@ describe('envelope', () => {
     expect(levelAt(zero, 3)).toBeCloseTo(1);
   });
   it('sampleSegment returns exact endpoints and the requested length', () => {
-    const s = sampleSegment(1, 0.2, 'exp', 256);
+    const s = sampleSegment(1, 0.2, 0.6, 256);
     expect(s).toHaveLength(256);
     expect(s[0]).toBeCloseTo(1);
     expect(s[255]).toBeCloseTo(0.2);

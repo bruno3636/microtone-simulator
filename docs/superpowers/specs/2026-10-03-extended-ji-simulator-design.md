@@ -199,9 +199,9 @@ LOG · LIN · EXP), an ALL/ODD/EVEN segmented control, and a bar chart (canvas o
 | decay | 0–5000 ms | 200 ms |
 | sustain | 0–100 % | 80 % |
 | release | 0–10000 ms | 400 ms |
-| attackCurve / decayCurve / releaseCurve | LIN / EXP / LOG | LIN / EXP / EXP |
+| attackCurve / decayCurve / releaseCurve | curve amount −1 … +1 (0 = linear) | 0 / 0.6 / 0.6 |
 
-LIN/EXP/LOG map to curve amounts 0 / +0.6 / −0.6 in the shared rule.
+Curves are continuous amounts in the shared rule (§4.1). Older saved settings with LIN/EXP/LOG names migrate to 0 / +0.6 / −0.6 (persist v4).
 
 Pure functions:
 - `levelAt(env, tHeld)`: level during attack/decay/sustain.
@@ -214,9 +214,15 @@ Editor UI: an SVG graph. The x axis is time; the sustain portion is drawn as a f
   end (x = release).
 - The x scale auto-fits attack + decay + release (minimum span 50 ms) and is frozen while dragging.
 - Number fields (ms, %) next to the graph stay in sync with the handles.
-- Each segment has a small LIN/EXP/LOG segmented control under the graph.
+- Each sloped segment (attack, decay, release) has a small filled **curve dot** at its midpoint.
+  Dragging it up or down moves the curve's midpoint and sets the curve amount (bisection on the
+  shared rule); amounts within ±0.05 snap to linear, and a double-click resets to linear. Dragging
+  a straight line's dot is how it becomes EXP or LOG — there are no LIN/EXP/LOG buttons. Flat
+  segments (e.g. decay into 100 % sustain) show no curve dot. Each segment's amount is shown as a
+  readout (LIN / EXP 0.60 / LOG 0.35) under its time field.
 - Each held note shows a dot at its current position (from `engine.getVoices()`), in its
-  degree color.
+  degree color. On release the dot starts exactly where it was (the snapshot's `heldMs`) and
+  glides to the end of the release segment over the release time; it never jumps.
 
 ### 4.4 Presets
 

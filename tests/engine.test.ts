@@ -5,7 +5,7 @@ import { FakeContext, FakeGain, asCtx } from './fakeAudio';
 
 const env: EnvelopeSettings = {
   attack: 100, decay: 100, sustain: 0.5, release: 200,
-  attackCurve: 'lin', decayCurve: 'lin', releaseCurve: 'lin',
+  attackCurve: 0, decayCurve: 0, releaseCurve: 0,
 };
 
 let fake: FakeContext;
@@ -92,6 +92,17 @@ describe('AudioEngine', () => {
     expect(eng.getVoices()).toHaveLength(1);
     fake.oscillators[0].end(); // the old voice ending must not remove the new one
     expect(eng.getVoices().map((x) => x.id)).toEqual(['0']);
+  });
+
+  it('snapshots report how long the note was held (for the release dot)', () => {
+    eng.noteOn('0', 440);
+    fake.currentTime = 0.3;
+    expect(eng.getVoices()[0].heldMs).toBeCloseTo(300);
+    eng.noteOff('0');
+    fake.currentTime = 0.4;
+    const v = eng.getVoices()[0];
+    expect(v.heldMs).toBeCloseTo(300);
+    expect(v.elapsedMs).toBeCloseTo(100);
   });
 
   it('caps polyphony at 24 by stealing the oldest voice', () => {

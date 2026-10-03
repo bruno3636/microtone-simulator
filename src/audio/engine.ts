@@ -1,6 +1,6 @@
 import { computeAmplitudes, type HarmonicSettings } from './harmonics';
 import { normalizeRms, periodicWaveCoeffs, buildWavetable } from './timbre';
-import { levelAt, releaseLevelAt, effMs, CURVE_AMOUNT, type CurveKind, type EnvelopeSettings } from './envelope';
+import { levelAt, releaseLevelAt, effMs, type EnvelopeSettings } from './envelope';
 import { shapeCurve } from './curves';
 import { createImpulseResponse } from './reverb';
 
@@ -11,6 +11,8 @@ export interface VoiceSnapshot {
   level: number;
   stage: VoiceStage;
   elapsedMs: number;
+  /** how long the note was held: time from note-on to release (equals elapsedMs while held) */
+  heldMs: number;
   env: EnvelopeSettings;
   /** attack-spectrum weight: 1 = fully bright, 0 = fully the sustain spectrum (always 1 when brightness decay is off) */
   brightness: number;
@@ -55,7 +57,7 @@ interface Voice {
 
 const DEFAULT_ENV: EnvelopeSettings = {
   attack: 10, decay: 200, sustain: 0.8, release: 400,
-  attackCurve: 'lin', decayCurve: 'exp', releaseCurve: 'exp',
+  attackCurve: 0, decayCurve: 0.6, releaseCurve: 0.6,
 };
 
 export class AudioEngine {
@@ -148,8 +150,7 @@ export class AudioEngine {
   }
 
   /** Schedule a curved segment as RAMP_STEPS linear ramps. Caller must have an event at t0 with value `from`. */
-  private segment(p: AudioParam, from: number, to: number, curve: CurveKind, t0: number, dur: number) {
-    const c = CURVE_AMOUNT[curve];
+  private segment(p: AudioParam, from: number, to: number, c: number, t0: number, dur: number) {
     for (let i = 1; i <= RAMP_STEPS; i++) {
       p.linearRampToValueAtTime(shapeCurve(from, to, i / RAMP_STEPS, c), t0 + (dur * i) / RAMP_STEPS);
     }
@@ -377,6 +378,7 @@ export class AudioEngine {
     for (const v of this.voices.values()) {
       let stage: VoiceStage;
       let elapsedMs: number;
+      const heldMs = ((v.releaseAt ?? now) - v.start) * 1000;
       if (v.releaseAt != null) {
         stage = 'release';
         elapsedMs = (now - v.releaseAt) * 1000;
@@ -386,7 +388,7 @@ export class AudioEngine {
         stage = elapsedMs < a ? 'attack' : elapsedMs < a + effMs(v.settings.decay) ? 'decay' : 'sustain';
       }
       out.push({
-        id: v.id, freq: v.freq, level: this.levelOf(v, now), stage, elapsedMs, env: v.settings,
+        id: v.id, freq: v.freq, level: this.levelOf(v, now), stage, elapsedMs, heldMs, env: v.settings,
         brightness: this.brightnessOf(v, now),
       });
     }

@@ -1,9 +1,8 @@
 import { useRef, useState, type PointerEvent as RPointerEvent } from 'react';
 import { useStore, type Spectrum } from '../state/store';
 import { computeAmplitudes, MAX_HARMONICS, type HarmonicFilter, type HarmonicSettings } from '../audio/harmonics';
-import { NumberField, Segmented, Slider } from './ui';
+import { NumberField, Segmented, Slider, fmtCurve } from './ui';
 
-const fmtCurve = (c: number) => (Math.abs(c) < 0.005 ? 'LIN' : c > 0 ? `EXP ${c.toFixed(2)}` : `LOG ${(-c).toFixed(2)}`);
 
 export function HarmonicsEditor() {
   const attack = useStore((s) => s.harmonics);

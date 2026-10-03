@@ -32,25 +32,25 @@ function measured(levels: number[]): HarmonicSettings {
 
 export const DEFAULT_HARMONICS: HarmonicSettings = { count: 8, start: 1, end: 0.1, curve: 0.5, filter: 'all', tweaks: {} };
 export const DEFAULT_ENVELOPE: EnvelopeSettings = {
-  attack: 10, decay: 200, sustain: 0.8, release: 400, attackCurve: 'lin', decayCurve: 'exp', releaseCurve: 'exp',
+  attack: 10, decay: 200, sustain: 0.8, release: 400, attackCurve: 0, decayCurve: 0.6, releaseCurve: 0.6,
 };
 
 export const SYNTH_PRESETS: Record<Exclude<PresetId, 'custom'>, SynthPreset> = {
   sine: {
     label: 'Sine',
     harmonics: { count: 1, start: 1, end: 1, curve: 0, filter: 'all', tweaks: {} },
-    envelope: { attack: 10, decay: 200, sustain: 1, release: 300, attackCurve: 'lin', decayCurve: 'exp', releaseCurve: 'exp' },
+    envelope: { attack: 10, decay: 200, sustain: 1, release: 300, attackCurve: 0, decayCurve: 0.6, releaseCurve: 0.6 },
   },
   organ: {
     // pipe organ principal chorus, see spectra.ts; flue-pipe speech ≈40 ms, flat sustain
     label: 'Organ',
     harmonics: measured(ORGAN_CHORUS),
-    envelope: { attack: 40, decay: 60, sustain: 1, release: 120, attackCurve: 'log', decayCurve: 'lin', releaseCurve: 'exp' },
+    envelope: { attack: 40, decay: 60, sustain: 1, release: 120, attackCurve: -0.6, decayCurve: 0, releaseCurve: 0.6 },
   },
   pluck: {
     label: 'Pluck',
     harmonics: { count: 32, start: 1, end: 0.02, curve: 0.85, filter: 'all', tweaks: {} },
-    envelope: { attack: 3, decay: 1200, sustain: 0, release: 500, attackCurve: 'lin', decayCurve: 'exp', releaseCurve: 'exp' },
+    envelope: { attack: 3, decay: 1200, sustain: 0, release: 500, attackCurve: 0, decayCurve: 0.6, releaseCurve: 0.6 },
   },
   // Instrument presets from spectral analysis (see spectra.ts for sources).
   // Piano/guitar decay to silence while held; decay length chosen so the EXP curve reaches −20 dB
@@ -60,44 +60,44 @@ export const SYNTH_PRESETS: Record<Exclude<PresetId, 'custom'>, SynthPreset> = {
     harmonics: measured(PIANO_ATTACK),
     dark: measured(PIANO_SUSTAIN),
     tauMs: PIANO_TAU_MS,
-    envelope: { attack: 4, decay: 2000, sustain: 0, release: 250, attackCurve: 'lin', decayCurve: 'exp', releaseCurve: 'exp' },
+    envelope: { attack: 4, decay: 2000, sustain: 0, release: 250, attackCurve: 0, decayCurve: 0.6, releaseCurve: 0.6 },
   },
   guitar: {
     label: 'Guitar',
     harmonics: measured(GUITAR_ATTACK),
     dark: measured(GUITAR_SUSTAIN),
     tauMs: GUITAR_TAU_MS,
-    envelope: { attack: 3, decay: 2000, sustain: 0, release: 180, attackCurve: 'lin', decayCurve: 'exp', releaseCurve: 'exp' },
+    envelope: { attack: 3, decay: 2000, sustain: 0, release: 180, attackCurve: 0, decayCurve: 0.6, releaseCurve: 0.6 },
   },
   violin: {
     label: 'Violin',
     harmonics: measured(VIOLIN),
-    envelope: { attack: 90, decay: 120, sustain: 0.9, release: 180, attackCurve: 'log', decayCurve: 'exp', releaseCurve: 'exp' },
+    envelope: { attack: 90, decay: 120, sustain: 0.9, release: 180, attackCurve: -0.6, decayCurve: 0.6, releaseCurve: 0.6 },
   },
   cello: {
     label: 'Cello',
     harmonics: measured(CELLO),
-    envelope: { attack: 130, decay: 150, sustain: 0.9, release: 300, attackCurve: 'log', decayCurve: 'exp', releaseCurve: 'exp' },
+    envelope: { attack: 130, decay: 150, sustain: 0.9, release: 300, attackCurve: -0.6, decayCurve: 0.6, releaseCurve: 0.6 },
   },
   // Winds and brass from SHARC (see spectra.ts): sustained tones, onset times typical of each instrument.
   flute: {
     label: 'Flute',
     harmonics: measured(FLUTE),
-    envelope: { attack: 80, decay: 100, sustain: 0.95, release: 150, attackCurve: 'log', decayCurve: 'exp', releaseCurve: 'exp' },
+    envelope: { attack: 80, decay: 100, sustain: 0.95, release: 150, attackCurve: -0.6, decayCurve: 0.6, releaseCurve: 0.6 },
   },
   clarinet: {
     label: 'Clarinet',
     harmonics: measured(CLARINET),
-    envelope: { attack: 40, decay: 80, sustain: 0.95, release: 120, attackCurve: 'log', decayCurve: 'exp', releaseCurve: 'exp' },
+    envelope: { attack: 40, decay: 80, sustain: 0.95, release: 120, attackCurve: -0.6, decayCurve: 0.6, releaseCurve: 0.6 },
   },
   trombone: {
     label: 'Trombone',
     harmonics: measured(TROMBONE),
-    envelope: { attack: 60, decay: 120, sustain: 0.9, release: 160, attackCurve: 'log', decayCurve: 'exp', releaseCurve: 'exp' },
+    envelope: { attack: 60, decay: 120, sustain: 0.9, release: 160, attackCurve: -0.6, decayCurve: 0.6, releaseCurve: 0.6 },
   },
   trumpet: {
     label: 'Trumpet',
     harmonics: measured(TRUMPET),
-    envelope: { attack: 35, decay: 100, sustain: 0.9, release: 140, attackCurve: 'log', decayCurve: 'exp', releaseCurve: 'exp' },
+    envelope: { attack: 35, decay: 100, sustain: 0.9, release: 140, attackCurve: -0.6, decayCurve: 0.6, releaseCurve: 0.6 },
   },
 };

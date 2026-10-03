@@ -1,5 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
 
+/** Curve amount as text: LIN, EXP 0.60 (below the straight line) or LOG 0.60 (above). */
+export const fmtCurve = (c: number) => (Math.abs(c) < 0.005 ? 'LIN' : c > 0 ? `EXP ${c.toFixed(2)}` : `LOG ${(-c).toFixed(2)}`);
+
 export function Segmented<T extends string>({ value, options, onChange, label }: {
   value: T; options: { value: T; label: string }[]; onChange(v: T): void; label?: string;
 }) {

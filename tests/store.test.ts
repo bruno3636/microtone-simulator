@@ -77,7 +77,7 @@ describe('store', () => {
     const saved = JSON.parse(localStorage.getItem('ejis-settings')!);
     expect(saved.state.volume).toBe(0.42);
     expect(saved.state.held).toBeUndefined();
-    expect(saved.version).toBe(3);
+    expect(saved.version).toBe(4);
   });
 
   describe('brightness decay + instrument presets', () => {
@@ -153,5 +153,15 @@ describe('store', () => {
       await useStore.persist.rehydrate();
       expect(s().preset).toBe('custom');
     });
+  });
+
+  it('saved envelopes with the old LIN/EXP/LOG curve names convert to curve amounts', async () => {
+    const prev = JSON.parse(localStorage.getItem('ejis-settings') ?? '{"state":{}}').state;
+    localStorage.setItem('ejis-settings', JSON.stringify({
+      state: { ...prev, envelope: { attack: 10, decay: 200, sustain: 0.8, release: 400, attackCurve: 'lin', decayCurve: 'exp', releaseCurve: 'log' } },
+      version: 3,
+    }));
+    await useStore.persist.rehydrate();
+    expect(s().envelope).toMatchObject({ attackCurve: 0, decayCurve: 0.6, releaseCurve: -0.6 });
   });
 });
