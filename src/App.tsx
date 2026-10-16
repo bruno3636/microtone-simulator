@@ -31,8 +31,8 @@ export default function App() {
         </div>
         <Visualizer />
         <DegreeGrid />
-        <KeyboardMap />
         <InterScaleRatios />
+        <KeyboardMap />
       </main>
       <footer className="mx-auto max-w-[1200px] px-4 pb-8">
         <p className="label normal-case tracking-normal">

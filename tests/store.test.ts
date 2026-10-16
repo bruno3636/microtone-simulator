@@ -79,7 +79,8 @@ describe('store', () => {
     const saved = JSON.parse(localStorage.getItem('ejis-settings')!);
     expect(saved.state.volume).toBe(0.42);
     expect(saved.state.held).toBeUndefined();
-    expect(saved.version).toBe(7);
+    expect(saved.version).toBe(9);
+    expect(saved.state.bend).toBeUndefined();
   });
 
   describe('brightness decay + instrument presets', () => {
@@ -273,6 +274,15 @@ describe('store', () => {
       await useStore.persist.rehydrate();
       expect(s()).toMatchObject({ tuning: 'just_intonation', notes: ['1 +0c', '5/4 -13.7c'] });
     });
+    it("v8: saved default keymaps gain ; and ' after L", async () => {
+      const prev = JSON.parse(localStorage.getItem('ejis-settings') ?? '{"state":{}}').state;
+      const old = { scale: { 0: 'a', 8: 'l,x', 9: 'c', 10: 'v' }, chords: { 0: 'a' } };
+      localStorage.setItem('ejis-settings', JSON.stringify({ state: { ...prev, keymaps: old }, version: 7 }));
+      await useStore.persist.rehydrate();
+      expect(s().keymaps.scale).toMatchObject({ 9: 'c,;', 10: "v,'" });
+      expect(s().keymaps.chords).toEqual({ 0: 'a' });
+      expect(s().keymaps.piano).toMatchObject({ 1: 'w,o2', 6: 't' });
+    });
   });
   it('12EDO is always chromatic', () => {
     s().applyTemplate('edo12', 'major');
@@ -335,5 +345,37 @@ describe('store', () => {
     localStorage.setItem('ejis-settings', JSON.stringify({ state: { ...prev, tuning: 'custom_edo', edo: 19 }, version: 5 }));
     await useStore.persist.rehydrate();
     expect(s().edo).toBe(19);
+  });
+
+  describe('scale presets', () => {
+    it('loading sets tuning, variant, EDO and notes; Reset reloads it; picking a tuning clears it', () => {
+      s().loadScalePreset('edo24-rast');
+      expect(s()).toMatchObject({ tuning: 'custom_edo', edo: 24, scalePreset: 'edo24-rast' });
+      expect(s().notes).toHaveLength(7);
+      s().setNote(1, '9/8');
+      s().resetNotes();
+      expect(s().notes[1]).toBe('2^(4/24)');
+      s().loadScalePreset('mt-sixth-major');
+      expect(s()).toMatchObject({ tuning: 'meantone', tuningVariant: 'sixth' });
+      s().applyTemplate('just_intonation', 'major');
+      expect(s().scalePreset).toBeNull();
+    });
+    it('12-note presets use the piano key layout; others switch back to the scale layout', () => {
+      s().loadScalePreset('well-vallotti-chromatic');
+      expect(s().keymap).toBe('piano');
+      s().loadScalePreset('ji-major');
+      expect(s().keymap).toBe('scale');
+    });
+  });
+
+  it('pitch bend: live notes bend, sustained notes do not', async () => {
+    const { liveFreq } = await import('../src/audio/play');
+    s().applyTemplate('just_intonation', 'chromatic');
+    const st = { notes: s().notes, root: { note: 'A', freq: 440 }, latched: [2], bend: 100 };
+    expect(liveFreq(st, 0)).toBeCloseTo(440 * 2 ** (1 / 12), 9);
+    expect(liveFreq(st, 2)).toBeCloseTo(440 * 9 / 8, 9);
+    s().setBend(5000);
+    expect(s().bend).toBe(1200);
+    s().setBend(0);
   });
 });

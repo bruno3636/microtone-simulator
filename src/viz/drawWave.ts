@@ -112,9 +112,9 @@ export function findTrigger(buf: Float32Array, window: number): number {
   return 0;
 }
 
-export function drawLiveWave(dc: DrawCtx, analyser: AnalyserNode, buf: Float32Array<ArrayBuffer>, gain: number) {
+/** Draw a captured time-domain buffer (the caller decides how often to capture: the live speed). */
+export function drawLiveWave(dc: DrawCtx, buf: Float32Array<ArrayBuffer>, gain: number) {
   const { ctx, w, h } = dc;
-  analyser.getFloatTimeDomainData(buf);
   centerLine(dc);
   let rms = 0;
   for (const v of buf) rms += v * v;

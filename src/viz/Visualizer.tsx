@@ -5,7 +5,7 @@ import { degreeFreq, mod } from '../tuning/ratios';
 import { degreeColor } from '../theme';
 import { buildPartials, findCoincidences } from './partials';
 import { drawComputedWave, drawLiveWave, drawHint, type DrawCtx, type WaveNote } from './drawWave';
-import { drawComputedSpectrum, drawLiveSpectrum } from './drawSpectrum';
+import { drawComputedSpectrum, drawLiveSpectrum, type Hover } from './drawSpectrum';
 import { NumberField, Segmented, Slider } from '../components/ui';
 
 interface Drawn extends WaveNote { degree: number }
@@ -41,7 +41,7 @@ export function Visualizer() {
   const setViz = useStore((s) => s.setViz);
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const hoverX = useRef<number | null>(null);
+  const hover = useRef<Hover | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current!;
@@ -68,6 +68,9 @@ export function Visualizer() {
     let timeBuf: Float32Array<ArrayBuffer> | null = null;
     let freqBuf: Float32Array<ArrayBuffer> | null = null;
     let peaks: Float32Array | null = null;
+    // live wave: frames' worth of time since the last capture (speed 1 = a new capture every frame)
+    let liveAcc = 0;
+    let captured = false;
 
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
@@ -90,7 +93,7 @@ export function Visualizer() {
         } else {
           const partials = buildPartials(notes, engine.getAmplitudes(), 20000, engine.getDarkAmplitudes());
           const colors = new Map(notes.map((n) => [n.id, n.color]));
-          drawComputedSpectrum(dc, partials, findCoincidences(partials), (id) => colors.get(id) ?? dc.colors.text, v.freqScale, hoverX.current);
+          drawComputedSpectrum(dc, partials, findCoincidences(partials), (id) => colors.get(id) ?? dc.colors.text, v.freqScale, hover.current);
         }
         return;
       }
@@ -98,14 +101,20 @@ export function Visualizer() {
       const analyser = engine.getAnalyser();
       if (!analyser) return drawHint(dc, 'Play a note');
       if (v.view === 'wave') {
-        if (!timeBuf || timeBuf.length !== analyser.fftSize) timeBuf = new Float32Array(analyser.fftSize);
-        drawLiveWave(dc, analyser, timeBuf, v.liveGain);
+        if (!timeBuf || timeBuf.length !== analyser.fftSize) { timeBuf = new Float32Array(analyser.fftSize); captured = false; }
+        liveAcc += dt * 60 * v.liveSpeed;
+        if (!captured || liveAcc >= 1) {
+          analyser.getFloatTimeDomainData(timeBuf);
+          captured = true;
+          liveAcc %= 1;
+        }
+        drawLiveWave(dc, timeBuf, v.liveGain);
       } else {
         if (!freqBuf || freqBuf.length !== analyser.frequencyBinCount) {
           freqBuf = new Float32Array(analyser.frequencyBinCount);
           peaks = new Float32Array(analyser.frequencyBinCount).fill(-200);
         }
-        drawLiveSpectrum(dc, analyser, freqBuf, peaks!, dt);
+        drawLiveSpectrum(dc, analyser, freqBuf, peaks!, dt, hover.current);
       }
     };
     raf = requestAnimationFrame(frame);
@@ -134,13 +143,21 @@ export function Visualizer() {
             options={[{ value: 'log', label: 'Log' }, { value: 'lin', label: 'Lin' }]} />
         )}
         {viz.source === 'live' && viz.view === 'wave' && (
-          <Slider label="Gain" value={viz.liveGain} min={1} max={8} step={0.5}
-            format={(x) => `×${x}`} onChange={(liveGain) => setViz({ liveGain })} />
+          <>
+            <Slider label="Gain" value={viz.liveGain} min={1} max={8} step={0.5}
+              format={(x) => `×${x}`} onChange={(liveGain) => setViz({ liveGain })} />
+            <Slider label="Speed" value={viz.liveSpeed} min={0} max={1} step={0.01}
+              format={(x) => (x === 0 ? 'frozen' : x === 1 ? 'real time' : `${Math.round(x * 60)} fps`)}
+              onChange={(liveSpeed) => setViz({ liveSpeed })} />
+          </>
         )}
       </div>
       <div ref={wrapRef} className="relative h-[320px] w-full sm:h-[380px]"
-        onPointerMove={(e) => { hoverX.current = e.clientX - e.currentTarget.getBoundingClientRect().left; }}
-        onPointerLeave={() => { hoverX.current = null; }}>
+        onPointerMove={(e) => {
+          const r = e.currentTarget.getBoundingClientRect();
+          hover.current = { x: e.clientX - r.left, y: e.clientY - r.top };
+        }}
+        onPointerLeave={() => { hover.current = null; }}>
         <canvas ref={canvasRef} className="absolute inset-0" aria-label="Wave and spectrum visualizer" />
       </div>
     </section>

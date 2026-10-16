@@ -3,6 +3,7 @@ import { persist, createJSONStorage, type StateStorage } from 'zustand/middlewar
 import type { HarmonicSettings } from '../audio/harmonics';
 import { curveAmount, type EnvelopeSettings } from '../audio/envelope';
 import { DEFAULT_KEYMAPS, NOTE_FREQS, TUNINGS } from '../tuning/presets';
+import { SCALE_PRESETS } from '../tuning/scalePresets';
 import { createFromTemplate } from '../tuning/ratios';
 import { DEFAULT_ENVELOPE, DEFAULT_HARMONICS, SYNTH_PRESETS, type PresetId } from './presets';
 import type { ThemeMode } from '../theme';
@@ -15,6 +16,8 @@ export interface VizSettings {
   showSum: boolean;
   freqScale: 'log' | 'lin';
   liveGain: number;
+  /** live wave refresh speed: 1 = every frame, lower holds each capture longer, 0 = frozen */
+  liveSpeed: number;
 }
 
 interface Data {
@@ -45,6 +48,10 @@ interface Data {
   viz: VizSettings;
   open: { keyboard: boolean; ratios: boolean };
   theme: ThemeMode;
+  /** the scale preset the notes were loaded from (Reset reloads it), or null */
+  scalePreset: string | null;
+  /** pitch bend in cents on live (not sustained) notes; springs back to 0, not persisted */
+  bend: number;
 }
 
 interface Actions {
@@ -80,6 +87,8 @@ interface Actions {
   setViz(p: Partial<VizSettings>): void;
   toggleOpen(k: keyof Data['open']): void;
   setTheme(m: ThemeMode): void;
+  loadScalePreset(id: string): void;
+  setBend(cents: number): void;
 }
 
 export type StoreState = Data & Actions;
@@ -126,9 +135,11 @@ export const useStore = create<StoreState>()(
       preset: 'custom',
       volume: 0.6,
       space: 0,
-      viz: { view: 'wave', source: 'computed', periods: 2, speed: 0.5, showSum: true, freqScale: 'log', liveGain: 1 },
+      viz: { view: 'wave', source: 'computed', periods: 2, speed: 0.5, showSum: true, freqScale: 'log', liveGain: 1, liveSpeed: 1 },
       open: { keyboard: true, ratios: false },
       theme: 'system',
+      scalePreset: null,
+      bend: 0,
 
       setTab: (tab) => set({ tab }),
       applyTemplate: (tuning, scale) => {
@@ -136,19 +147,34 @@ export const useStore = create<StoreState>()(
         // switching tuning resets the variant to that tuning's default
         const variant = tuning === s.tuning && s.tuningVariant ? s.tuningVariant : (TUNINGS[tuning]?.defaultVariant ?? '');
         const t = createFromTemplate(tuning, scale, variant, s.edo);
-        set({ tuning, tuningVariant: variant, scale: t.scale, notes: t.notes, shown: [0] });
+        set({ tuning, tuningVariant: variant, scale: t.scale, notes: t.notes, shown: [0], scalePreset: null });
       },
       setTuningVariant: (variant) => {
         const s = get();
         const t = createFromTemplate(s.tuning, s.scale, variant, s.edo);
-        set({ tuningVariant: variant, scale: t.scale, notes: t.notes, shown: [0] });
+        set({ tuningVariant: variant, scale: t.scale, notes: t.notes, shown: [0], scalePreset: null });
       },
       setEdo: (n) => {
         const edo = Math.min(96, Math.max(1, Math.round(n)));
         set({ edo });
-        if (TUNINGS[get().tuning]?.edo) get().applyTemplate(get().tuning, get().scale);
+        if (TUNINGS[get().tuning]?.edo) get().applyTemplate(get().tuning, get().scale); // also clears a scale preset
       },
-      resetNotes: () => get().applyTemplate(get().tuning, get().scale),
+      resetNotes: () => {
+        const { scalePreset } = get();
+        if (scalePreset && SCALE_PRESETS.some((p) => p.id === scalePreset)) get().loadScalePreset(scalePreset);
+        else get().applyTemplate(get().tuning, get().scale);
+      },
+      loadScalePreset: (id) => {
+        const p = SCALE_PRESETS.find((x) => x.id === id);
+        if (!p) return;
+        set((s) => ({
+          tuning: p.tuning, tuningVariant: p.variant ?? TUNINGS[p.tuning]?.defaultVariant ?? '', edo: p.edo ?? s.edo,
+          scale: 'chromatic', notes: [...p.notes], shown: [0], scalePreset: id,
+          // 12-note presets play like a piano (A W S E D …); others go back from the piano layout
+          keymap: p.notes.length === 12 && s.keymaps.piano ? 'piano' : s.keymap === 'piano' ? 'scale' : s.keymap,
+        }));
+      },
+      setBend: (bend) => set({ bend: Math.max(-1200, Math.min(1200, bend)) }),
       clearNotes: () => set({ notes: ['1'], shown: [0] }),
       setNote: (i, expr) => set((s) => ({ notes: s.notes.map((n, j) => (j === i ? expr : n)) })),
       deleteDegree: (i) =>
@@ -255,10 +281,11 @@ export const useStore = create<StoreState>()(
       // v3 removed the STRINGS preset; v4 made envelope curves continuous amounts;
       // v5 reorganised the tunings (renamed 12EDO/meantone, removed the custom presets);
       // v6 changed the Custom EDO default from 19 to 31
-      version: 7,
+      version: 9,
       storage: createJSONStorage(() => safeStorage),
       // shown (visualizer) has no toggle on the cards any more: it always restarts as the root
-      partialize: ({ held: _held, latched: _latched, shown: _shown, ...rest }) => {
+      partialize: ({ held: _held, latched: _latched, shown: _shown, bend: _bend, ...rest }) => {
+        void _bend;
         void _held;
         void _latched;
         void _shown;
@@ -279,6 +306,12 @@ export const useStore = create<StoreState>()(
           p.tuning = 'just_intonation';
           p.tuningVariant = '';
         }
+        // v8: ";" and "'" continue the home row after L in the default scale keymap
+        const km = p.keymaps?.scale;
+        if (version < 8 && km && km[9] === 'c' && km[10] === 'v') p.keymaps = { ...p.keymaps, scale: { ...km, 9: 'c,;', 10: "v,'" } };
+        // v9: the piano layout joins saved keymaps
+        if (p.keymaps && !p.keymaps.piano) p.keymaps = { ...p.keymaps, piano: { ...DEFAULT_KEYMAPS.piano } };
+        if (p.viz) p.viz = { ...p.viz, liveSpeed: p.viz.liveSpeed ?? 1 };
         if (p.envelope) {
           const e = p.envelope;
           p.envelope = { ...e, attackCurve: curveAmount(e.attackCurve), decayCurve: curveAmount(e.decayCurve), releaseCurve: curveAmount(e.releaseCurve) };

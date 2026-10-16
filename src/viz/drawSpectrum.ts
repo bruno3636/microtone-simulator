@@ -40,6 +40,66 @@ function axis(dc: DrawCtx, fmin: number, fmax: number, scale: 'log' | 'lin', bas
   ctx.stroke();
 }
 
+export interface Hover { x: number; y: number }
+
+/** Tooltip box near the pointer (right of it, flipped left at the edge), its top at the pointer's height. */
+function tooltip(dc: DrawCtx, lines: { text: string; color?: string }[], hx: number, hy: number) {
+  const { ctx, w, h, colors } = dc;
+  ctx.font = '11px "JetBrains Mono Variable", monospace';
+  const sw = 10; // colour swatch
+  const lw = Math.max(...lines.map((l) => ctx.measureText(l.text).width + (l.color ? sw + 6 : 0)));
+  const bw = lw + 12;
+  const bh = lines.length * 15 + 8;
+  const bx = hx + 12 + bw > w ? Math.max(2, hx - 12 - bw) : hx + 12;
+  const by = Math.min(h - bh - 2, Math.max(2, hy - bh / 2));
+  ctx.fillStyle = colors.bg;
+  ctx.strokeStyle = colors.text;
+  ctx.lineWidth = 1;
+  ctx.fillRect(bx, by, bw, bh);
+  ctx.strokeRect(bx + 0.5, by + 0.5, bw - 1, bh - 1);
+  lines.forEach((l, i) => {
+    const ty = by + 15 + i * 15;
+    let tx = bx + 6;
+    if (l.color) {
+      ctx.fillStyle = l.color;
+      ctx.fillRect(tx, ty - 9, sw, sw);
+      tx += sw + 6;
+    }
+    ctx.fillStyle = colors.text;
+    ctx.fillText(l.text, tx, ty);
+  });
+}
+
+/**
+ * Partials under the pointer: the nearest line within `radius` px, plus every other partial drawn
+ * on (practically) the same line — overlapping harmonics of several notes.
+ */
+export function partialsAt(partials: Partial[], hoverX: number, xOf: (f: number) => number, radius = 6): Partial[] {
+  let best: Partial | null = null;
+  let bestD = radius;
+  for (const p of partials) {
+    const d = Math.abs(xOf(p.freq) - hoverX);
+    if (d < bestD) { bestD = d; best = p; }
+  }
+  if (!best) return [];
+  const bx = xOf(best.freq);
+  return partials
+    .filter((p) => Math.abs(xOf(p.freq) - bx) < 1.5 || Math.abs(1200 * Math.log2(p.freq / best!.freq)) <= 0.5)
+    .sort((a, b) => a.freq - b.freq || a.degree - b.degree);
+}
+
+/** Live spectrum frequency gridlines; labels are thinned so they never collide. */
+export const LIVE_TICKS = [20, 30, 40, 50, 60, 80, 100, 150, 200, 300, 400, 500, 600, 800, 1000, 1500, 2000, 3000, 4000, 5000, 6000, 8000, 10000, 15000, 20000];
+export function liveLabels(w: number, fmin = 20, fmax = 20000, minGap = 30): number[] {
+  const out: number[] = [];
+  let last = -Infinity;
+  for (const f of LIVE_TICKS) {
+    const x = freqToX(f, fmin, fmax, w, 'log');
+    if (x - last >= minGap && x <= w - 16) { out.push(f); last = x; }
+  }
+  return out;
+}
+
 function vline(ctx: CanvasRenderingContext2D, x: number, y0: number, y1: number) {
   ctx.beginPath();
   ctx.moveTo(x, y0);
@@ -49,7 +109,7 @@ function vline(ctx: CanvasRenderingContext2D, x: number, y0: number, y1: number)
 
 export function drawComputedSpectrum(
   dc: DrawCtx, partials: Partial[], found: { coincident: Coincidence[]; near: NearMiss[] },
-  colorOf: (noteId: string) => string, scale: 'log' | 'lin', hoverX: number | null,
+  colorOf: (noteId: string) => string, scale: 'log' | 'lin', hover: Hover | null,
 ) {
   const { ctx, w, h, colors } = dc;
   if (partials.length === 0) return drawHint(dc, 'Play a note or show (~) a degree');
@@ -88,29 +148,21 @@ export function drawComputedSpectrum(
     ctx.fillText('◆', cx - 4, y - 4);
   }
 
-  if (hoverX != null) {
-    let best: Partial | null = null;
-    let bestD = 6;
-    for (const p of partials) {
-      const d = Math.abs(x(p.freq) - hoverX);
-      if (d < bestD) { bestD = d; best = p; }
-    }
-    if (best) {
-      const text = `degree ${best.degree + 1} · harmonic ${best.harmonic} · ${best.freq.toFixed(1)} Hz · ${best.amp.toFixed(2)}`;
-      ctx.font = '11px "JetBrains Mono Variable", monospace';
-      const tw = ctx.measureText(text).width + 12;
-      const bx = Math.min(w - tw - 2, Math.max(2, hoverX + 8));
-      ctx.fillStyle = colors.bg;
-      ctx.strokeStyle = colors.text;
-      ctx.fillRect(bx, 4, tw, 20);
-      ctx.strokeRect(bx + 0.5, 4.5, tw - 1, 19);
-      ctx.fillStyle = colors.text;
-      ctx.fillText(text, bx + 6, 18);
+  if (hover) {
+    // every partial on the hovered line, one row each (several notes' harmonics can overlap)
+    const under = partialsAt(partials, hover.x, x);
+    if (under.length) {
+      tooltip(dc, under.map((p) => ({
+        color: colorOf(p.noteId),
+        text: `pitch ${p.degree + 1} · harmonic ${p.harmonic} · ${p.freq.toFixed(1)} Hz · ${p.amp.toFixed(2)}`,
+      })), hover.x, hover.y);
     }
   }
 }
 
-export function drawLiveSpectrum(dc: DrawCtx, analyser: AnalyserNode, buf: Float32Array<ArrayBuffer>, peaks: Float32Array, dt: number) {
+export function drawLiveSpectrum(
+  dc: DrawCtx, analyser: AnalyserNode, buf: Float32Array<ArrayBuffer>, peaks: Float32Array, dt: number, hover: Hover | null,
+) {
   const { ctx, w, h, colors } = dc;
   analyser.getFloatFrequencyData(buf);
   const binHz = analyser.context.sampleRate / analyser.fftSize;
@@ -121,13 +173,13 @@ export function drawLiveSpectrum(dc: DrawCtx, analyser: AnalyserNode, buf: Float
   const yOf = (db: number) => top + (Math.min(0, Math.max(-100, db)) / -100) * (base - top);
   const fAt = (px: number) => fmin * (fmax / fmin) ** (px / w);
 
-  // octave Cs as faint gridlines, labels at 100 / 1k / 10k
+  // gridlines at 1-2-3-5 steps per decade; as many labels as fit
   ctx.lineWidth = 1;
   ctx.strokeStyle = colors.border;
-  for (let f = 32.703; f < fmax; f *= 2) vline(ctx, freqToX(f, fmin, fmax, w, 'log'), 0, base);
+  for (const f of LIVE_TICKS) vline(ctx, freqToX(f, fmin, fmax, w, 'log'), 0, base);
   ctx.font = '10px "JetBrains Mono Variable", monospace';
   ctx.fillStyle = colors.muted;
-  for (const f of [100, 1000, 10000]) ctx.fillText(fmtHz(f), freqToX(f, fmin, fmax, w, 'log') + 3, base + 13);
+  for (const f of liveLabels(w, fmin, fmax)) ctx.fillText(fmtHz(f), freqToX(f, fmin, fmax, w, 'log') + 3, base + 13);
 
   for (let i = 0; i < buf.length; i++) peaks[i] = Math.max(buf[i], (Number.isFinite(peaks[i]) ? peaks[i] : -200) - 20 * dt);
 
@@ -168,4 +220,18 @@ export function drawLiveSpectrum(dc: DrawCtx, analyser: AnalyserNode, buf: Float
   ctx.stroke();
 
   if (loudest < -95) drawHint(dc, 'Play a note');
+
+  if (hover && hover.x >= 0 && hover.x < cols) {
+    // crosshair with the frequency under the pointer and the level there
+    const px = Math.floor(hover.x);
+    ctx.strokeStyle = colors.secondary;
+    ctx.setLineDash([3, 3]);
+    vline(ctx, px + 0.5, 0, base);
+    ctx.setLineDash([]);
+    const db = level[px];
+    tooltip(dc, [
+      { text: `${fAt(hover.x).toFixed(fAt(hover.x) < 100 ? 1 : 0)} Hz` },
+      { text: Number.isFinite(db) && db > -200 ? `${db.toFixed(1)} dB` : '— dB' },
+    ], hover.x, hover.y);
+  }
 }

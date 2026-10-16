@@ -10,6 +10,9 @@ import { playDegree, stopDegree, toggleLatch } from '../audio/play';
 import { keysForDegree } from '../tuning/keymaps';
 import { alternativesFor } from '../tuning/degreeInput';
 import { sourceBadge } from '../tuning/sourceBadge';
+import { convertSource, SOURCE_TARGETS, targetKey } from '../tuning/convertSource';
+import { octaveOf, shiftOctave } from '../tuning/octave';
+import { PitchBend } from './PitchBend';
 import { useFinePointer } from '../hooks/useFinePointer';
 import { engine } from '../audio/engine';
 
@@ -54,6 +57,11 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
   const ratioValue = evalRatio(note);
   const centsAboveRoot = ratioValue == null ? null : 1200 * Math.log2(ratioValue);
   const badge = sourceBadge(note, tuning, edo);
+  // the badge opens a menu of every source; picking one moves the pitch to that source's nearest note
+  const targets = SOURCE_TARGETS(edo, divisions ?? undefined);
+  const octave = octaveOf(note);
+  const shiftOct = (k: number) =>
+    setNote(i, step != null && divisions != null ? setCents(edoExpr(step + k * divisions, divisions), cents ?? 0) : shiftOctave(note, k));
 
   const release = (e: RPointerEvent) => {
     if (!pointers.current.delete(e.pointerId)) return;
@@ -106,7 +114,19 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
           onPointerUp={grip.up}
           onPointerCancel={grip.cancel}
           onKeyDown={(e) => grip.key(i, e)}>{keys.length ? keys.join('') : i + 1}</button>
-          <span className="label ml-1 shrink-0 whitespace-nowrap text-sm normal-case tracking-normal" title={`Source: ${badge}`}>{badge}</span>
+          <label className="relative ml-1 flex shrink-0 items-center" title="Change source">
+            <span className="sr-only">Source of pitch {i + 1}</span>
+            <select className="label cursor-pointer appearance-none border-0 bg-transparent py-0 pl-0 pr-3 text-sm normal-case tracking-normal hover:text-[var(--text)]"
+              style={{ fieldSizing: 'content' } as CSSProperties}
+              value={badge} onChange={(e) => {
+                const t = targets.find((x) => targetKey(x) === e.target.value);
+                if (t) setNote(i, convertSource(note, t));
+              }}>
+              {!targets.some((t) => targetKey(t) === badge) && <option value={badge}>{badge}</option>}
+              {targets.map((t) => <option key={targetKey(t)} value={targetKey(t)}>{targetKey(t)}</option>)}
+            </select>
+            <span className="label pointer-events-none absolute right-0 text-[9px]" aria-hidden>▾</span>
+          </label>
         </div>
       </div>
       {tag ? (
@@ -114,7 +134,7 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
         <select className="input w-full min-w-0 text-sm" value={tag.pos} aria-label={`Interval of pitch ${i + 1}`}
           onChange={(e) => {
             const alt = alternativesFor(tag).find((a) => a.pos === Number(e.target.value));
-            if (alt) setNote(i, setCents(alt.note, cents ?? 0)); // keeps the offset
+            if (alt) setNote(i, setCents(shiftOctave(alt.note, octave), cents ?? 0)); // keeps octave and offset
           }}>
           {alternativesFor(tag).map((a) => <option key={a.pos} value={a.pos}>{a.name}</option>)}
         </select>
@@ -140,6 +160,16 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
           <NumberField hideLabel label="Cents offset" value={cents ?? 0} min={-1200} max={1200} step={0.1} arrowStep={1}
             onChange={(c) => setNote(i, setCents(note, c))} />
           <span className="mono text-xs">{centsAboveRoot == null ? '—' : `${centsAboveRoot.toFixed(1)}¢`}</span>
+        </span>
+      </div>
+      <div className="flex items-center justify-between gap-1">
+        <span className="label">Octave</span>
+        <span className="flex items-center gap-1">
+          <button type="button" className="btn px-1.5 py-0 leading-tight" aria-label={`Pitch ${i + 1} down an octave`} title="Down an octave"
+            onClick={() => shiftOct(-1)}>−</button>
+          <span className="mono w-6 text-center text-sm">{octave > 0 ? `+${octave}` : octave}</span>
+          <button type="button" className="btn px-1.5 py-0 leading-tight" aria-label={`Pitch ${i + 1} up an octave`} title="Up an octave"
+            onClick={() => shiftOct(1)}>+</button>
         </span>
       </div>
       <div className="flex justify-between">
@@ -241,6 +271,7 @@ export function DegreeGrid() {
         <h2 className="display m-0 text-xl">Pitch Collection</h2>
         <span className="label">press a card or key to play · shift-click to sustain · drag a number to reorder</span>
       </div>
+      <PitchBend />
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 min-[880px]:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
         {Array.from({ length: count }, (_, i) => <DegreeCard key={i} i={i} dragStyle={dragStyle(i)} grip={grip} />)}
         <div className="relative" data-popover>

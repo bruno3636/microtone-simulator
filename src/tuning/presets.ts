@@ -142,6 +142,9 @@ export const NOTE_FREQS: Record<string, number> = {
 };
 
 export const DEFAULT_KEYMAPS: Record<string, Record<string, string>> = {
-  scale: { 0: 'a', 1: 's', 2: 'd', 3: 'f', 4: 'g', 5: 'h', 6: 'j', 7: 'k,z,y', 8: 'l,x', 9: 'c', 10: 'v', 11: 'b', 12: 'n', 13: 'm' },
+  scale: { 0: 'a', 1: 's', 2: 'd', 3: 'f', 4: 'g', 5: 'h', 6: 'j', 7: 'k,z,y', 8: 'l,x', 9: "c,;", 10: "v,'", 11: 'b', 12: 'n', 13: 'm' },
+  // piano shape for 12-note scales: white keys on the home row, black keys above; K O L P ; ' go on
+  // into the next octave ("k2" = degree 0 one octave up)
+  piano: { 0: 'a,k2', 1: 'w,o2', 2: 's,l2', 3: 'e,p2', 4: 'd,;2', 5: "f,'2", 6: 't', 7: 'g', 8: 'y', 9: 'h', 10: 'u', 11: 'j' },
   chords: { 0: 'a,f2,h2', 1: 's,g2,j', 2: 'a,d,h2', 3: 's,f,j2', 4: 'a,d,g', 5: 's,f,h', 6: 'j,d,g', 7: 'z,y', 8: 'x', 9: 'c', 10: 'v', 11: 'b', 12: 'n', 13: 'm' },
 };

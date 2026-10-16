@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { nudge } from './nudge';
 import { isNumericKey } from '../hooks/keyTarget';
 
@@ -45,6 +45,9 @@ export function NumberField({ label, value, min, max, step = 1, suffix, onChange
 }) {
   const [text, setText] = useState(String(value));
   useEffect(() => setText(String(value)), [value]);
+  // fast key repeats can arrive before a re-render: step from the latest value, not the rendered one
+  const latest = useRef(value);
+  useEffect(() => { latest.current = value; }, [value]);
   const invalid = text.trim() === '' || Number.isNaN(Number(text)) || Number(text) < min || Number(text) > max;
   return (
     <label className="flex flex-col gap-1">
@@ -61,9 +64,10 @@ export function NumberField({ label, value, min, max, step = 1, suffix, onChange
             // only number keys type here; other keys play notes (the global keyboard handler)
             if (e.key.length === 1 && !isNumericKey(e.key) && !e.metaKey && !e.ctrlKey) e.preventDefault();
             if (arrowStep == null) return;
-            const n = nudge(e.key, value, arrowStep, min, max);
+            const n = nudge(e.key, latest.current, arrowStep, min, max);
             if (n == null) return;
             e.preventDefault();
+            latest.current = n;
             setText(String(n));
             onChange(n);
           }}

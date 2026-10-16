@@ -36,3 +36,26 @@ describe('draw helpers', () => {
     expect(blendedSample(table, null, 0.3, 0.25)).toBeCloseTo(1);
   });
 });
+
+describe('spectrum hover helpers', () => {
+  it('partialsAt returns every partial on the hovered line (overlapping harmonics of several notes)', async () => {
+    const { partialsAt } = await import('../src/viz/drawSpectrum');
+    const P = (noteId: string, degree: number, harmonic: number, freq: number) => ({ noteId, degree, harmonic, freq, amp: 0.5 });
+    const parts = [P('0', 0, 3, 660), P('7', 7, 2, 660), P('0', 0, 1, 220), P('4', 4, 1, 275)];
+    const xOf = (f: number) => f; // 1 px per Hz
+    expect(partialsAt(parts, 662, xOf).map((p) => p.degree)).toEqual([0, 7]);
+    expect(partialsAt(parts, 221, xOf).map((p) => p.harmonic)).toEqual([1]);
+    expect(partialsAt(parts, 400, xOf)).toEqual([]);
+  });
+  it('liveLabels shows more labels on wider canvases, never closer than the gap', async () => {
+    const { liveLabels, freqToX } = await import('../src/viz/drawSpectrum');
+    const narrow = liveLabels(360);
+    const wide = liveLabels(1100);
+    expect(wide.length).toBeGreaterThan(narrow.length);
+    expect(wide.length).toBeGreaterThanOrEqual(12);
+    for (const ls of [narrow, wide]) {
+      const xs = ls.map((f) => freqToX(f, 20, 20000, ls === narrow ? 360 : 1100, 'log'));
+      expect(xs.every((x, i) => i === 0 || x - xs[i - 1] >= 30)).toBe(true);
+    }
+  });
+});

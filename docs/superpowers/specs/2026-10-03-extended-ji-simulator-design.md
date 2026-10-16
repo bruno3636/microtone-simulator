@@ -569,3 +569,36 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
 - MIDI file playback and MIDI input.
 - Fully per-harmonic envelopes (brightness decay in §4.6 covers the main effect with two spectra).
 - Saving or sharing custom tunings as files or links.
+
+## Revisions 2026-10-16
+
+- **Layout:** Inter-Note Ratio sits above the Keyboard section.
+- **Live retuning:** held notes (key or pointer) and sustained notes glide to edited values; fast
+  ↑ / ↓ repeats step from the latest value (`NumberField` keeps a ref), so no presses are lost.
+- **Octave row** on every card: − / + move the pitch an octave (`shiftOctave`: EDO steps ± N,
+  rational values stay fractions, other values get one `(…) * 2^(n)` factor; tag and cents kept).
+  The interval picker keeps the card's octave (`octaveOf`).
+- **Source menu:** the badge is a select over every source (`SOURCE_TARGETS`: JI, 12EDO, the
+  custom EDO and the note's own EDO, Pyth, the five meantones, the four wells). Picking one moves
+  the pitch to that source's nearest note in the same octave, keeping its cents offset
+  (`convertSource`; JI uses the 12-note just scale, written as a plain fraction).
+- **Keymaps:** the default scale map continues the home row with `;` and `'` (degrees 9, 10). A
+  **piano** map (`A W S E D F T G Y H U J`, then `K O L P ; '` into the next octave) is used
+  automatically by 12-note scale presets; loading another preset leaves the piano map for the
+  scale map (persist v8/v9 migrate saved keymaps).
+- **Pitch bend** slider above the cards: ±1 / ±2 / ±12 semitone range, springs back to 0 on
+  release; bends live (held, not sustained) notes, including notes started while bent
+  (`liveFreq`; `bend` not persisted). Sustaining a bent note returns it to its unbent pitch.
+- **Scale presets** (`SCALE_PRESETS`, "Preset scale" select, grouped by source): just major / minor
+  / pentatonic / septimal major / harmonics 8–16; 12EDO major, minor, harmonic minor, pentatonic,
+  blues, whole tone; 19EDO major, 22EDO superpyth major, 24EDO maqam Rast, 31EDO major, 53EDO
+  major; Pythagorean major / minor / pentatonic; ¼-comma major / minor / chromatic, ⅙-comma major;
+  Werckmeister III chromatic, Kirnberger III major, Vallotti chromatic, Young major. Loading sets
+  tuning, variant, EDO and notes; Reset reloads the preset; choosing a tuning or scale clears it.
+- **Visualizer:**
+  - The computed-spectrum tooltip follows the pointer's height and lists every partial on the
+    hovered line (`partialsAt`), so overlapping harmonics of several notes each get a row with
+    their colour.
+  - The live spectrum has gridlines at 1-2-3-5 steps per decade, labelled as densely as fits
+    (`liveLabels`, ≥ 30 px apart), plus a crosshair with the frequency and dB under the pointer.
+  - The live wave has a **Speed** slider: real time (a new capture every frame) down to frozen.
