@@ -59,3 +59,22 @@ describe('spectrum hover helpers', () => {
     }
   });
 });
+
+describe('amplitudes relative to the fundamental', () => {
+  it('ampVsFundamental: a partial as a ratio of its own note’s fundamental', async () => {
+    const { ampVsFundamental } = await import('../src/viz/drawSpectrum');
+    const P = (noteId: string, harmonic: number, amp: number) => ({ noteId, degree: 0, harmonic, freq: 100 * harmonic, amp });
+    const parts = [P('0', 1, 0.8), P('0', 3, 0.2), P('7', 1, 0.5), P('7', 2, 0.6), P('9', 2, 0.3)];
+    expect(ampVsFundamental(parts[0], parts)).toBe('fundamental');
+    expect(ampVsFundamental(parts[1], parts)).toBe('0.25× fund.');
+    expect(ampVsFundamental(parts[3], parts)).toBe('1.2× fund.');
+    expect(ampVsFundamental(parts[4], parts)).toBe('0.30'); // no fundamental: plain amplitude
+  });
+  it('fundamentalDb: the strongest bin within ±3 % of the fundamental', async () => {
+    const { fundamentalDb } = await import('../src/viz/drawSpectrum');
+    const buf = new Float32Array(100).fill(-100);
+    buf[44] = -20; buf[45] = -12; buf[90] = -5; // binHz 10 → 440–450 Hz around the fundamental, 900 Hz elsewhere
+    expect(fundamentalDb(buf, 10, 440)).toBe(-12);
+    expect(fundamentalDb(buf, 10, null)).toBeNull();
+  });
+});

@@ -70,6 +70,7 @@ export function Visualizer() {
     let peaks: Float32Array | null = null;
     // live wave: frames' worth of time since the last capture (speed 1 = a new capture every frame)
     let liveAcc = 0;
+    const liveRef = { db: null as number | null };
     let captured = false;
 
     const frame = (now: number) => {
@@ -114,7 +115,11 @@ export function Visualizer() {
           freqBuf = new Float32Array(analyser.frequencyBinCount);
           peaks = new Float32Array(analyser.frequencyBinCount).fill(-200);
         }
-        drawLiveSpectrum(dc, analyser, freqBuf, peaks!, dt, hover.current);
+        // 0 dB follows the lowest sounding fundamental; the linear axis spans its expected partials
+        const voices = engine.getVoices().filter((x) => x.level > 1e-3);
+        const fundamental = voices.length ? Math.min(...voices.map((x) => x.freq)) : null;
+        const maxHz = voices.length ? Math.max(...voices.map((x) => x.freq)) * engine.getAmplitudes().length * 1.15 : 5000;
+        drawLiveSpectrum(dc, analyser, freqBuf, peaks!, dt, hover.current, { scale: v.freqScale, fundamental, maxHz, ref: liveRef });
       }
     };
     raf = requestAnimationFrame(frame);
@@ -138,7 +143,7 @@ export function Visualizer() {
               onClick={() => setViz({ showSum: !viz.showSum })}>Sum</button>
           </>
         )}
-        {viz.source === 'computed' && viz.view === 'spectrum' && (
+        {viz.view === 'spectrum' && (
           <Segmented<VizSettings['freqScale']> label="Frequency axis" value={viz.freqScale} onChange={(freqScale) => setViz({ freqScale })}
             options={[{ value: 'log', label: 'Log' }, { value: 'lin', label: 'Lin' }]} />
         )}

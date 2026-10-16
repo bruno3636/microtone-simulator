@@ -602,3 +602,16 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
   - The live spectrum has gridlines at 1-2-3-5 steps per decade, labelled as densely as fits
     (`liveLabels`, ≥ 30 px apart), plus a crosshair with the frequency and dB under the pointer.
   - The live wave has a **Speed** slider: real time (a new capture every frame) down to frozen.
+
+### 2026-10-16 (later)
+
+- Computed spectrum: coincident partials are drawn as stacked segments with no ◆ marker; the
+  hover box gives each partial's amplitude relative to its own note's fundamental
+  (`ampVsFundamental`: "fundamental", "0.38× fund.", or the plain amplitude when that note has no
+  fundamental partial).
+- Live spectrum: 0 dB is the level of the lowest sounding fundamental (`fundamentalDb`, strongest
+  bin within ±3 %, smoothed across frames and kept through release; plain dBFS until one is
+  measured). The level axis spans +10 … −90 dB with gridlines every 20 dB (the 0 dB line is
+  labelled "0 dB = fundamental"); the crosshair reads "… dB re fund.". The Log / Lin frequency
+  axis now applies to the live spectrum too: log 20 Hz–20 kHz; lin 0 Hz up to the highest expected
+  partial ×1.15 (1–20 kHz), with 1-2-5 gridlines at least 48 px apart.

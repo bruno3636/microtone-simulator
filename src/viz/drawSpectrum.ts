@@ -88,6 +88,14 @@ export function partialsAt(partials: Partial[], hoverX: number, xOf: (f: number)
     .sort((a, b) => a.freq - b.freq || a.degree - b.degree);
 }
 
+/** A partial's amplitude as a ratio of its own note's fundamental ("0.25× fund."), or plain if it has none. */
+export function ampVsFundamental(p: Partial, partials: Partial[]): string {
+  if (p.harmonic === 1) return 'fundamental';
+  const f = partials.find((q) => q.noteId === p.noteId && q.harmonic === 1);
+  if (!f || f.amp === 0) return p.amp.toFixed(2);
+  return `${+(p.amp / f.amp).toFixed(2)}× fund.`;
+}
+
 /** Live spectrum frequency gridlines; labels are thinned so they never collide. */
 export const LIVE_TICKS = [20, 30, 40, 50, 60, 80, 100, 150, 200, 300, 400, 500, 600, 800, 1000, 1500, 2000, 3000, 4000, 5000, 6000, 8000, 10000, 15000, 20000];
 export function liveLabels(w: number, fmin = 20, fmax = 20000, minGap = 30): number[] {
@@ -111,7 +119,7 @@ export function drawComputedSpectrum(
   dc: DrawCtx, partials: Partial[], found: { coincident: Coincidence[]; near: NearMiss[] },
   colorOf: (noteId: string) => string, scale: 'log' | 'lin', hover: Hover | null,
 ) {
-  const { ctx, w, h, colors } = dc;
+  const { ctx, w, h } = dc;
   if (partials.length === 0) return drawHint(dc, 'Play a note or show (~) a degree');
   const freqs = partials.map((p) => p.freq);
   const fmin = Math.max(10, Math.min(...freqs) / 2);
@@ -133,8 +141,7 @@ export function drawComputedSpectrum(
     vline(ctx, x(p.freq), base, base - len(p.amp));
   }
 
-  // coincident partials: stacked segments in each note's colour, ◆ on top
-  ctx.font = '10px "JetBrains Mono Variable", monospace';
+  // coincident partials: stacked segments in each note's colour
   for (const c of found.coincident) {
     const cx = x(c.freq);
     let y = base;
@@ -144,8 +151,6 @@ export function drawComputedSpectrum(
       vline(ctx, cx, y, y - l);
       y -= l;
     }
-    ctx.fillStyle = colors.text;
-    ctx.fillText('◆', cx - 4, y - 4);
   }
 
   if (hover) {
@@ -154,32 +159,93 @@ export function drawComputedSpectrum(
     if (under.length) {
       tooltip(dc, under.map((p) => ({
         color: colorOf(p.noteId),
-        text: `pitch ${p.degree + 1} · harmonic ${p.harmonic} · ${p.freq.toFixed(1)} Hz · ${p.amp.toFixed(2)}`,
+        text: `pitch ${p.degree + 1} · harmonic ${p.harmonic} · ${p.freq.toFixed(1)} Hz · ${ampVsFundamental(p, partials)}`,
       })), hover.x, hover.y);
     }
   }
 }
 
+/** Live spectrum options: frequency axis, the fundamental that sets 0 dB, and the lin-axis top. */
+export interface LiveSpectrumOpts {
+  scale: 'log' | 'lin';
+  /** lowest sounding fundamental (Hz), or null when nothing sounds */
+  fundamental: number | null;
+  /** highest partial expected (Hz), the top of the linear axis */
+  maxHz: number;
+  /** level of the fundamental in dBFS, smoothed and kept across frames (null = none measured yet) */
+  ref: { db: number | null };
+}
+
+/** Level of the fundamental: the strongest bin within ±3 % of its frequency. */
+export function fundamentalDb(buf: Float32Array, binHz: number, f0: number | null): number | null {
+  if (f0 == null) return null;
+  const b0 = Math.max(0, Math.floor((f0 * 0.97) / binHz));
+  const b1 = Math.min(buf.length - 1, Math.ceil((f0 * 1.03) / binHz));
+  let m = -Infinity;
+  for (let b = b0; b <= b1; b++) m = Math.max(m, buf[b]);
+  return Number.isFinite(m) ? m : null;
+}
+
+/** Linear-axis gridlines from 0 Hz: a 1-2-5 step that keeps labels at least `minGap` px apart. */
+function linTicks(fmax: number, w: number, minGap = 48): number[] {
+  const raw = (fmax / w) * minGap;
+  const mag = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 5, 10].map((m) => m * mag).find((x) => x >= raw)!;
+  const out: number[] = [];
+  for (let f = step; f <= fmax; f += step) out.push(f);
+  return out;
+}
+
+const DB_TOP = 10;
+const DB_BOTTOM = -90;
+
 export function drawLiveSpectrum(
   dc: DrawCtx, analyser: AnalyserNode, buf: Float32Array<ArrayBuffer>, peaks: Float32Array, dt: number, hover: Hover | null,
+  opts: LiveSpectrumOpts,
 ) {
   const { ctx, w, h, colors } = dc;
   analyser.getFloatFrequencyData(buf);
   const binHz = analyser.context.sampleRate / analyser.fftSize;
-  const fmin = 20;
-  const fmax = 20000;
+  const { scale } = opts;
+  const fmin = scale === 'log' ? 20 : 0;
+  const fmax = scale === 'log' ? 20000 : Math.min(20000, Math.max(1000, opts.maxHz));
   const base = h - 18;
   const top = 10;
-  const yOf = (db: number) => top + (Math.min(0, Math.max(-100, db)) / -100) * (base - top);
-  const fAt = (px: number) => fmin * (fmax / fmin) ** (px / w);
 
-  // gridlines at 1-2-3-5 steps per decade; as many labels as fit
+  // 0 dB = the (lowest) fundamental's level; with nothing measured yet, plain dBFS
+  const measured = fundamentalDb(buf, binHz, opts.fundamental);
+  if (measured != null && measured > -100) {
+    opts.ref.db = opts.ref.db == null ? measured : opts.ref.db + (measured - opts.ref.db) * Math.min(1, dt * 8);
+  }
+  const refDb = opts.ref.db ?? 0;
+  const rel = (db: number) => db - refDb;
+  const yOf = (db: number) => top + ((DB_TOP - Math.min(DB_TOP, Math.max(DB_BOTTOM, rel(db)))) / (DB_TOP - DB_BOTTOM)) * (base - top);
+  const fAt = (px: number) => (scale === 'log' ? fmin * (fmax / fmin) ** (px / w) : fmin + (px / w) * (fmax - fmin));
+  const xOf = (f: number) => freqToX(f, scale === 'log' ? fmin : 0, fmax, w, scale);
+
+  // frequency gridlines (log: 1-2-3-5 per decade; lin: even steps), labelled as densely as fits
   ctx.lineWidth = 1;
   ctx.strokeStyle = colors.border;
-  for (const f of LIVE_TICKS) vline(ctx, freqToX(f, fmin, fmax, w, 'log'), 0, base);
+  const grid = scale === 'log' ? LIVE_TICKS : linTicks(fmax, w);
+  const labels = scale === 'log' ? liveLabels(w, fmin, fmax) : grid;
+  for (const f of grid) vline(ctx, xOf(f), 0, base);
   ctx.font = '10px "JetBrains Mono Variable", monospace';
   ctx.fillStyle = colors.muted;
-  for (const f of liveLabels(w, fmin, fmax)) ctx.fillText(fmtHz(f), freqToX(f, fmin, fmax, w, 'log') + 3, base + 13);
+  for (const f of labels) if (xOf(f) <= w - 16) ctx.fillText(fmtHz(f), xOf(f) + 3, base + 13);
+
+  // level gridlines every 20 dB; 0 dB is the fundamental
+  for (let db = 0; db >= DB_BOTTOM + 10; db -= 20) {
+    const y = yOf(db + refDb);
+    ctx.strokeStyle = colors.border;
+    ctx.setLineDash(db === 0 ? [] : [2, 4]);
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = colors.muted;
+    ctx.fillText(db === 0 && opts.ref.db != null ? '0 dB = fundamental' : `${db} dB`, 4, y - 3);
+  }
 
   for (let i = 0; i < buf.length; i++) peaks[i] = Math.max(buf[i], (Number.isFinite(peaks[i]) ? peaks[i] : -200) - 20 * dt);
 
@@ -222,16 +288,17 @@ export function drawLiveSpectrum(
   if (loudest < -95) drawHint(dc, 'Play a note');
 
   if (hover && hover.x >= 0 && hover.x < cols) {
-    // crosshair with the frequency under the pointer and the level there
+    // crosshair with the frequency under the pointer and the level there, relative to the fundamental
     const px = Math.floor(hover.x);
     ctx.strokeStyle = colors.secondary;
     ctx.setLineDash([3, 3]);
     vline(ctx, px + 0.5, 0, base);
     ctx.setLineDash([]);
     const db = level[px];
+    const f = fAt(hover.x);
     tooltip(dc, [
-      { text: `${fAt(hover.x).toFixed(fAt(hover.x) < 100 ? 1 : 0)} Hz` },
-      { text: Number.isFinite(db) && db > -200 ? `${db.toFixed(1)} dB` : '— dB' },
+      { text: `${f.toFixed(f < 100 ? 1 : 0)} Hz` },
+      { text: Number.isFinite(db) && db > -200 ? `${rel(db).toFixed(1)} dB${opts.ref.db != null ? ' re fund.' : ''}` : '— dB' },
     ], hover.x, hover.y);
   }
 }

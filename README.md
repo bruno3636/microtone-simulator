@@ -49,7 +49,9 @@ In the **Tuning** panel:
   | View | Computed | Live |
   |---|---|---|
   | **Wave** | the theoretical waveform; Periods and Speed set the animation, Sum shows the combined wave | an oscilloscope of the actual output; Gain and Speed (real time down to frozen) |
-  | **Spectrum** | each note's harmonics. Hover a line to list every partial there, including overlapping harmonics of different notes | the measured spectrum (20 Hz–20 kHz). Hover to read the frequency and level under the pointer |
+  | **Spectrum** | each note's harmonics. Hover a line to list every partial there, including overlapping harmonics of different notes, with its amplitude relative to that note's fundamental | the measured spectrum, with 0 dB = the (lowest) fundamental. Hover to read the frequency and level under the pointer |
+
+  Both spectra have a **Log / Lin** frequency axis.
 
 ### Shape the sound
 The **Synthesizer** tab has instrument presets (measured spectra), a harmonics editor (count,
