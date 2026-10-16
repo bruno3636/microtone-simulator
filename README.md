@@ -11,7 +11,8 @@ Based on [web_intonation](https://flappix.github.io/web_intonation/) by flappix.
 ## Using it
 
 ### Pick a tuning
-In the **Tuning** panel:
+A first visit starts on the **7-limit chromatic** just scale (12 notes, played with the piano
+key layout). In the **Tuning** panel:
 
 - **Preset scale** opens a searchable menu of about 95 scales, grouped by source (type to filter,
   ↑ / ↓ and Enter to pick):

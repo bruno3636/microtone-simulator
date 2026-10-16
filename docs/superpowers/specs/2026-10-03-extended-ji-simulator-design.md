@@ -670,3 +670,6 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
 - Roughness y-axis is logarithmic (equal ratios of roughness = equal heights), fitted from the
   lowest point more than 30¢ from any octave (× 0.8) to the peak (× 1.08); the unison and octaves,
   far smoother than everything else, run off the bottom. The header says "log scale".
+- **First visit:** with nothing saved, the app starts on the `ji12-7limit` preset (1, 16/15, 9/8,
+  7/6, 5/4, 4/3, 7/5, 3/2, 8/5, 5/3, 7/4, 15/8; tuning Just intonation, scale preset selected so
+  Reset reloads it) with the piano keymap. Saved settings are unaffected.

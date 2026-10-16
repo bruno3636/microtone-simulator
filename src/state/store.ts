@@ -113,7 +113,8 @@ const safeStorage: StateStorage = {
   removeItem: (k) => { try { localStorage.removeItem(k); } catch { /* storage unavailable */ } },
 };
 
-const initialTemplate = createFromTemplate('just_intonation', 'chromatic');
+// a new user starts on the 7-limit chromatic preset (12 notes, so the piano key layout)
+const INITIAL_PRESET = SCALE_PRESETS.find((p) => p.id === 'ji12-7limit')!;
 
 export const useStore = create<StoreState>()(
   persist(
@@ -122,11 +123,11 @@ export const useStore = create<StoreState>()(
       tuning: 'just_intonation',
       tuningVariant: '',
       edo: 31,
-      scale: initialTemplate.scale,
-      notes: initialTemplate.notes,
+      scale: 'chromatic',
+      notes: [...INITIAL_PRESET.notes],
       root: { note: 'A', freq: NOTE_FREQS.A },
       keymaps: structuredClone(DEFAULT_KEYMAPS),
-      keymap: 'scale',
+      keymap: 'piano',
       shown: [0],
       held: [],
       latched: [],
@@ -140,7 +141,7 @@ export const useStore = create<StoreState>()(
       viz: { view: 'wave', source: 'computed', periods: 2, speed: 0.5, showSum: true, freqScale: 'log', liveGain: 1, liveSpeed: 1, roughRange: 1 },
       open: { keyboard: true, ratios: false },
       theme: 'system',
-      scalePreset: null,
+      scalePreset: INITIAL_PRESET.id,
       bend: 0,
 
       setTab: (tab) => set({ tab }),
