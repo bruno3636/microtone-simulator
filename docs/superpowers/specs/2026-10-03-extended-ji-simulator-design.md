@@ -143,7 +143,12 @@ the Synthesizer tab and defaults to **0 (fully dry)**.
 - `keydown` with `event.repeat` is ignored (no machine-gun retriggers).
 - Keys are ignored while focus is in an input, select, or textarea, so typing a ratio never plays
   notes (the original had this bug). Exception: after a pointer change, selects blur so note keys
-  keep working; range/checkbox/button inputs never block note keys.
+  keep working; range/checkbox/button inputs never block note keys. Number fields (`NumberField`,
+  `data-numeric`, e.g. the cents box) keep only digits, `.`, `-`, `+` and editing keys; any other
+  key is not typed and plays its note as usual (revised 2026-10-08).
+- A sounding (held or sustained) pitch follows its card: editing its ratio, cents offset, or the
+  root glides the voice to the new frequency (`engine.retune`, 10 ms time constant; the envelope
+  is untouched), so changes are heard live.
 - On window `blur` or tab hide, all notes are released (no stuck notes).
 - Pointer playing: `pointerdown` on a degree card plays it and `pointerup`/`pointercancel`/
   `pointerleave` releases it. Multi-touch plays chords. Pressing the card's inputs/buttons
@@ -316,9 +321,9 @@ Controls above the canvas:
 ### 5.1 Which notes are drawn (computed modes)
 
 - **Held notes:** drawn at their live envelope level.
-- **Shown notes** (eye toggle on a degree card, as in the original): drawn at full level, dimmed
-  (60 % opacity), even when silent, so ratios can be compared without playing. Degree 1 is shown
-  by default.
+- **Shown notes:** drawn at full level, dimmed (60 % opacity), even when silent. Only degree 1
+  (the root) is shown; the per-card toggle was removed 2026-10-04 and `shown` is no longer
+  persisted, so it always restarts as the root.
 - A note that's both held and shown is drawn once, at its live level and full opacity.
 - Colors come from the degree color (section 7.3). Notes beyond the scale length (other octaves)
   use their degree's color.
@@ -369,16 +374,32 @@ Controls above the canvas:
 Behavior matches the original unless noted.
 
 - **Tunings** (menu order, `TUNING_ORDER`; revised 2026-10-03):
-  - **Just intonation** — 5-limit 12-note JI (as the original).
-  - **Tempered JI** — each degree is a just ratio ± a cents offset, written `5/4 -13.7c`
-    (`c`, `¢` or `cents`). Degree cards show the ratio, and the "± cents" offset input sits on the Cents row beside the total; inter-scale ratios show the just ratio plus the cents difference.
+  - **Just intonation** — 5-limit 12-note JI (as the original). Every ratio degree is **JI + cents**
+    (revised 2026-10-08; the separate Tempered JI tuning was merged in — saved settings on it load
+    as Just intonation, persist v7): a just ratio with an optional cents offset, written
+    `5/4 -13.7c` (`c`, `¢` or `cents`); an offset of 0 is stored as the plain ratio (`withCents`).
+    Every card of every source (ratio, EDO step, Pythagorean / meantone / well-tempered interval)
+    shows a "± cents" offset input on the Cents row beside the total (↑ / ↓ change it by 1¢; typed
+    values keep 0.1¢ precision; revised 2026-10-08). The offset is written after the note's value
+    and keeps its name tag (`setCents`): `2^(7/12) +3c`, `well.vallotti:4|2^(…/1200) -2c`; the card
+    still reads as that EDO step / named interval (Step and badge use the value without the offset),
+    and changing the step or interval keeps the offset. Inter-scale ratios describe the values
+    without the offsets (EDO steps, fraction or 4-decimal ratio) plus the cents difference; exact
+    names (named tunings, 12EDO) get the difference in front ("+3.0¢ Perfect 5th").
   - **Harmonic series** — harmonics 1–12 (always chromatic).
   - **12EDO** — 2^(k/12) (always chromatic).
   - **Custom EDO** — 2^(k/N) with a "Divisions / octave" field, N = 1–96, default 31 (always
     chromatic; saved settings on the old default 19 migrate to 31, persist v6).
-  Pitch sources can be mixed in one collection. Each card shows **Step** for EDO steps, otherwise
-  **Ratio** (named notes show their ratio; editing it drops the name tag), and an **Interval** row:
-  notes picked by name show their exact name ("Augmented unison", "Tritone"); 12EDO steps use
+  Pitch sources can be mixed in one collection (revised 2026-10-03). Each card shows **Step** for
+  EDO steps; for notes picked by name (Pythagorean, meantone, well temperament) the interval name
+  replaces the Ratio field as a select over every interval of the same family and variant
+  (`alternativesFor`: 17 spelled intervals, or 12 for well temperament) — picking one re-tunes the
+  card; everything else shows **Ratio**. Cards have no Interval row. A source badge sits right of
+  the coloured chip (`sourceBadge`): JI (ratios, incl. tempered JI and cents), NEDO for EDO steps ("12EDO", "31EDO"; N from the note, or the
+  tuning's for the root 1), Pyth,
+  1/3 · 1/4 · 1/5 · 1/6 · 2/7 MT (meantone), Werck, Kirn, Val, Yng.
+  Interval names appear in the Inter-Note Ratio section: notes picked by name use their exact
+  name ("Augmented unison", "Tritone"); 12EDO steps use
   semitone names; everything else is named from the nearest reference ratio, octave-reduced, with
   the cents difference in front ("+13.7¢ Major 3rd"): 1/1 unison, 16/15 minor 2nd, 9/8 major 2nd,
   8/7 supermajor 2nd, 7/6 subminor 3rd, 6/5 minor 3rd, 11/9 neutral 3rd, 5/4 major 3rd, 9/7
@@ -410,14 +431,13 @@ Behavior matches the original unless noted.
 - **Scales:** major, natural minor, harmonic minor, chromatic. Harmonic series, 12EDO and
   Custom EDO are always chromatic.
 - **Insert degree popover** (`src/tuning/degreeInput.ts`): choose a value type and type the value —
-  Just intonation (ratio), Tempered JI (ratio ± cents), 12EDO (steps), Custom EDO (steps of N),
+  JI + cents (ratio, plus an optional ± cents offset), 12EDO (steps), Custom EDO (steps of N),
   Pythagorean (interval), Meantone (variant + interval), Well temperament (variant + interval) —
   the pickers list interval names above the root (spelled for Pythagorean/meantone). Pythagorean and meantone list 17 spelled notes (C C♯ D♭ D D♯ E♭ E F F♯ G♭ G G♯ A♭ A A♯ B♭ B),
   each placed by its position on the chain of fifths, so enharmonic pairs are distinct pitches
   (Pythagorean C♯ 2187/2048 vs D♭ 256/243); well temperament keeps 12 names (closed circle).
-  **Cents** (stored as
-  `1 +Nc`, editable on the card) or **Frequency** (stored as `Hz / rootHz` against the current
-  root). A preview shows the expression, cents and Hz; Add is disabled until the value is valid.
+  or **Cents** (stored as
+  `1 +Nc`, editable on the card). (A Frequency type was removed 2026-10-03.) A preview shows the expression, cents and Hz; Add is disabled until the value is valid.
   The popover opens on the value type matching the current tuning (Just intonation for the
   harmonic series).
 - **Root:** note select (C … B, A = 440 Hz) plus a Hz field. Editing Hz clears the note name
@@ -425,7 +445,8 @@ Behavior matches the original unless noted.
 - **Degree cards:** number + color chip, editable ratio expression (evaluated with mathjs; invalid
   input highlighted with the error color and the note is skipped), cents above the root (0.1¢),
   frequency in Hz,
-  eye toggle, delete × in the top-right corner (not on degree 1), and "+" to insert a degree (see below).
+  and delete × in the top-right corner (not on degree 1). Cards have no visualizer toggle or insert
+  button (removed 2026-10-04); degrees are added with the "+" tile after the last card (see below).
   On computers (hover + fine pointer) each card's coloured chip shows the key(s) that play exactly
   that pitch (`keysForDegree`, from the current keyboard map, e.g. "A" or "KZY") instead of its
   number; on touch devices, or when no key is mapped, the chip shows the pitch number.

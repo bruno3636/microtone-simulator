@@ -1,14 +1,15 @@
 import { useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent as RPointerEvent } from 'react';
 import { nearestSlot, previewIndex, type SlotRect } from './reorder';
 import { useStore } from '../state/store';
-import { evalRatio, degreeFreq, splitCents, joinCents, parseEdo, edoExpr, splitLabel } from '../tuning/ratios';
+import { evalRatio, degreeFreq, splitCents, joinCents, setCents, parseEdo, edoExpr, splitLabel } from '../tuning/ratios';
 import { NumberField } from './ui';
 import { AddDegreePopover } from './AddDegreePopover';
 import { degreeColor } from '../theme';
 import { useResolvedTheme } from '../hooks/useTheme';
 import { playDegree, stopDegree, toggleLatch } from '../audio/play';
 import { keysForDegree } from '../tuning/keymaps';
-import { intervalBySemitones, nameRatio } from '../tuning/intervals';
+import { alternativesFor } from '../tuning/degreeInput';
+import { sourceBadge } from '../tuning/sourceBadge';
 import { useFinePointer } from '../hooks/useFinePointer';
 import { engine } from '../audio/engine';
 
@@ -26,35 +27,33 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
   const notes = useStore((s) => s.notes);
   const rootHz = useStore((s) => s.root.freq);
   const held = useStore((s) => s.held.some((d) => ((d % s.notes.length) + s.notes.length) % s.notes.length === i));
-  const shown = useStore((s) => s.shown.includes(i));
-  const { setNote, deleteDegree, toggleShown } = useStore.getState();
+  const { setNote, deleteDegree } = useStore.getState();
   const latched = useStore((s) => s.latched.includes(i));
   const keymap = useStore((s) => s.keymaps[s.keymap]);
   const finePointer = useFinePointer();
   const keys = finePointer && keymap ? keysForDegree(keymap, i, notes.length) : [];
-  const [adding, setAdding] = useState(false);
   const pointers = useRef(new Set<number>());
   const valid = evalRatio(note) != null;
-  // tempered JI degrees carry a cents offset ("5/4 -13.7c"): edit the ratio and the offset separately
+  // every note can carry a cents offset ("5/4 -13.7c", "2^(7/12) +3c"): the value and the offset
+  // are edited separately
   const { ratio, cents } = splitCents(note);
-  // musical interval: notes picked by name (Pythagorean, meantone, well temperament) carry their exact
-  // name; 12EDO steps use semitone names; anything else is named from the nearest reference ratio
-  const { label: taggedName, body } = splitLabel(note);
+  // notes picked by name (Pythagorean, meantone, well temperament) show their interval name in place
+  // of the ratio, as a picker over the other intervals of the same tuning
+  const { tag, body } = splitLabel(note);
   // 12EDO / Custom EDO: edit the step number instead of the ratio expression
   const tuning = useStore((s) => s.tuning);
   const edo = useStore((s) => s.edo);
   const edoTuning = tuning === 'edo12' || tuning === 'custom_edo';
   // any note written as an EDO step shows Step k / N (N from the note), whatever the tuning —
   // e.g. a 12EDO step inserted into a just-intonation collection; the root "1" counts as step 0
-  // only in an EDO tuning
-  const parsed = parseEdo(note) ?? (edoTuning && note.trim() === '1' ? { step: 0, divisions: tuning === 'edo12' ? 12 : edo } : null);
+  // only in an EDO tuning (the cents offset is ignored here)
+  const parsed = parseEdo(ratio) ?? (edoTuning && ratio.trim() === '1' ? { step: 0, divisions: tuning === 'edo12' ? 12 : edo } : null);
   const step = parsed?.step ?? null;
   const divisions = parsed?.divisions ?? null;
   const hz = degreeFreq(notes, i, rootHz);
   const ratioValue = evalRatio(note);
   const centsAboveRoot = ratioValue == null ? null : 1200 * Math.log2(ratioValue);
-  const intervalLabel =
-    taggedName ?? (parsed && parsed.divisions === 12 ? intervalBySemitones(parsed.step) : ratioValue == null ? '—' : nameRatio(ratioValue));
+  const badge = sourceBadge(note, tuning, edo);
 
   const release = (e: RPointerEvent) => {
     if (!pointers.current.delete(e.pointerId)) return;
@@ -93,7 +92,8 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
         <button type="button" className="absolute right-0.5 top-0.5 border-0 bg-transparent px-1 leading-none text-[var(--text-muted)] hover:text-[var(--text)]"
           title="Delete degree" aria-label={`Delete pitch ${i + 1}`} onClick={() => deleteDegree(i)}>×</button>
       )}
-      <div className="flex items-center justify-between gap-1 pr-3">
+      <div className="flex items-center gap-1 pr-3">
+        <div className="flex min-w-0 items-center gap-1">
         {/* the number is the drag handle: drag to move this pitch; ← / → move it with the keyboard */}
         {/* shows the key(s) that play this pitch on computers, else the pitch number */}
         <button type="button"
@@ -106,20 +106,23 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
           onPointerUp={grip.up}
           onPointerCancel={grip.cancel}
           onKeyDown={(e) => grip.key(i, e)}>{keys.length ? keys.join('') : i + 1}</button>
-        <div className="flex items-center gap-0.5">
-          <button type="button" className="btn px-1 py-0.5" aria-pressed={shown} aria-label="Show in visualizer" title="Show in visualizer"
-            style={{ color: shown ? 'var(--text)' : 'var(--text-muted)' }} onClick={() => toggleShown(i)}>~</button>
-          <div className="relative" data-popover>
-            <button type="button" className="btn px-1 py-0.5" title="Insert degree after" onClick={() => setAdding(true)}>+</button>
-            {adding && <AddDegreePopover after={i} onClose={() => setAdding(false)} />}
-          </div>
+          <span className="label ml-1 shrink-0 whitespace-nowrap text-sm normal-case tracking-normal" title={`Source: ${badge}`}>{badge}</span>
         </div>
       </div>
-      {step != null && divisions != null ? (
+      {tag ? (
+        // the interval name stands in for the ratio: pick another to move this pitch within its tuning
+        <select className="input w-full min-w-0 text-sm" value={tag.pos} aria-label={`Interval of pitch ${i + 1}`}
+          onChange={(e) => {
+            const alt = alternativesFor(tag).find((a) => a.pos === Number(e.target.value));
+            if (alt) setNote(i, setCents(alt.note, cents ?? 0)); // keeps the offset
+          }}>
+          {alternativesFor(tag).map((a) => <option key={a.pos} value={a.pos}>{a.name}</option>)}
+        </select>
+      ) : step != null && divisions != null ? (
         <div className="flex items-center justify-between gap-2">
           <span className="label">Step</span>
           <NumberField hideLabel label="EDO step" value={step} min={-999} max={999} suffix={`/ ${divisions}`}
-            onChange={(k) => setNote(i, edoExpr(Math.round(k), divisions))} />
+            onChange={(k) => setNote(i, setCents(edoExpr(Math.round(k), divisions), cents ?? 0))} />
         </div>
       ) : (
         <label className="flex items-center gap-2">
@@ -129,22 +132,14 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
             onChange={(e) => setNote(i, cents == null ? e.target.value : joinCents(e.target.value, cents))} />
         </label>
       )}
-      <div className="flex items-center justify-between gap-2">
-        <span className="label">Interval</span>
-        <span className="truncate text-sm">{intervalLabel}</span>
-      </div>
       <div className="flex flex-wrap items-center justify-between gap-x-1 gap-y-1">
         <span className="label">Cents</span>
         <span className="ml-auto flex min-w-0 items-center gap-1">
-          {cents != null && (
-            // tempered JI: the cents offset sits beside the total it produces
-            <>
-              <span className="label" aria-hidden>±</span>
-              <NumberField hideLabel label="Cents offset" value={cents} min={-1200} max={1200} step={0.1}
-                onChange={(c) => setNote(i, joinCents(ratio, c))} />
-            </>
-          )}
-          <span className={`mono ${cents != null ? 'text-xs' : 'text-sm'}`}>{centsAboveRoot == null ? '—' : `${centsAboveRoot.toFixed(1)}¢`}</span>
+          {/* every source: the offset sits beside the total it produces (0 = no offset) */}
+          <span className="label" aria-hidden>±</span>
+          <NumberField hideLabel label="Cents offset" value={cents ?? 0} min={-1200} max={1200} step={0.1} arrowStep={1}
+            onChange={(c) => setNote(i, setCents(note, c))} />
+          <span className="mono text-xs">{centsAboveRoot == null ? '—' : `${centsAboveRoot.toFixed(1)}¢`}</span>
         </span>
       </div>
       <div className="flex justify-between">

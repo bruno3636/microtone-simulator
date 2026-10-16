@@ -18,7 +18,7 @@ export function InterScaleRatios() {
   return (
     <Section title="Inter-Note Ratio" open={open} onToggle={() => toggleOpen('ratios')}>
       {rows.length === 0 ? (
-        <p className="label normal-case tracking-normal">Show (~) or play at least two pitches.</p>
+        <p className="label normal-case tracking-normal">Play a pitch to compare it with the root.</p>
       ) : (
         <div className="flex flex-wrap gap-3">
           {rows.map((row, r) => (

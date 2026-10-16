@@ -246,4 +246,20 @@ describe('AudioEngine', () => {
       expect(fake.oscillators[1].wave).not.toBe(b0);
     });
   });
+
+  it('retune glides a sounding voice to a new pitch without restarting it', () => {
+    eng.noteOn('4', 550);
+    fake.currentTime = 0.5;
+    eng.retune('4', 551.27);
+    const f = fake.oscillators[0].frequency;
+    expect(fake.oscillators).toHaveLength(1);
+    expect(f.last('target')).toMatchObject({ value: 551.27, time: 0.5 });
+    expect(eng.getVoices()[0].freq).toBe(551.27);
+    expect(envOf(0).gain.events.filter((e) => e.time === 0.5)).toHaveLength(0); // envelope untouched
+  });
+
+  it('retune ignores ids that are not sounding', () => {
+    expect(() => eng.retune('9', 300)).not.toThrow();
+    expect(fake.oscillators).toHaveLength(0);
+  });
 });

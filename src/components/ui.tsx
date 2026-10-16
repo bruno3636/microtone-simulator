@@ -1,4 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import { nudge } from './nudge';
+import { isNumericKey } from '../hooks/keyTarget';
 
 /** Curve amount as text: LIN, EXP 0.60 (below the straight line) or LOG 0.60 (above). */
 export const fmtCurve = (c: number) => (Math.abs(c) < 0.005 ? 'LIN' : c > 0 ? `EXP ${c.toFixed(2)}` : `LOG ${(-c).toFixed(2)}`);
@@ -35,9 +37,11 @@ export function Slider({ label, value, min, max, step, onChange, format }: {
 
 /** Text-backed number input: keeps the user's typing, commits only valid in-range numbers. */
 /** `hideLabel`: compact inline field — the label is kept for screen readers only. */
-export function NumberField({ label, value, min, max, step = 1, suffix, onChange, hideLabel = false }: {
+export function NumberField({ label, value, min, max, step = 1, suffix, onChange, hideLabel = false, arrowStep }: {
   label: string; value: number; min: number; max: number; step?: number; suffix?: string; onChange(v: number): void;
   hideLabel?: boolean;
+  /** when set, ArrowUp / ArrowDown change the value by this much */
+  arrowStep?: number;
 }) {
   const [text, setText] = useState(String(value));
   useEffect(() => setText(String(value)), [value]);
@@ -47,11 +51,21 @@ export function NumberField({ label, value, min, max, step = 1, suffix, onChange
       <span className={hideLabel ? 'sr-only' : 'label'}>{label}</span>
       <span className="flex items-center gap-1">
         <input className={`input mono ${hideLabel ? 'w-12 px-1 py-0.5 text-right text-xs' : 'w-20'}`} inputMode="decimal" value={text} aria-invalid={invalid}
-          step={step}
+          step={step} data-numeric=""
           onChange={(e) => {
             setText(e.target.value);
             const n = Number(e.target.value);
             if (e.target.value.trim() !== '' && !Number.isNaN(n) && n >= min && n <= max) onChange(n);
+          }}
+          onKeyDown={(e) => {
+            // only number keys type here; other keys play notes (the global keyboard handler)
+            if (e.key.length === 1 && !isNumericKey(e.key) && !e.metaKey && !e.ctrlKey) e.preventDefault();
+            if (arrowStep == null) return;
+            const n = nudge(e.key, value, arrowStep, min, max);
+            if (n == null) return;
+            e.preventDefault();
+            setText(String(n));
+            onChange(n);
           }}
           onBlur={() => setText(String(value))} />
         {suffix && <span className="label">{suffix}</span>}

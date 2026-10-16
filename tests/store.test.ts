@@ -79,7 +79,7 @@ describe('store', () => {
     const saved = JSON.parse(localStorage.getItem('ejis-settings')!);
     expect(saved.state.volume).toBe(0.42);
     expect(saved.state.held).toBeUndefined();
-    expect(saved.version).toBe(6);
+    expect(saved.version).toBe(7);
   });
 
   describe('brightness decay + instrument presets', () => {
@@ -268,6 +268,10 @@ describe('store', () => {
       localStorage.setItem('ejis-settings', JSON.stringify({ state: { ...prev, tuning: 'custom_spooky' }, version: 4 }));
       await useStore.persist.rehydrate();
       expect(s().tuning).toBe('just_intonation');
+      // Tempered JI was merged into Just intonation (v7); its "+0c" notes still play
+      localStorage.setItem('ejis-settings', JSON.stringify({ state: { ...prev, tuning: 'tempered_ji', notes: ['1 +0c', '5/4 -13.7c'] }, version: 6 }));
+      await useStore.persist.rehydrate();
+      expect(s()).toMatchObject({ tuning: 'just_intonation', notes: ['1 +0c', '5/4 -13.7c'] });
     });
   });
   it('12EDO is always chromatic', () => {

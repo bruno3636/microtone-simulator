@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { evalRatio, degreeRatio, degreeFreq, isPure, createFromTemplate, mod, splitCents, joinCents, edoStep, edoExpr, parseEdo } from '../src/tuning/ratios';
+import { evalRatio, degreeRatio, degreeFreq, isPure, createFromTemplate, mod, splitCents, joinCents, edoStep, edoExpr, parseEdo, withCents, setCents, splitLabel } from '../src/tuning/ratios';
 import { TUNINGS, TUNING_ORDER, tuningNotes } from '../src/tuning/presets';
 
 const cents = (expr: string) => 1200 * Math.log2(evalRatio(expr)!);
@@ -50,7 +50,7 @@ describe('ratios', () => {
   describe('tuning roster', () => {
     it('offers exactly the requested tunings, in order', () => {
       expect(TUNING_ORDER).toEqual([
-        'just_intonation', 'tempered_ji', 'harmonic_series', 'edo12', 'custom_edo', 'pythagorean_tuning', 'meantone', 'well_temperament',
+        'just_intonation', 'harmonic_series', 'edo12', 'custom_edo', 'pythagorean_tuning', 'meantone', 'well_temperament',
       ]);
       expect([...TUNING_ORDER].sort()).toEqual(Object.keys(TUNINGS).sort());
     });
@@ -111,11 +111,10 @@ describe('ratios', () => {
       expect(isPure('5/4 +0c')).toBe(true);
       expect(isPure('5/4 -13.7c')).toBe(false);
     });
-    it('the template is the just ratios with a zero offset each', () => {
-      const n = tuningNotes('tempered_ji');
-      expect(n).toHaveLength(12);
-      expect(n[7]).toBe('3/2 +0c');
-      expect(evalRatio(n[4])).toBe(1.25);
+    it('withCents drops a zero offset (plain ratio) and joins any other', () => {
+      expect(withCents('5/4', 0)).toBe('5/4');
+      expect(withCents(' 5/4 ', -13.7)).toBe('5/4 -13.7c');
+      expect(withCents('3/2', 0.04)).toBe('3/2');
     });
   });
 
@@ -144,5 +143,24 @@ describe('ratios', () => {
     expect(parseEdo(' 2 ^ ( 7 / 12 ) ')).toEqual({ step: 7, divisions: 12 });
     expect(parseEdo('3/2')).toBeNull();
     expect(edoStep('2 ^ (7 / 12)', 12)).toBe(7);
+  });
+});
+
+describe('setCents (cents offset on any note)', () => {
+  it('keeps the name tag and the value, replacing only the offset', () => {
+    expect(setCents('meantone.quarter:4|5^(1/1) / 1', -2)).toBe('meantone.quarter:4|5^(1/1) / 1 -2c');
+    expect(setCents('meantone.quarter:4|5^(1/1) / 1 -2c', 0)).toBe('meantone.quarter:4|5^(1/1) / 1');
+    expect(setCents('2^(7/12)', 3)).toBe('2^(7/12) +3c');
+    expect(setCents('2^(7/12) +3c', 1.5)).toBe('2^(7/12) +1.5c');
+    expect(setCents('5/4', 0)).toBe('5/4');
+  });
+  it('an offset EDO step still reads as that step', () => {
+    expect(parseEdo(splitCents('2^(7/12) +3c').ratio)).toEqual({ step: 7, divisions: 12 });
+    expect(evalRatio('2^(7/12) +3c')).toBeCloseTo(2 ** (703 / 1200), 12);
+  });
+  it('an offset named note still carries its tag', () => {
+    const n = setCents(tuningNotes('meantone', 'quarter')[4], 5);
+    expect(splitLabel(n).tag).toEqual({ family: 'meantone', variant: 'quarter', pos: 4 });
+    expect(1200 * Math.log2(evalRatio(n)!)).toBeCloseTo(386.314 + 5, 2);
   });
 });

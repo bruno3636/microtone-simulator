@@ -255,11 +255,13 @@ export const useStore = create<StoreState>()(
       // v3 removed the STRINGS preset; v4 made envelope curves continuous amounts;
       // v5 reorganised the tunings (renamed 12EDO/meantone, removed the custom presets);
       // v6 changed the Custom EDO default from 19 to 31
-      version: 6,
+      version: 7,
       storage: createJSONStorage(() => safeStorage),
-      partialize: ({ held: _held, latched: _latched, ...rest }) => {
+      // shown (visualizer) has no toggle on the cards any more: it always restarts as the root
+      partialize: ({ held: _held, latched: _latched, shown: _shown, ...rest }) => {
         void _held;
         void _latched;
+        void _shown;
         return Object.fromEntries(Object.entries(rest).filter(([, v]) => typeof v !== 'function')) as Partial<StoreState>;
       },
       migrate: (persisted, version) => {
@@ -272,6 +274,7 @@ export const useStore = create<StoreState>()(
         if (p.tuning && renamed[p.tuning]) [p.tuning, p.tuningVariant] = renamed[p.tuning];
         // still on the old default — unless Custom EDO is in use, whose saved notes are 19-EDO
         if (version < 6 && p.edo === 19 && p.tuning !== 'custom_edo') p.edo = 31;
+        // unknown tunings (incl. Tempered JI, merged into Just intonation in v7) fall back to JI
         if (p.tuning && !(p.tuning in TUNINGS)) {
           p.tuning = 'just_intonation';
           p.tuningVariant = '';

@@ -37,7 +37,7 @@ function sameEdo(a: string, b: string): { steps: number; divisions: number } | n
 
 /**
  * Pairs of shown/held degrees: the distance in EDO steps (both from the same EDO), the just ratio
- * ± cents (tempered JI), a fraction (rational) or the ratio to 4 decimals (irrational); the size in
+ * ± cents (JI + cents), a fraction (rational) or the ratio to 4 decimals (irrational); the size in
  * cents; and the musical interval as its own column.
  */
 export function interScaleRatios(notes: string[], degrees: number[]): InterRatio[][] {
@@ -54,24 +54,27 @@ export function interScaleRatios(notes: string[], degrees: number[]): InterRatio
       const la = splitLabel(notes[ds[i]]);
       const lb = splitLabel(notes[ds[j]]);
       const named = la.tag && lb.tag ? intervalBetween(la.tag, lb.tag) : null;
-      const edo = sameEdo(la.body, lb.body);
+      // any note can carry a cents offset: describe the values without it, then add the difference
       const a = splitCents(la.body);
       const b = splitCents(lb.body);
-      let exact: string;
+      const edo = sameEdo(a.ratio, b.ratio);
+      const dc = (b.cents ?? 0) - (a.cents ?? 0);
+      const offset = Math.abs(dc) >= 0.05;
+      let base: string;
       if (edo) {
-        exact = `${edo.steps} steps (${edo.divisions}EDO)`;
-      } else if (a.cents != null || b.cents != null) {
-        // tempered JI: the just ratio between the ratio parts, plus the cents difference
+        base = `${edo.steps} steps (${edo.divisions}EDO)`;
+      } else {
         const ra = evalRatio(a.ratio);
         const rb = evalRatio(b.ratio);
-        const dc = (b.cents ?? 0) - (a.cents ?? 0);
-        const just = ra && rb ? (toFraction(rb / ra) ?? (rb / ra).toFixed(4)) : '—';
-        exact = Math.abs(dc) < 0.05 ? just : `${just} ${dc > 0 ? '+' : '-'}${Math.abs(dc).toFixed(1)}c`;
-      } else {
-        exact = toFraction(v) ?? v.toFixed(4);
+        base = ra && rb ? (toFraction(rb / ra) ?? (rb / ra).toFixed(4)) : '—';
       }
-      // musical interval: exact for two notes of the same named tuning or of 12EDO, else the nearest reference
-      const interval = named ?? (edo && edo.divisions === 12 ? intervalBySemitones(edo.steps) : nameRatio(v));
+      const exact = offset ? `${base} ${dc > 0 ? '+' : '-'}${Math.abs(dc).toFixed(1)}c` : base;
+      // musical interval: exact for two notes of the same named tuning or of 12EDO (the offset in
+      // front, as nameRatio writes it), else the nearest reference
+      const exactName = named ?? (edo && edo.divisions === 12 ? intervalBySemitones(edo.steps) : null);
+      const interval = exactName
+        ? offset ? `${dc > 0 ? '+' : '−'}${Math.abs(dc).toFixed(1)}¢ ${exactName}` : exactName
+        : nameRatio(v);
       row.push({ lo: ds[i], hi: ds[j], exact, cents: `${(1200 * Math.log2(v)).toFixed(1)}¢`, interval });
     }
     rows.push(row);

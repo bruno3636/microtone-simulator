@@ -3,3 +3,6 @@ dist
 .DS_Store
 .superpowers/
 .memsearch/
+
+# Local Netlify folder
+.netlify

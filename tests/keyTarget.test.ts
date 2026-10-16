@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { isTextEntry } from '../src/hooks/keyTarget';
+import { isNumericKey } from '../src/hooks/keyTarget';
 
 const input = (type?: string) => {
   const el = document.createElement('input');
@@ -54,5 +55,22 @@ describe('latchAction (shift-sustain from the keyboard)', () => {
   });
   it('a plain key press plays normally', () => {
     expect(latchAction(false, false)).toBe('play');
+  });
+});
+
+describe('numeric fields (data-numeric) only take number keys', () => {
+  const num = () => { const el = input(); el.dataset.numeric = ''; return el; };
+  it('number keys stay in the field', () => {
+    for (const k of ['0', '7', '.', '-', '+']) expect(isTextEntry(num(), k), k).toBe(true);
+  });
+  it('any other key passes through to play notes', () => {
+    for (const k of ['a', 'S', 'k', ';', ',']) expect(isTextEntry(num(), k), k).toBe(false);
+  });
+  it('isNumericKey', () => {
+    expect(['3', '.', '-', '+'].every(isNumericKey)).toBe(true);
+    expect(['a', 'e', ' ', '/'].some(isNumericKey)).toBe(false);
+  });
+  it('plain text fields are unchanged', () => {
+    expect(isTextEntry(input(), 'a')).toBe(true);
   });
 });

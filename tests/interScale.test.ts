@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { interScaleRatios, toFraction } from '../src/tuning/interScale';
+import { tuningNotes } from '../src/tuning/presets';
 
 describe('inter-scale ratios', () => {
   it('toFraction finds small rationals and rejects irrationals', () => {
@@ -22,5 +23,18 @@ describe('inter-scale ratios', () => {
     expect(rows[0][0].exact).toBe('5/4 -13.7c');
     expect(rows[1][0].exact).toBe('6/5 +15.7c');
     expect(rows[0][1].exact).toBe('3/2 +2.0c');
+  });
+
+  it('offset EDO steps: steps plus the cents difference; 12EDO names get the offset in front', () => {
+    const [[x]] = interScaleRatios(['1', '2^(7/12) +3c'], [0, 1]);
+    expect(x.exact).toBe('7 steps (12EDO) +3.0c');
+    expect(x.interval).toBe('+3.0¢ Perfect 5th');
+    expect(x.cents).toBe('703.0¢');
+  });
+  it('offset named notes keep their exact name, with the offset in front', () => {
+    const n = tuningNotes('meantone', 'quarter');
+    const [[x]] = interScaleRatios([n[0], `${n[4]} -2c`], [0, 1]);
+    expect(x.interval).toBe('−2.0¢ Major 3rd');
+    expect(x.exact).toBe('5/4 -2.0c'); // ¼-comma major third is a pure 5/4
   });
 });

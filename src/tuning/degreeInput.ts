@@ -1,21 +1,19 @@
 import { MEANTONE_FRACTIONS, meantoneDegree, tuningNotes } from './presets';
-import { intervalByFifths, noteTag, withLabel } from './intervals';
-import { evalRatio, joinCents } from './ratios';
+import { intervalByFifths, intervalBySemitones, noteTag, withLabel, type NoteTag } from './intervals';
+import { evalRatio, joinCents, withCents } from './ratios';
 
 /** Ways to type in a new scale degree (the "insert degree" popover). */
 export type DegreeSourceId =
-  | 'ji' | 'tempered_ji' | 'edo12' | 'custom_edo' | 'pythagorean' | 'meantone' | 'well' | 'cents' | 'frequency';
+  | 'ji' | 'edo12' | 'custom_edo' | 'pythagorean' | 'meantone' | 'well' | 'cents';
 
 export const DEGREE_SOURCES: { id: DegreeSourceId; label: string }[] = [
-  { id: 'ji', label: 'Just intonation (ratio)' },
-  { id: 'tempered_ji', label: 'Tempered JI (ratio ± cents)' },
+  { id: 'ji', label: 'JI + cents (ratio ± cents)' },
   { id: 'edo12', label: '12EDO (steps)' },
   { id: 'custom_edo', label: 'Custom EDO (steps of N)' },
   { id: 'pythagorean', label: 'Pythagorean (note)' },
   { id: 'meantone', label: 'Meantone (note)' },
   { id: 'well', label: 'Well temperament (note)' },
   { id: 'cents', label: 'Cents' },
-  { id: 'frequency', label: 'Frequency (Hz)' },
 ];
 
 export interface DegreeInput {
@@ -29,8 +27,6 @@ export interface DegreeInput {
   spelling?: string;
   /** chromatic note index 0–11, root = C (well temperament) */
   note?: number;
-  hz?: number;
-  rootHz?: number;
 }
 
 const isInt = (n: number | undefined): n is number => n != null && Number.isInteger(n);
@@ -68,9 +64,8 @@ function pythagorean(n: number): string {
 export function buildDegree(i: DegreeInput): string | null {
   switch (i.source) {
     case 'ji':
-      return i.ratio != null && evalRatio(i.ratio) != null ? i.ratio.trim() : null;
-    case 'tempered_ji':
-      return i.ratio != null && evalRatio(i.ratio) != null && finite(i.cents) ? joinCents(i.ratio, i.cents) : null;
+      if (i.ratio == null || evalRatio(i.ratio) == null) return null;
+      return withCents(i.ratio, finite(i.cents) ? i.cents : 0);
     case 'edo12':
       return isInt(i.steps) ? (i.steps === 0 ? '1' : `2^(${i.steps}/12)`) : null;
     case 'custom_edo':
@@ -90,7 +85,22 @@ export function buildDegree(i: DegreeInput): string | null {
       return isInt(i.note) && i.note >= 0 && i.note < 12 ? tuningNotes('well_temperament', i.variant)[i.note] : null;
     case 'cents':
       return finite(i.cents) ? joinCents('1', i.cents) : null;
-    case 'frequency':
-      return finite(i.hz) && i.hz > 0 && finite(i.rootHz) && i.rootHz > 0 ? `${i.hz} / ${+i.rootHz.toFixed(3)}` : null;
   }
+}
+
+/**
+ * Every interval of a tagged note's tuning (same family and variant), for the interval picker on
+ * Pythagorean, meantone and well-tempered pitch cards.
+ */
+export function alternativesFor(tag: NoteTag): { name: string; pos: number; note: string }[] {
+  if (tag.family === 'well') {
+    const notes = tuningNotes('well_temperament', tag.variant ?? undefined);
+    return notes.map((note, pos) => ({ name: intervalBySemitones(pos), pos, note }));
+  }
+  const source = tag.family === 'pythagorean' ? 'pythagorean' : 'meantone';
+  return SPELLED_NOTES.map((n) => ({
+    name: spelledInterval(n),
+    pos: n.fifths,
+    note: buildDegree({ source, variant: tag.variant ?? undefined, spelling: n.name })!,
+  }));
 }

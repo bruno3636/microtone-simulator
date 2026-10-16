@@ -16,7 +16,7 @@ export function useKeyboard(): void {
   useEffect(() => {
     const tracker = createKeyTracker();
     const down = (e: KeyboardEvent) => {
-      if (e.repeat || e.metaKey || e.ctrlKey || e.altKey || isTextEntry(e.target as Element | null)) return;
+      if (e.repeat || e.metaKey || e.ctrlKey || e.altKey || isTextEntry(e.target as Element | null, e.key)) return;
       const ds = lookup(baseKey(e.key, e.code, e.shiftKey));
       if (ds.length === 0) return;
       engine.resume();

@@ -31,6 +31,21 @@ export function joinCents(ratio: string, cents: number): string {
   return `${ratio.trim()} ${c < 0 ? '-' : '+'}${Math.abs(c)}c`;
 }
 
+/** A ratio with a cents offset, or the plain ratio when the offset rounds to 0. */
+export function withCents(ratio: string, cents: number): string {
+  return Math.round(cents * 10) === 0 ? ratio.trim() : joinCents(ratio, cents);
+}
+
+/**
+ * Set the cents offset of any note (ratio, EDO step or named note), keeping its name tag and its
+ * value; 0 removes the offset.
+ */
+export function setCents(note: string, cents: number): string {
+  const m = /^\s*([^|]*?)\s*\|/.exec(String(note));
+  const prefix = m && m[1] ? `${m[1]}|` : '';
+  return prefix + withCents(splitCents(note).ratio, cents);
+}
+
 /** Evaluate a ratio expression, optionally followed by a cents offset ("3/2 -2c"). */
 export function evalRatio(expr: string): number | null {
   if (expr == null || String(expr).trim() === '') return null;

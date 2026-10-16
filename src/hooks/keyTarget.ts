@@ -1,12 +1,17 @@
 const TEXT_TYPES = new Set(['text', 'number', 'search', 'email', 'url', 'tel', 'password']);
 
+/** Keys a number field types: digits, decimal point and sign. */
+export const isNumericKey = (key: string) => /^[0-9.+-]$/.test(key);
+
 /**
  * True when the focused element consumes typed characters (so note keys must not fire).
  * Range, checkbox, radio, button, color etc. never block note keys. SELECT counts as
  * text entry (type-ahead); TuningPanel blurs it after pointer changes so keys resume.
  */
-export function isTextEntry(el: Element | null): boolean {
+export function isTextEntry(el: Element | null, key?: string): boolean {
   if (!el) return false;
+  // number fields keep only number keys; any other key falls through to play its note
+  if ((el as HTMLElement).dataset?.numeric != null) return key == null || isNumericKey(key) || key.length > 1;
   if (el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') return true;
   if ((el as HTMLElement).isContentEditable) return true;
   if (el.tagName === 'INPUT') {

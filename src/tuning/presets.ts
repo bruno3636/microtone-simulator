@@ -13,8 +13,6 @@ export interface Tuning {
   edo?: boolean;
 }
 
-const JI_RATIOS = ['1', '16/15', '9/8', '6/5', '5/4', '4/3', '45/32', '3/2', '8/5', '5/3', '9/5', '15/8'];
-
 /** N-EDO: k/N of an octave per step. */
 export const edoNotes = (n: number): string[] =>
   Array.from({ length: n }, (_, k) => (k === 0 ? '1' : `2^(${k}/${n})`));
@@ -72,11 +70,6 @@ export const TUNINGS: Record<string, Tuning> = {
     label: 'Just intonation', scalable: true,
     notes: ['1', '1 + 1/15', '1 + 1/8', '1 + 1/5', '1 + 1/4', '1 + 1/3', '1 + 13/32', '1 + 1/2', '1 + 3/5', '1 + 2/3', '1 + 4/5', '1 + 7/8'],
   },
-  tempered_ji: {
-    // each degree is a just ratio ± a cents offset, e.g. "5/4 -13.7c"
-    label: 'Tempered JI', scalable: true,
-    notes: JI_RATIOS.map((r) => `${r} +0c`),
-  },
   harmonic_series: {
     label: 'Harmonic series', scalable: false,
     notes: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
@@ -121,7 +114,7 @@ export const TUNINGS: Record<string, Tuning> = {
 
 /** Tuning menu order. */
 export const TUNING_ORDER = [
-  'just_intonation', 'tempered_ji', 'harmonic_series', 'edo12', 'custom_edo', 'pythagorean_tuning', 'meantone', 'well_temperament',
+  'just_intonation', 'harmonic_series', 'edo12', 'custom_edo', 'pythagorean_tuning', 'meantone', 'well_temperament',
 ];
 
 /** The notes of a tuning: its variant's (default if unknown), N-EDO for custom EDO, else its fixed notes. */

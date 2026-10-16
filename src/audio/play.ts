@@ -29,6 +29,15 @@ export function toggleLatch(degree: number): void {
   }
 }
 
+// a sounding pitch follows its card: editing its ratio / cents (or the root) is heard live
+useStore.subscribe((s, prev) => {
+  if (s.notes === prev.notes && s.root.freq === prev.root.freq) return;
+  for (const d of s.held) {
+    const f = degreeFreq(s.notes, d, s.root.freq);
+    if (f != null) engine.retune(String(d), f);
+  }
+});
+
 /** Release everything that isn't sustained (window blur, tab hidden). */
 export function stopAll(): void {
   const { held, latched } = useStore.getState();

@@ -33,6 +33,8 @@ const SILENT_LEVEL = 1e-3;
 const NEVER = 1e9;
 /** How long a re-strike takes to return to the fully bright spectrum. */
 const REBRIGHTEN_S = 0.005;
+/** glide time constant when a sounding pitch is retuned (smooth, no zipper noise) */
+const RETUNE_TAU = 0.01;
 
 export const voiceGain = (n: number) => BASE_VOICE_GAIN / Math.sqrt(Math.max(1, n));
 
@@ -292,6 +294,20 @@ export class AudioEngine {
     };
     this.voices.set(id, voice);
     this.rebalance(now);
+  }
+
+  /** Glide a sounding voice to a new pitch (its value was edited), leaving its envelope alone. */
+  retune(id: string, freq: number): void {
+    const v = this.voices.get(id);
+    if (!v || !this.ctx || v.freq === freq) return;
+    const now = this.ctx.currentTime;
+    for (const osc of v.dark ? [v.osc, v.dark.osc] : [v.osc]) {
+      const f = osc.frequency;
+      f.cancelScheduledValues(now);
+      f.setValueAtTime(v.freq, now);
+      f.setTargetAtTime(freq, now, RETUNE_TAU);
+    }
+    v.freq = freq;
   }
 
   noteOff(id: string): void {

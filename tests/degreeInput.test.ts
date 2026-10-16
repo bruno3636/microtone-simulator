@@ -6,18 +6,20 @@ const value = (s: string | null) => (s == null ? null : evalRatio(s));
 const cents = (s: string | null) => 1200 * Math.log2(value(s)!);
 
 describe('buildDegree (insert degree from a typed value)', () => {
-  it('offers every source, including Cents and Frequency', () => {
+  it('offers every source', () => {
     expect(DEGREE_SOURCES.map((s) => s.id)).toEqual([
-      'ji', 'tempered_ji', 'edo12', 'custom_edo', 'pythagorean', 'meantone', 'well', 'cents', 'frequency',
+      'ji', 'edo12', 'custom_edo', 'pythagorean', 'meantone', 'well', 'cents',
     ]);
   });
   it('just intonation: a ratio expression', () => {
     expect(buildDegree({ source: 'ji', ratio: ' 7/4 ' })).toBe('7/4');
     expect(buildDegree({ source: 'ji', ratio: '7/' })).toBeNull();
   });
-  it('tempered JI: ratio ± cents', () => {
-    expect(buildDegree({ source: 'tempered_ji', ratio: '5/4', cents: -13.7 })).toBe('5/4 -13.7c');
-    expect(buildDegree({ source: 'tempered_ji', ratio: 'x', cents: 1 })).toBeNull();
+  it('JI + cents: ratio with an optional cents offset', () => {
+    expect(buildDegree({ source: 'ji', ratio: '5/4', cents: -13.7 })).toBe('5/4 -13.7c');
+    expect(buildDegree({ source: 'ji', ratio: '5/4', cents: 0 })).toBe('5/4');
+    expect(buildDegree({ source: 'ji', ratio: '5/4' })).toBe('5/4');
+    expect(buildDegree({ source: 'ji', ratio: 'x', cents: 1 })).toBeNull();
   });
   it('EDO: steps of 12 or of N', () => {
     expect(value(buildDegree({ source: 'edo12', steps: 7 }))).toBeCloseTo(2 ** (7 / 12), 12);
@@ -59,11 +61,6 @@ describe('buildDegree (insert degree from a typed value)', () => {
   it('cents: an editable cents offset from the root', () => {
     expect(buildDegree({ source: 'cents', cents: 701.955 })).toBe('1 +702c');
     expect(cents(buildDegree({ source: 'cents', cents: 386.3 }))).toBeCloseTo(386.3, 6);
-  });
-  it('frequency: Hz relative to the current root', () => {
-    expect(buildDegree({ source: 'frequency', hz: 660, rootHz: 440 })).toBe('660 / 440');
-    expect(value(buildDegree({ source: 'frequency', hz: 523.251, rootHz: 440 }))).toBeCloseTo(523.251 / 440, 12);
-    expect(buildDegree({ source: 'frequency', hz: 0, rootHz: 440 })).toBeNull();
   });
   it('note pickers list interval names (spelled for Pythagorean / meantone)', () => {
     expect(SPELLED_NOTES.map(spelledInterval)).toEqual([

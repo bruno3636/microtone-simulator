@@ -8,7 +8,7 @@ import { NumberField } from './ui';
 
 /** The typed-input source that matches the current tuning, so the popover opens on the familiar one. */
 const SOURCE_FOR_TUNING: Record<string, DegreeSourceId> = {
-  just_intonation: 'ji', tempered_ji: 'tempered_ji', harmonic_series: 'ji', edo12: 'edo12',
+  just_intonation: 'ji', harmonic_series: 'ji', edo12: 'edo12',
   custom_edo: 'custom_edo', pythagorean_tuning: 'pythagorean', meantone: 'meantone', well_temperament: 'well',
 };
 
@@ -23,7 +23,6 @@ export function AddDegreePopover({ after, onClose }: { after: number; onClose():
   const [well, setWell] = useState(tuning === 'well_temperament' && tuningVariant ? tuningVariant : 'werckmeister3');
   const [note, setNote] = useState(7);
   const [spelling, setSpelling] = useState('G');
-  const [hz, setHz] = useState(Math.round(root.freq * 1.5 * 100) / 100);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -35,7 +34,7 @@ export function AddDegreePopover({ after, onClose }: { after: number; onClose():
   }, [onClose]);
 
   const variant = source === 'meantone' ? meantone : source === 'well' ? well : undefined;
-  const built = buildDegree({ source, ratio, cents, steps, divisions, variant, spelling, note, hz, rootHz: root.freq });
+  const built = buildDegree({ source, ratio, cents, steps, divisions, variant, spelling, note });
   const value = built == null ? null : evalRatio(built);
   const add = () => {
     if (built == null) return;
@@ -61,14 +60,14 @@ export function AddDegreePopover({ after, onClose }: { after: number; onClose():
         {DEGREE_SOURCES.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
       </select>
 
-      {(source === 'ji' || source === 'tempered_ji') && (
+      {source === 'ji' && (
         <label className="flex flex-col gap-1">
           <span className="label">Ratio</span>
           <input className="input mono" value={ratio} autoFocus aria-invalid={evalRatio(ratio) == null}
             onChange={(e) => setRatio(e.target.value)} placeholder="e.g. 7/4" />
         </label>
       )}
-      {(source === 'tempered_ji' || source === 'cents') && (
+      {(source === 'ji' || source === 'cents') && (
         <NumberField label={source === 'cents' ? 'Cents above root' : '± cents'} value={cents} min={-2400} max={2400} step={0.1} onChange={setCents} />
       )}
       {(source === 'edo12' || source === 'custom_edo') && (
@@ -95,7 +94,6 @@ export function AddDegreePopover({ after, onClose }: { after: number; onClose():
           </select>
         </label>
       )}
-      {source === 'frequency' && <NumberField label="Frequency" suffix="Hz" value={hz} min={1} max={20000} step={0.01} onChange={setHz} />}
 
       <div className="mono border-t border-[var(--border-subtle)] pt-2 text-xs" aria-live="polite">
         {built == null || value == null ? (
