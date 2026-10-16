@@ -1,6 +1,34 @@
 import { evalRatio, mod, parseEdo, splitCents, splitLabel, toFraction } from './ratios';
 
 export { toFraction };
+
+const LIMIT = 32;
+/** largest allowed a·b, which keeps the shown ratios reasonably simple */
+export const MAX_PRODUCT = 256;
+/** complexity penalties (prefer simpler ratios): a·b above `above` counts `cents` further away */
+export const PENALTIES = [{ above: 128, cents: 10 }, { above: 64, cents: 5 }];
+const penalty = (p: number) => PENALTIES.find((t) => p > t.above)?.cents ?? 0;
+
+/**
+ * The just ratio shown for an EDO / irrational interval: with 1 ≤ a, b ≤ 32 and a·b ≤ 256, the a/b
+ * whose cents distance is smallest — ratios with 64 < a·b ≤ 128 scored 5¢ worse, a·b > 128 10¢ worse; the smaller a·b wins
+ * an exact tie. Always in lowest terms.
+ */
+export function nearestJust(v: number): { a: number; b: number } {
+  const c = 1200 * Math.log2(v);
+  let best = { a: 1, b: 1, score: Infinity };
+  for (let b = 1; b <= LIMIT; b++) {
+    for (let a = 1; a <= LIMIT; a++) {
+      const p = a * b;
+      if (p > MAX_PRODUCT) continue;
+      const score = Math.abs(1200 * Math.log2(a / b) - c) + penalty(p);
+      if (score < best.score - 1e-9 || (Math.abs(score - best.score) <= 1e-9 && p < best.a * best.b)) best = { a, b, score };
+    }
+  }
+  return { a: best.a, b: best.b };
+}
+
+const signedCents = (d: number) => `${d > 0 ? '+' : '-'}${Math.abs(d).toFixed(1)}c`;
 import { intervalBetween, intervalBySemitones, nameRatio } from './intervals';
 
 /**
@@ -45,15 +73,19 @@ export function interScaleRatios(notes: string[], degrees: number[]): InterRatio
       const edo = sameEdo(a.ratio, b.ratio);
       const dc = (b.cents ?? 0) - (a.cents ?? 0);
       const offset = Math.abs(dc) >= 0.05;
-      let base: string;
-      if (edo) {
-        base = `${edo.steps} steps (${edo.divisions}EDO)`;
+      // exact: a just ratio between the values as written, plus any offset difference; for EDO and
+      // other irrational intervals, the nearest just ratio a/b (a, b ≤ 32) ± how far off it is
+      const ra = evalRatio(a.ratio);
+      const rb = evalRatio(b.ratio);
+      const frac = !edo && ra && rb ? toFraction(rb / ra) : null;
+      let exact: string;
+      if (frac) {
+        exact = offset ? `${frac} ${signedCents(dc)}` : frac;
       } else {
-        const ra = evalRatio(a.ratio);
-        const rb = evalRatio(b.ratio);
-        base = ra && rb ? (toFraction(rb / ra) ?? (rb / ra).toFixed(4)) : '—';
+        const j = nearestJust(v);
+        const d = 1200 * Math.log2(v / (j.a / j.b));
+        exact = Math.abs(d) < 0.05 ? `${j.a}/${j.b}` : `${j.a}/${j.b} ${signedCents(d)}`;
       }
-      const exact = offset ? `${base} ${dc > 0 ? '+' : '-'}${Math.abs(dc).toFixed(1)}c` : base;
       // musical interval: exact for two notes of the same named tuning or of 12EDO (the offset in
       // front, as nameRatio writes it), else the nearest reference
       const exactName = named ?? (edo && edo.divisions === 12 ? intervalBySemitones(edo.steps) : null);

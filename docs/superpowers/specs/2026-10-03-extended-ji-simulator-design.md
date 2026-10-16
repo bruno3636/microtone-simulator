@@ -637,3 +637,10 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
   the pointer above any partial rows.
 - **Inter-Note Ratio:** just (rational, no offset, not EDO) intervals are named without the ±¢
   prefix (`nameRatio(v, false)`); irrational intervals keep it.
+- **Inter-Note Ratio, EDO and irrational intervals:** instead of "N steps (xEDO)" or a 4-decimal
+  ratio, show a just ratio a/b with 1 ≤ a, b ≤ 32 and a·b ≤ 256 and the signed cents difference
+  (`nearestJust`): the smallest cents distance wins, where ratios with 64 < a·b ≤ 128 count 5¢ and
+  a·b > 128 count 10¢ further away (the smaller a·b wins exact ties) — e.g. 12EDO "16/15 -11.7c", "9/8 -3.9c", "6/5 -15.6c",
+  "5/4 +13.7c", "17/12 -3.0c", "8/5 -13.7c"; 31EDO "6/5 -6.0c", "5/4 +0.8c", "15/8 -4.4c". Rational
+  intervals between the written values keep their exact fraction (plus any offset difference), even
+  above 32 (45/32). 12EDO and named-tuning interval names are unchanged.

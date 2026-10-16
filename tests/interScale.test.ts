@@ -27,7 +27,7 @@ describe('inter-scale ratios', () => {
 
   it('offset EDO steps: steps plus the cents difference; 12EDO names get the offset in front', () => {
     const [[x]] = interScaleRatios(['1', '2^(7/12) +3c'], [0, 1]);
-    expect(x.exact).toBe('7 steps (12EDO) +3.0c');
+    expect(x.exact).toBe('3/2 +1.0c'); // 703¢ vs 701.955¢
     expect(x.interval).toBe('+3.0¢ Perfect 5th');
     expect(x.cents).toBe('703.0¢');
   });
@@ -46,5 +46,27 @@ describe('inter-scale ratios', () => {
     // irrational (e.g. 31EDO) intervals keep the deviation from the nearest just reference
     const [[e]] = interScaleRatios(['1', '2^(10/31)'], [0, 1]);
     expect(e.interval).toMatch(/^[+−]\d+\.\d¢ Major 3rd$/);
+  });
+
+  it('nearestJust: a, b ≤ 32, a·b ≤ 256; a·b in (64, 128] scored 5¢ worse, above 128 10¢ worse', async () => {
+    const { nearestJust } = await import('../src/tuning/interScale');
+    expect(nearestJust(2 ** (7 / 12))).toEqual({ a: 3, b: 2 });
+    expect(nearestJust(2 ** (4 / 12))).toEqual({ a: 5, b: 4 });
+    expect(nearestJust(2 ** (3 / 12))).toEqual({ a: 6, b: 5 }); // 13/11 (143): 10.8 + 10 > 15.6
+    expect(nearestJust(2 ** (1 / 12))).toEqual({ a: 16, b: 15 }); // 240, allowed: 11.7 + 10 beats 11/10's 65
+    expect(nearestJust(2 ** (6 / 12))).toEqual({ a: 17, b: 12 }); // 3.0 + 10 still beats 7/5's 17.5
+    expect(nearestJust(2 ** (8 / 31))).toEqual({ a: 6, b: 5 });
+    // 11/10 (110) scores 10.2 + 5, losing to 12/11 (132) at 4.2 + 10
+    expect(nearestJust(2 ** (4 / 31))).toEqual({ a: 12, b: 11 });
+    expect(nearestJust(2 ** (14 / 31))).toEqual({ a: 11, b: 8 }); // 9.4 + 5 beats 15/11 (165) at 5.0 + 10
+    expect(nearestJust(2 ** (8 / 12))).toEqual({ a: 8, b: 5 }); // 19/12 (228): 4.4 + 10 > 13.7
+    expect(nearestJust(2 ** (25 / 41))).toEqual({ a: 3, b: 2 }); // 17/11 (187): 21.9 + 10 > 29.8
+    expect(nearestJust(2)).toEqual({ a: 2, b: 1 });
+    expect(nearestJust(40)).toEqual({ a: 32, b: 1 });
+    for (const k of [1, 5, 11, 17, 23]) {
+      const { a, b } = nearestJust(2 ** (k / 24));
+      expect(a * b).toBeLessThanOrEqual(256);
+      expect(Math.max(a, b)).toBeLessThanOrEqual(32);
+    }
   });
 });

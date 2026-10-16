@@ -75,22 +75,23 @@ describe('note tags (family, variant, position)', () => {
 });
 
 describe('inter-note ratios by source', () => {
-  it('irrational ratios show 4 decimals; rational ones a fraction', () => {
+  it('irrational ratios show the nearest a/b (a, b ≤ 32, a·b ≤ 256) ± cents; rational ones their fraction', () => {
     const rows = interScaleRatios(['1', '5/4', '1 +13.7c', 'sqrt(2)'], [0, 1, 3]);
-    expect(rows[0][1].exact).toBe('1.4142');
+    expect(rows[0][1].exact).toBe('17/12 -3.0c'); // 3.0 + 10 penalty still beats 7/5's 17.5
     expect(rows[0][0].exact).toBe('5/4');
   });
-  it('two notes of the same EDO show the distance in steps', () => {
+  it('EDO intervals show the nearest just ratio (a, b ≤ 32, a·b ≤ 256) with the cents difference', () => {
     const rows = interScaleRatios(['1', '2^(4/12)', '2^(7/12)', '2^(5/19)'], [0, 1, 2, 3]);
-    expect(rows[0][0].exact).toBe('4 steps (12EDO)'); // root 1 counts as step 0
-    expect(rows[1][0].exact).toBe('3 steps (12EDO)');
-    expect(rows[1][1].exact).not.toContain('steps'); // 12EDO vs 19EDO: not the same EDO
+    expect(rows[0][0].exact).toBe('5/4 +13.7c'); // a·b ≤ 256, with 5¢ / 10¢ penalties above 64 / 128
+    expect(rows[1][0].exact).toBe('6/5 -15.6c');
+    expect(rows[0][1].exact).toBe('3/2 -2.0c');
+    expect(rows[0][1].interval).toBe('Perfect 5th'); // 12EDO steps keep their semitone names
   });
   it('named tunings show their ratio again; the musical interval is its own column', () => {
     const notes = [tuningNotes('meantone', 'quarter')[0], tuningNotes('meantone', 'quarter')[4], tuningNotes('meantone', 'quarter')[7]];
     const rows = interScaleRatios(notes, [0, 1, 2]);
     expect(rows[0][0].exact).toBe('5/4'); // quarter-comma major third is pure
-    expect(rows[0][1].exact).toBe('1.4953');
+    expect(rows[0][1].exact).toBe('3/2 -5.4c'); // ¼-comma fifth
     expect(rows[0][0].interval).toBe('Major 3rd');
     expect(rows[0][1].interval).toBe('Perfect 5th');
     expect(rows[1][0].interval).toBe('Minor 3rd');
