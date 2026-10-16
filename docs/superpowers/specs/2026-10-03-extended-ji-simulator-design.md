@@ -401,11 +401,11 @@ Behavior matches the original unless noted.
   Interval names appear in the Inter-Note Ratio section: notes picked by name use their exact
   name ("Augmented unison", "Tritone"); 12EDO steps use
   semitone names; everything else is named from the nearest reference ratio, octave-reduced, with
-  the cents difference in front ("+13.7¢ Major 3rd"): 1/1 unison, 16/15 minor 2nd, 9/8 major 2nd,
+  the cents difference in front ("+13.7¢ Major 3rd"): 1/1 unison, 16/15 minor 2nd, 10/9 submajor 2nd, 9/8 major 2nd,
   8/7 supermajor 2nd, 7/6 subminor 3rd, 6/5 minor 3rd, 11/9 neutral 3rd, 5/4 major 3rd, 9/7
   supermajor 3rd, 21/16 narrow 4th, 4/3 perfect 4th, 11/8 wide 4th, 7/5 diminished 5th, 10/7
   augmented 4th, 16/11 narrow 5th, 3/2 perfect 5th, 32/21 wide 5th, 14/9 subminor 6th, 8/5 minor
-  6th, 18/11 neutral 6th, 5/3 major 6th, 12/7 supermajor 6th, 7/4 subminor 7th, 16/9 minor 7th,
+  6th, 18/11 neutral 6th, 5/3 major 6th, 12/7 supermajor 6th, 7/4 subminor 7th, 16/9 minor 7th, 9/5 superminor 7th,
   15/8 major 7th, 2/1 octave (ratios nearer 2/1 than 1/1 are named from it; exact octaves = "Octave").
   Notes picked by name — Pythagorean, meantone, well temperament, via the insert popover or those
   tunings' templates — which are stored tagged with family, variant and position, e.g.
@@ -618,3 +618,22 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
 - 12-note just intonation presets (piano layout): 5-limit chromatic (9/5 and 16/9 sevenths),
   7-limit chromatic (7/6, 7/5, 7/4), harmonics 16–30, subharmonics 16–32.
 - 11-limit chromatic (12/11, 7/6, 11/8, 7/4, 11/6) and 13-limit chromatic (13/12, 13/8 added) presets.
+
+### 2026-10-17
+
+- **Preset menu** (`ScalePicker`): a custom dropdown replacing the native select: a button showing
+  the current preset opens a panel with a search box (every word must match label or group,
+  `filterPresets`) over a list grouped by source with sticky headings and note counts. ↑ / ↓ move,
+  Enter loads, Esc / outside click close; focus returns to the button so note keys keep working.
+- **About 95 presets** (`SCALE_PRESETS`, always contiguous by group in `PRESET_GROUPS` order): adds
+  just modes and ancient tetrachord scales (Archytas, Didymus, Ptolemy equable), 12EDO church modes,
+  melodic minor, phrygian dominant, double harmonic, Hungarian minor, minor pentatonic, Hirajōshi,
+  In, octatonic, augmented and chromatic; 5/7/17/19/22/24/31/41/53EDO scales (maqam Bayati and
+  Hijaz, full 19/22/24/31/53 sets); Pythagorean modes, chromatic and 17-note; ⅓-, ⅕-, 2/7-comma
+  majors, ¼-comma modes and pentatonic, ⅙/⅓-comma chromatics, ¼-comma 17-note split keys; the
+  remaining well-temperament majors / chromatics. Spellings are sorted by pitch where the order
+  depends on the tuning.
+- **Computed spectrum:** the same dashed crosshair as the live spectrum, with the frequency under
+  the pointer above any partial rows.
+- **Inter-Note Ratio:** just (rational, no offset, not EDO) intervals are named without the ±¢
+  prefix (`nameRatio(v, false)`); irrational intervals keep it.

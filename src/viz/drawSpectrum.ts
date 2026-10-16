@@ -119,7 +119,7 @@ export function drawComputedSpectrum(
   dc: DrawCtx, partials: Partial[], found: { coincident: Coincidence[]; near: NearMiss[] },
   colorOf: (noteId: string) => string, scale: 'log' | 'lin', hover: Hover | null,
 ) {
-  const { ctx, w, h } = dc;
+  const { ctx, w, h, colors } = dc;
   if (partials.length === 0) return drawHint(dc, 'Play a note or show (~) a degree');
   const freqs = partials.map((p) => p.freq);
   const fmin = Math.max(10, Math.min(...freqs) / 2);
@@ -153,15 +153,23 @@ export function drawComputedSpectrum(
     }
   }
 
-  if (hover) {
-    // every partial on the hovered line, one row each (several notes' harmonics can overlap)
+  if (hover && hover.x >= 0 && hover.x <= w) {
+    // crosshair like the live spectrum: the frequency under the pointer, then every partial on the
+    // hovered line, one row each (several notes' harmonics can overlap)
+    ctx.strokeStyle = colors.secondary;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    vline(ctx, Math.floor(hover.x) + 0.5, 0, base);
+    ctx.setLineDash([]);
+    const f = scale === 'log' ? fmin * (fmax / fmin) ** (hover.x / w) : fmin + (hover.x / w) * (fmax - fmin);
     const under = partialsAt(partials, hover.x, x);
-    if (under.length) {
-      tooltip(dc, under.map((p) => ({
+    tooltip(dc, [
+      { text: `${f.toFixed(f < 100 ? 1 : 0)} Hz` },
+      ...under.map((p) => ({
         color: colorOf(p.noteId),
         text: `pitch ${p.degree + 1} · harmonic ${p.harmonic} · ${p.freq.toFixed(1)} Hz · ${ampVsFundamental(p, partials)}`,
-      })), hover.x, hover.y);
-    }
+      })),
+    ], hover.x, hover.y);
   }
 }
 

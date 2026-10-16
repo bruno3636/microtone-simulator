@@ -37,4 +37,14 @@ describe('inter-scale ratios', () => {
     expect(x.interval).toBe('−2.0¢ Major 3rd');
     expect(x.exact).toBe('5/4 -2.0c'); // ¼-comma major third is a pure 5/4
   });
+
+  it('just intervals are named without a ±¢ prefix (their cents are already shown)', () => {
+    const [[a, b]] = interScaleRatios(['1', '45/32', '11/9'], [0, 1, 2]);
+    expect(a.exact).toBe('45/32');
+    expect(a.interval).toBe('Diminished 5th'); // nearest reference 7/5, no "+7.7¢"
+    expect(b.interval).toBe('Neutral 3rd');
+    // irrational (e.g. 31EDO) intervals keep the deviation from the nearest just reference
+    const [[e]] = interScaleRatios(['1', '2^(10/31)'], [0, 1]);
+    expect(e.interval).toMatch(/^[+−]\d+\.\d¢ Major 3rd$/);
+  });
 });

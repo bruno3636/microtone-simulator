@@ -59,7 +59,8 @@ export function interScaleRatios(notes: string[], degrees: number[]): InterRatio
       const exactName = named ?? (edo && edo.divisions === 12 ? intervalBySemitones(edo.steps) : null);
       const interval = exactName
         ? offset ? `${dc > 0 ? '+' : '−'}${Math.abs(dc).toFixed(1)}¢ ${exactName}` : exactName
-        : nameRatio(v);
+        // a just (rational) interval needs no ±¢ prefix: its size in cents is shown beside it
+        : nameRatio(v, !(!edo && !offset && toFraction(v) != null));
       row.push({ lo: ds[i], hi: ds[j], exact, cents: `${(1200 * Math.log2(v)).toFixed(1)}¢`, interval });
     }
     rows.push(row);

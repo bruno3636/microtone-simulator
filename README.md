@@ -13,10 +13,15 @@ Based on [web_intonation](https://flappix.github.io/web_intonation/) by flappix.
 ### Pick a tuning
 In the **Tuning** panel:
 
-- **Preset scale** loads a ready-made scale: just major/minor/pentatonic, harmonics 8–16, 12-note
-  just chromatics (5-, 7-, 11- and 13-limit, harmonics 16–30, subharmonics 16–32),
-  12EDO modes, 19/22/24/31/53EDO scales (incl. maqam Rast), Pythagorean, ¼- and ⅙-comma
-  meantone, and Werckmeister / Kirnberger / Vallotti / Young well temperaments.
+- **Preset scale** opens a searchable menu of about 95 scales, grouped by source (type to filter,
+  ↑ / ↓ and Enter to pick):
+  - **Just intonation:** Ptolemy major/minor, modes, pentatonics, 12-note 5-/7-/11-/13-limit
+    chromatics, harmonic and subharmonic series, Archytas / Didymus / Ptolemy tetrachord scales.
+  - **12EDO:** church modes, harmonic/melodic minor, pentatonics, blues, whole tone, octatonic,
+    Hirajōshi and more.
+  - **Other EDOs:** 5, 7, 17, 19, 22, 24 (maqam Rast, Bayati, Hijaz, quarter-tones), 31, 41 and 53.
+  - **Pythagorean**, **meantone** (⅓-, ¼-, ⅕-, ⅙-, 2/7-comma, incl. 17-note split keys) and
+    **well temperaments** (Werckmeister III, Kirnberger III, Vallotti, Young).
 - Or choose a **Tuning** (+ **Variant** or **Divisions / octave**) and a **Scale**.
 - **Root** / **Root Hz** set the pitch of the first note. **Reset** reloads the tuning or preset;
   **Clear** leaves only the root.
@@ -44,13 +49,14 @@ In the **Tuning** panel:
 
 ### Compare
 - **Inter-Note Ratio** lists the ratio, size in cents and interval name between the sounding
-  pitches (and the root).
+  pitches (and the root). Non-just intervals also show how far they are from the nearest just
+  interval (e.g. "−3.2¢ Major 3rd").
 - The visualizer has two views, each from two sources:
 
   | View | Computed | Live |
   |---|---|---|
   | **Wave** | the theoretical waveform; Periods and Speed set the animation, Sum shows the combined wave | an oscilloscope of the actual output; Gain and Speed (real time down to frozen) |
-  | **Spectrum** | each note's harmonics. Hover a line to list every partial there, including overlapping harmonics of different notes, with its amplitude relative to that note's fundamental | the measured spectrum, with 0 dB = the (lowest) fundamental. Hover to read the frequency and level under the pointer |
+  | **Spectrum** | each note's harmonics. A crosshair shows the frequency under the pointer; hover a line to list every partial there, including overlapping harmonics of different notes, with its amplitude relative to that note's fundamental | the measured spectrum, with 0 dB = the (lowest) fundamental. Hover to read the frequency and level under the pointer |
 
   Both spectra have a **Log / Lin** frequency axis.
 

@@ -1,9 +1,7 @@
 import { useRef, type ChangeEvent } from 'react';
 import { useStore } from '../state/store';
 import { TUNINGS, TUNING_ORDER, SCALES, NOTE_NAMES } from '../tuning/presets';
-import { SCALE_PRESETS } from '../tuning/scalePresets';
-
-const PRESET_GROUPS = [...new Set(SCALE_PRESETS.map((p) => p.group))];
+import { ScalePicker } from './ScalePicker';
 import { NumberField } from './ui';
 
 export function TuningPanel() {
@@ -20,17 +18,7 @@ export function TuningPanel() {
   const sel = { className: 'input', onPointerDown: () => { pointer.current = true; }, onKeyDown: () => { pointer.current = false; } };
   return (
     <div className="flex flex-wrap items-end gap-4">
-      <label className="flex flex-col gap-1">
-        <span className="label">Preset scale</span>
-        <select {...sel} value={s.scalePreset ?? ''} onChange={pick((v) => v && s.loadScalePreset(v))}>
-          <option value="">—</option>
-          {PRESET_GROUPS.map((g) => (
-            <optgroup key={g} label={g}>
-              {SCALE_PRESETS.filter((p) => p.group === g).map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
-            </optgroup>
-          ))}
-        </select>
-      </label>
+      <ScalePicker />
       <label className="flex flex-col gap-1">
         <span className="label">Tuning</span>
         <select {...sel} value={s.tuning} onChange={pick((v) => s.applyTemplate(v, s.scale))}>

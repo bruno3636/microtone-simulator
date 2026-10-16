@@ -78,6 +78,9 @@ describe('scale presets', () => {
       expect(cs.at(-1)!).toBeLessThan(1200);
     }
     expect(new Set(SCALE_PRESETS.map((p) => p.id)).size).toBe(SCALE_PRESETS.length);
+    // each group is one contiguous run (the menu shows one heading per group)
+    const runs = SCALE_PRESETS.map((p) => p.group).filter((g, i, a) => i === 0 || a[i - 1] !== g);
+    expect(runs).toEqual([...groups]);
   });
   it('there are several 12-note just intonation presets', () => {
     const ji12 = SCALE_PRESETS.filter((p) => p.group === 'Just intonation' && p.notes.length === 12);
@@ -103,5 +106,16 @@ describe('default keymap', () => {
     expect(degreesForKey(DEFAULT_KEYMAPS.piano, 'k', 12)).toEqual([12]);
     expect(degreesForKey(DEFAULT_KEYMAPS.piano, 'o', 12)).toEqual([13]);
     expect(degreesForKey(DEFAULT_KEYMAPS.piano, "'", 12)).toEqual([17]);
+  });
+});
+
+describe('filterPresets (search in the preset menu)', () => {
+  it('matches label, group or note count words, case-insensitively, keeping list order', async () => {
+    const { filterPresets } = await import('../src/tuning/scalePresets');
+    expect(filterPresets('').length).toBe(SCALE_PRESETS.length);
+    const maqam = filterPresets('MAQAM').map((p) => p.id);
+    expect(maqam).toEqual(['edo24-rast', 'edo24-bayati', 'edo24-hijaz']);
+    expect(filterPresets('meantone dorian').map((p) => p.id)).toEqual(['mt-quarter-dorian']); // every word must match
+    expect(filterPresets('zzz')).toEqual([]);
   });
 });

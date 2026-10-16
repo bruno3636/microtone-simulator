@@ -106,6 +106,7 @@ describe('inter-note ratios by source', () => {
 describe('nameRatio (nearest reference interval, octave-reduced)', () => {
   it('exact reference ratios get the bare name', () => {
     expect(nameRatio(1)).toBe('Unison');
+    expect(nameRatio(45 / 32, false)).toBe('Diminished 5th');
     expect(nameRatio(5 / 4)).toBe('Major 3rd');
     expect(nameRatio(3 / 2)).toBe('Perfect 5th');
     expect(nameRatio(7 / 5)).toBe('Diminished 5th');
@@ -124,6 +125,12 @@ describe('nameRatio (nearest reference interval, octave-reduced)', () => {
     expect(nameRatio(2)).toBe('Octave');
     expect(nameRatio(4)).toBe('Octave');
     expect(nameRatio(1.005)).toBe('+8.6¢ Unison');
+  });
+  it('names 10/9 the submajor 2nd and 9/5 the superminor 7th', () => {
+    expect(nameRatio(10 / 9)).toBe('Submajor 2nd');
+    expect(nameRatio(9 / 5)).toBe('Superminor 7th');
+    expect(nameRatio(16 / 9)).toBe('Minor 7th');
+    expect(nameRatio(9 / 8)).toBe('Major 2nd');
   });
   it('includes the 7- and 11-limit references', () => {
     const exact: [number, string][] = [
