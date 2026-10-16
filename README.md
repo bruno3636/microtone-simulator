@@ -64,7 +64,8 @@ In the **Tuning** panel:
   adds a Plomp–Levelt roughness term, d = min(a₁, a₂)·(e^(−3.5·s·Δf) − e^(−5.75·s·Δf)) with
   s = 0.24 / (0.0207·f₁ + 18.96). It shows:
   - the total roughness of the notes sounding right now (their partials at their live levels);
-  - the **dissonance curve** of the current timbre against the root over 1 or 2 octaves: dips are
+  - the **dissonance curve** of the current timbre against the root over 1 or 2 octaves, on a
+    logarithmic roughness axis so the dips stand out: dips are
     labelled with nearby just ratios, scale degrees stand on the curve in their colours, sounding
     notes are highlighted, and hovering reads the interval and its roughness. Change the harmonics
     in the Synthesizer tab to see how the timbre moves the dips.

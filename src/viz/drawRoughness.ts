@@ -27,9 +27,17 @@ export function drawRoughness(dc: DrawCtx, v: RoughnessView, hover: Hover | null
   if (v.curve.length === 0) return drawHint(dc, 'No harmonics to measure');
   const top = 46;
   const base = h - 18;
-  const vmax = Math.max(...v.curve.map((p) => p.value)) * 1.08 || 1;
+  // logarithmic y-axis: equal ratios of roughness get equal heights, so the dips after the
+  // unison peak are as visible as their relative depth (a linear axis flattens them)
+  // The unison and octaves are far smoother than anything else, so the scale is fitted to the
+  // dips between them (they run off the bottom, still the deepest points).
+  const nearOctave = (c: number) => Math.abs(c - 1200 * Math.round(c / 1200)) < 30;
+  const values = v.curve.map((p) => p.value).filter((x) => x > 0);
+  const interior = v.curve.filter((p) => p.value > 0 && !nearOctave(p.cents)).map((p) => p.value);
+  const lo = Math.log(Math.min(...(interior.length ? interior : values)) * 0.8);
+  const hi = Math.log(Math.max(...values) * 1.08);
   const xOf = (c: number) => (c / v.rangeCents) * w;
-  const yOf = (val: number) => base - (val / vmax) * (base - top);
+  const yOf = (val: number) => base - Math.max(0, (Math.log(Math.max(val, 1e-9)) - lo) / (hi - lo || 1)) * (base - top);
   const valueAt = (c: number) => {
     const i = Math.min(v.curve.length - 2, Math.max(0, Math.floor((c / v.rangeCents) * (v.curve.length - 1))));
     const p = v.curve[i];
@@ -112,7 +120,7 @@ export function drawRoughness(dc: DrawCtx, v: RoughnessView, hover: Hover | null
   ctx.fillText(v.current == null ? 'Play notes to measure their roughness' : `Roughness of the sounding notes: ${v.current.toFixed(3)}`, 4, 16);
   ctx.font = '10px "JetBrains Mono Variable", monospace';
   ctx.fillStyle = colors.muted;
-  ctx.fillText(`curve: this timbre vs the root (${v.rootLabel}) · Sethares`, 4, 32);
+  ctx.fillText(`curve: this timbre vs the root (${v.rootLabel}) · Sethares · log scale`, 4, 32);
 
   if (hover && hover.x >= 0 && hover.x <= w) {
     const c = (hover.x / w) * v.rangeCents;

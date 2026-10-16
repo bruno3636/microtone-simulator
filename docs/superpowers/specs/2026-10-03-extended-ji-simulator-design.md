@@ -667,3 +667,6 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
   with `nearestJust` ratios. Every scale degree (and its octave copies in the 2-octave range) stands
   on the curve in its colour (dim); sounding notes are drawn bright and larger.
 - Hover: dashed crosshair; tooltip with cents, nearest just ratio ± cents and the curve's roughness.
+- Roughness y-axis is logarithmic (equal ratios of roughness = equal heights), fitted from the
+  lowest point more than 30¢ from any octave (× 0.8) to the peak (× 1.08); the unison and octaves,
+  far smoother than everything else, run off the bottom. The header says "log scale".
