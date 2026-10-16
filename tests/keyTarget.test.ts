@@ -31,7 +31,7 @@ describe('isTextEntry', () => {
   });
 });
 
-import { baseKey, latchAction } from '../src/hooks/keyTarget';
+import { baseKey, latchAction, noteKeys } from '../src/hooks/keyTarget';
 
 describe('baseKey (the unshifted key a keymap entry refers to)', () => {
   it('uses the physical key when Shift is held', () => {
@@ -72,5 +72,18 @@ describe('numeric fields (data-numeric) only take number keys', () => {
   });
   it('plain text fields are unchanged', () => {
     expect(isTextEntry(input(), 'a')).toBe(true);
+  });
+});
+
+describe('noteKeys (keymap lookups for a press)', () => {
+  it('punctuation also tries the physical key, so ; and \' work on non-US layouts', () => {
+    expect(noteKeys(';', 'Semicolon', false)).toEqual([';']);
+    expect(noteKeys('ñ', 'Semicolon', false)).toEqual(['ñ', ';']); // Spanish layout
+    expect(noteKeys('´', 'Quote', false)).toEqual(['´', "'"]);
+    expect(noteKeys('ö', 'Semicolon', false)).toEqual(['ö', ';']); // German layout
+  });
+  it('letters and digits keep their usual handling', () => {
+    expect(noteKeys('a', 'KeyA', false)).toEqual(['a']);
+    expect(noteKeys('A', 'KeyA', true)).toEqual(['a']);
   });
 });

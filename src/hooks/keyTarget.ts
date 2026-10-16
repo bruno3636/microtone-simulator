@@ -37,3 +37,20 @@ export function latchAction(shift: boolean, latched: boolean): 'latch' | 'unlatc
   if (latched) return 'unlatch';
   return shift ? 'latch' : 'play';
 }
+
+/** US-layout character of a physical punctuation key (`KeyboardEvent.code`), for keymap fallback. */
+const PHYSICAL: Record<string, string> = {
+  Semicolon: ';', Quote: "'", Comma: ',', Period: '.', Slash: '/', BracketLeft: '[', BracketRight: ']',
+  Backslash: '\\', Minus: '-', Equal: '=', Backquote: '`',
+};
+
+/**
+ * Keys to look up in the keymap for a key press: the typed character first, then — for punctuation —
+ * the character printed on that physical key in the US layout, so ";" and "'" (right of L) still
+ * play on layouts where that key types something else (e.g. "ñ" on Spanish keyboards).
+ */
+export function noteKeys(key: string, code: string, shift: boolean): string[] {
+  const typed = baseKey(key, code, shift);
+  const physical = PHYSICAL[code];
+  return physical && physical !== typed ? [typed, physical] : [typed];
+}

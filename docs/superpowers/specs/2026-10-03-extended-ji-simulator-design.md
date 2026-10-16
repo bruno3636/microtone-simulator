@@ -644,3 +644,8 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
   "5/4 +13.7c", "17/12 -3.0c", "8/5 -13.7c"; 31EDO "6/5 -6.0c", "5/4 +0.8c", "15/8 -4.4c". Rational
   intervals between the written values keep their exact fraction (plus any offset difference), even
   above 32 (45/32). 12EDO and named-tuning interval names are unchanged.
+- **Keys on non-US layouts:** a punctuation key press that matches nothing by its character falls
+  back to the character printed on that physical key in the US layout (`noteKeys`: Semicolon → ";",
+  Quote → "'", …), so the keys right of L play on e.g. Spanish ("ñ") or German ("ö") keyboards.
+  Persist v10: saved scale keymaps with no ";" / "'" anywhere (customised before v8) gain them on
+  degrees 9 and 10.

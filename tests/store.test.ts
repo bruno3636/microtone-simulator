@@ -79,7 +79,7 @@ describe('store', () => {
     const saved = JSON.parse(localStorage.getItem('ejis-settings')!);
     expect(saved.state.volume).toBe(0.42);
     expect(saved.state.held).toBeUndefined();
-    expect(saved.version).toBe(9);
+    expect(saved.version).toBe(10);
     expect(saved.state.bend).toBeUndefined();
   });
 
@@ -273,6 +273,18 @@ describe('store', () => {
       localStorage.setItem('ejis-settings', JSON.stringify({ state: { ...prev, tuning: 'tempered_ji', notes: ['1 +0c', '5/4 -13.7c'] }, version: 6 }));
       await useStore.persist.rehydrate();
       expect(s()).toMatchObject({ tuning: 'just_intonation', notes: ['1 +0c', '5/4 -13.7c'] });
+    });
+    it("v10: customised scale keymaps without ; or ' gain them on degrees 9 and 10", async () => {
+      const prev = JSON.parse(localStorage.getItem('ejis-settings') ?? '{"state":{}}').state;
+      const custom = { scale: { 0: 'q', 9: 'x', 10: 'v' }, chords: { 0: 'a' } };
+      localStorage.setItem('ejis-settings', JSON.stringify({ state: { ...prev, keymaps: custom }, version: 9 }));
+      await useStore.persist.rehydrate();
+      expect(s().keymaps.scale).toMatchObject({ 0: 'q', 9: 'x,;', 10: "v,'" });
+      // already present somewhere: left alone
+      const has = { scale: { 3: ';', 9: 'x', 10: "v,'" }, chords: { 0: 'a' } };
+      localStorage.setItem('ejis-settings', JSON.stringify({ state: { ...prev, keymaps: has }, version: 9 }));
+      await useStore.persist.rehydrate();
+      expect(s().keymaps.scale).toMatchObject({ 3: ';', 9: 'x', 10: "v,'" });
     });
     it("v8: saved default keymaps gain ; and ' after L", async () => {
       const prev = JSON.parse(localStorage.getItem('ejis-settings') ?? '{"state":{}}').state;

@@ -3,7 +3,7 @@ import { useStore } from '../state/store';
 import { engine } from '../audio/engine';
 import { playDegree, stopDegree, stopAll, toggleLatch } from '../audio/play';
 import { degreesForKey } from '../tuning/keymaps';
-import { baseKey, isTextEntry, latchAction } from './keyTarget';
+import { isTextEntry, latchAction, noteKeys } from './keyTarget';
 import { createKeyTracker } from './keyTracker';
 
 
@@ -12,12 +12,21 @@ const lookup = (key: string) => {
   return degreesForKey(s.keymaps[s.keymap] ?? {}, key, s.notes.length);
 };
 
+/** Degrees for a key press: the typed character, else the physical key's US character. */
+const lookupPress = (key: string, code: string, shift: boolean) => {
+  for (const k of noteKeys(key, code, shift)) {
+    const ds = lookup(k);
+    if (ds.length) return ds;
+  }
+  return [];
+};
+
 export function useKeyboard(): void {
   useEffect(() => {
     const tracker = createKeyTracker();
     const down = (e: KeyboardEvent) => {
       if (e.repeat || e.metaKey || e.ctrlKey || e.altKey || isTextEntry(e.target as Element | null, e.key)) return;
-      const ds = lookup(baseKey(e.key, e.code, e.shiftKey));
+      const ds = lookupPress(e.key, e.code, e.shiftKey);
       if (ds.length === 0) return;
       engine.resume();
       // Shift + key sustains a pitch; any key press releases a sustained one. Those degrees aren't
@@ -35,7 +44,7 @@ export function useKeyboard(): void {
     const up = (e: KeyboardEvent) => {
       const tracked = tracker.release(e.code);
       if (tracked) tracked.forEach(stopDegree);
-      else lookup(e.key).filter((d) => !tracker.isActive(d)).forEach(stopDegree);
+      else lookupPress(e.key, e.code, false).filter((d) => !tracker.isActive(d)).forEach(stopDegree);
     };
     const releaseAll = () => { tracker.clear(); stopAll(); };
     const onHide = () => { if (document.hidden) releaseAll(); };

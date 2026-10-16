@@ -281,7 +281,7 @@ export const useStore = create<StoreState>()(
       // v3 removed the STRINGS preset; v4 made envelope curves continuous amounts;
       // v5 reorganised the tunings (renamed 12EDO/meantone, removed the custom presets);
       // v6 changed the Custom EDO default from 19 to 31
-      version: 9,
+      version: 10,
       storage: createJSONStorage(() => safeStorage),
       // shown (visualizer) has no toggle on the cards any more: it always restarts as the root
       partialize: ({ held: _held, latched: _latched, shown: _shown, bend: _bend, ...rest }) => {
@@ -309,6 +309,14 @@ export const useStore = create<StoreState>()(
         // v8: ";" and "'" continue the home row after L in the default scale keymap
         const km = p.keymaps?.scale;
         if (version < 8 && km && km[9] === 'c' && km[10] === 'v') p.keymaps = { ...p.keymaps, scale: { ...km, 9: 'c,;', 10: "v,'" } };
+        // v10: saved scale maps that never got ";" / "'" (customised before v8) gain them on 9 / 10
+        const sc = p.keymaps?.scale;
+        if (version < 10 && sc) {
+          const has = (k: string) => Object.values(sc).some((v) => String(v).split(',').some((x) => x.trim()[0] === k));
+          const add = (deg: number, k: string) => { if (!has(k)) sc[deg] = sc[deg] ? `${sc[deg]},${k}` : k; };
+          add(9, ';');
+          add(10, "'");
+        }
         // v9: the piano layout joins saved keymaps
         if (p.keymaps && !p.keymaps.piano) p.keymaps = { ...p.keymaps, piano: { ...DEFAULT_KEYMAPS.piano } };
         if (p.viz) p.viz = { ...p.viz, liveSpeed: p.viz.liveSpeed ?? 1 };
