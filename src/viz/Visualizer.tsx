@@ -1,11 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { useStore, type VizSettings } from '../state/store';
 import { engine } from '../audio/engine';
-import { degreeFreq, mod } from '../tuning/ratios';
+import { degreeFreq, degreeRatio, mod } from '../tuning/ratios';
 import { degreeColor } from '../theme';
 import { buildPartials, findCoincidences } from './partials';
 import { drawComputedWave, drawLiveWave, drawHint, type DrawCtx, type WaveNote } from './drawWave';
 import { drawComputedSpectrum, drawLiveSpectrum, type Hover } from './drawSpectrum';
+import { drawRoughness, type RoughnessMarker } from './drawRoughness';
+import { curveMinima, dissonanceCurve, totalRoughness } from '../audio/roughness';
 import { NumberField, Segmented, Slider } from '../components/ui';
 
 interface Drawn extends WaveNote { degree: number }
@@ -71,6 +73,10 @@ export function Visualizer() {
     // live wave: frames' worth of time since the last capture (speed 1 = a new capture every frame)
     let liveAcc = 0;
     const liveRef = { db: null as number | null };
+    // roughness view: the dissonance curve only changes with the timbre, root or range
+    let roughKey = '';
+    let roughCurve: { cents: number; value: number }[] = [];
+    let roughMinima: { cents: number; value: number }[] = [];
     let captured = false;
 
     const frame = (now: number) => {
@@ -86,6 +92,32 @@ export function Visualizer() {
       ctx.clearRect(0, 0, w, h);
       const dark = document.documentElement.getAttribute('data-theme') === 'dark';
       const dc: DrawCtx = { ctx, w, h, colors: cssColors() };
+
+      if (v.view === 'roughness') {
+        const amps = engine.getAmplitudes();
+        const range = (v.roughRange ?? 1) * 1200;
+        const key = `${amps.join(',')}|${s.root.freq}|${range}`;
+        if (key !== roughKey) {
+          roughKey = key;
+          roughCurve = dissonanceCurve(amps, s.root.freq, 0, range, range === 1200 ? 601 : 901);
+          roughMinima = curveMinima(roughCurve, 0.03);
+        }
+        const len = s.notes.length;
+        const markers: RoughnessMarker[] = [];
+        for (let d = 0; d < len * (v.roughRange ?? 1) + 1; d++) {
+          const r = degreeRatio(s.notes, d);
+          if (r != null) markers.push({ cents: 1200 * Math.log2(r), color: degreeColor(mod(d, len), dark), sounding: false });
+        }
+        const sounding = drawnNotes(dark).filter((n) => !n.dim);
+        for (const n of sounding) markers.push({ cents: 1200 * Math.log2(n.freq / s.root.freq), color: n.color, sounding: true });
+        const partials = buildPartials(sounding, amps, 20000, engine.getDarkAmplitudes());
+        drawRoughness(dc, {
+          curve: roughCurve, minima: roughMinima, markers, rangeCents: range,
+          current: sounding.length ? totalRoughness(partials) : null,
+          rootLabel: `${s.root.note || 'root'} ${+s.root.freq.toFixed(2)} Hz`,
+        }, hover.current);
+        return;
+      }
 
       if (v.source === 'computed') {
         const notes = drawnNotes(dark);
@@ -130,10 +162,15 @@ export function Visualizer() {
     <section className="panel flex flex-col gap-3 p-4">
       <div className="flex flex-wrap items-end gap-4">
         <Segmented<VizSettings['view']> label="View" value={viz.view} onChange={(view) => setViz({ view })}
-          options={[{ value: 'wave', label: 'Wave' }, { value: 'spectrum', label: 'Spectrum' }]} />
-        <Segmented<VizSettings['source']> label="Source" value={viz.source} onChange={(source) => setViz({ source })}
-          options={[{ value: 'computed', label: 'Computed' }, { value: 'live', label: 'Live' }]} />
-        {viz.source === 'computed' && viz.view === 'wave' && (
+          options={[{ value: 'wave', label: 'Wave' }, { value: 'spectrum', label: 'Spectrum' }, { value: 'roughness', label: 'Roughness' }]} />
+        {viz.view === 'roughness' ? (
+          <Segmented<'1' | '2'> label="Range" value={String(viz.roughRange ?? 1) as '1' | '2'} onChange={(r) => setViz({ roughRange: Number(r) as 1 | 2 })}
+            options={[{ value: '1', label: '1 octave' }, { value: '2', label: '2 octaves' }]} />
+        ) : (
+          <Segmented<VizSettings['source']> label="Source" value={viz.source} onChange={(source) => setViz({ source })}
+            options={[{ value: 'computed', label: 'Computed' }, { value: 'live', label: 'Live' }]} />
+        )}
+        {viz.view === 'wave' && viz.source === 'computed' && (
           <>
             <NumberField label="Periods" value={viz.periods} min={1} max={16} onChange={(periods) => setViz({ periods: Math.round(periods) })} />
             <Slider label="Speed" value={viz.speed} min={0} max={4} step={0.05}

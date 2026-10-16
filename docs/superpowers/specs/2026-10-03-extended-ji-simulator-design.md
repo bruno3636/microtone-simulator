@@ -649,3 +649,21 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
   Quote → "'", …), so the keys right of L play on e.g. Spanish ("ñ") or German ("ö") keyboards.
   Persist v10: saved scale keymaps with no ";" / "'" anywhere (customised before v8) gain them on
   degrees 9 and 10.
+
+### 2026-10-17 — Roughness view
+
+- Third visualizer view **Roughness** (Source toggle hidden; **Range**: 1 or 2 octaves,
+  `viz.roughRange`, persisted with a default of 1).
+- Model (`src/audio/roughness.ts`): W. A. Sethares' parametrisation of Plomp–Levelt — for partials
+  f1 < f2 with amplitudes a1, a2: d = min(a1, a2)·(e^(−3.5·s·Δf) − e^(−5.75·s·Δf)),
+  s = 0.24 / (0.0207·f1 + 18.96); a sound's roughness is the sum over all pairs of its partials
+  (`totalRoughness`, sorted by frequency, inner loop stops once a pair is > ln(1e8)/3.5 scaled
+  bandwidths apart).
+- Readout: roughness of the sounding notes, from their partials (`buildPartials`, live envelope
+  levels, brightness decay included); "Play notes to measure their roughness" when silent.
+- Dissonance curve (`dissonanceCurve`): two tones with the synth's harmonic amplitudes, one at the
+  root and one 0 … 1200 (or 2400) cents above (601 / 901 points), recomputed only when the timbre,
+  root or range changes. Dips deeper than 3 % of the curve's range (`curveMinima`) are labelled
+  with `nearestJust` ratios. Every scale degree (and its octave copies in the 2-octave range) stands
+  on the curve in its colour (dim); sounding notes are drawn bright and larger.
+- Hover: dashed crosshair; tooltip with cents, nearest just ratio ± cents and the curve's roughness.

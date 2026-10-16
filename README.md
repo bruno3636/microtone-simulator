@@ -51,7 +51,7 @@ In the **Tuning** panel:
 - **Inter-Note Ratio** lists the ratio, size in cents and interval name between the sounding
   pitches (and the root). Non-just intervals also show how far they are from the nearest just
   interval (e.g. "−3.2¢ Major 3rd").
-- The visualizer has two views, each from two sources:
+- The visualizer has three views. **Wave** and **Spectrum** each come from two sources:
 
   | View | Computed | Live |
   |---|---|---|
@@ -59,6 +59,15 @@ In the **Tuning** panel:
   | **Spectrum** | each note's harmonics. A crosshair shows the frequency under the pointer; hover a line to list every partial there, including overlapping harmonics of different notes, with its amplitude relative to that note's fundamental | the measured spectrum, with 0 dB = the (lowest) fundamental. Hover to read the frequency and level under the pointer |
 
   Both spectra have a **Log / Lin** frequency axis.
+
+  **Roughness** measures sensory dissonance with William Sethares' model: every pair of partials
+  adds a Plomp–Levelt roughness term, d = min(a₁, a₂)·(e^(−3.5·s·Δf) − e^(−5.75·s·Δf)) with
+  s = 0.24 / (0.0207·f₁ + 18.96). It shows:
+  - the total roughness of the notes sounding right now (their partials at their live levels);
+  - the **dissonance curve** of the current timbre against the root over 1 or 2 octaves: dips are
+    labelled with nearby just ratios, scale degrees stand on the curve in their colours, sounding
+    notes are highlighted, and hovering reads the interval and its roughness. Change the harmonics
+    in the Synthesizer tab to see how the timbre moves the dips.
 
 ### Shape the sound
 The **Synthesizer** tab has instrument presets (measured spectra), a harmonics editor (count,

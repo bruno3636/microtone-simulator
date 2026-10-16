@@ -9,7 +9,7 @@ import { DEFAULT_ENVELOPE, DEFAULT_HARMONICS, SYNTH_PRESETS, type PresetId } fro
 import type { ThemeMode } from '../theme';
 
 export interface VizSettings {
-  view: 'wave' | 'spectrum';
+  view: 'wave' | 'spectrum' | 'roughness';
   source: 'computed' | 'live';
   periods: number;
   speed: number;
@@ -18,6 +18,8 @@ export interface VizSettings {
   liveGain: number;
   /** live wave refresh speed: 1 = every frame, lower holds each capture longer, 0 = frozen */
   liveSpeed: number;
+  /** roughness view: dissonance curve over 1 or 2 octaves above the root */
+  roughRange: 1 | 2;
 }
 
 interface Data {
@@ -135,7 +137,7 @@ export const useStore = create<StoreState>()(
       preset: 'custom',
       volume: 0.6,
       space: 0,
-      viz: { view: 'wave', source: 'computed', periods: 2, speed: 0.5, showSum: true, freqScale: 'log', liveGain: 1, liveSpeed: 1 },
+      viz: { view: 'wave', source: 'computed', periods: 2, speed: 0.5, showSum: true, freqScale: 'log', liveGain: 1, liveSpeed: 1, roughRange: 1 },
       open: { keyboard: true, ratios: false },
       theme: 'system',
       scalePreset: null,
@@ -319,7 +321,7 @@ export const useStore = create<StoreState>()(
         }
         // v9: the piano layout joins saved keymaps
         if (p.keymaps && !p.keymaps.piano) p.keymaps = { ...p.keymaps, piano: { ...DEFAULT_KEYMAPS.piano } };
-        if (p.viz) p.viz = { ...p.viz, liveSpeed: p.viz.liveSpeed ?? 1 };
+        if (p.viz) p.viz = { ...p.viz, liveSpeed: p.viz.liveSpeed ?? 1, roughRange: p.viz.roughRange ?? 1 };
         if (p.envelope) {
           const e = p.envelope;
           p.envelope = { ...e, attackCurve: curveAmount(e.attackCurve), decayCurve: curveAmount(e.decayCurve), releaseCurve: curveAmount(e.releaseCurve) };
