@@ -615,3 +615,6 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
   labelled "0 dB = fundamental"); the crosshair reads "… dB re fund.". The Log / Lin frequency
   axis now applies to the live spectrum too: log 20 Hz–20 kHz; lin 0 Hz up to the highest expected
   partial ×1.15 (1–20 kHz), with 1-2-5 gridlines at least 48 px apart.
+- 12-note just intonation presets (piano layout): 5-limit chromatic (9/5 and 16/9 sevenths),
+  7-limit chromatic (7/6, 7/5, 7/4), harmonics 16–30, subharmonics 16–32.
+- 11-limit chromatic (12/11, 7/6, 11/8, 7/4, 11/6) and 13-limit chromatic (13/12, 13/8 added) presets.

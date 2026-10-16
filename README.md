@@ -13,7 +13,8 @@ Based on [web_intonation](https://flappix.github.io/web_intonation/) by flappix.
 ### Pick a tuning
 In the **Tuning** panel:
 
-- **Preset scale** loads a ready-made scale: just major/minor/pentatonic, harmonics 8–16,
+- **Preset scale** loads a ready-made scale: just major/minor/pentatonic, harmonics 8–16, 12-note
+  just chromatics (5-, 7-, 11- and 13-limit, harmonics 16–30, subharmonics 16–32),
   12EDO modes, 19/22/24/31/53EDO scales (incl. maqam Rast), Pythagorean, ¼- and ⅙-comma
   meantone, and Werckmeister / Kirnberger / Vallotti / Young well temperaments.
 - Or choose a **Tuning** (+ **Variant** or **Divisions / octave**) and a **Scale**.

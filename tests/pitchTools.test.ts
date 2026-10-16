@@ -79,6 +79,11 @@ describe('scale presets', () => {
     }
     expect(new Set(SCALE_PRESETS.map((p) => p.id)).size).toBe(SCALE_PRESETS.length);
   });
+  it('there are several 12-note just intonation presets', () => {
+    const ji12 = SCALE_PRESETS.filter((p) => p.group === 'Just intonation' && p.notes.length === 12);
+    expect(ji12.length).toBeGreaterThanOrEqual(5);
+    for (const p of ji12) expect(p.notes.every((n) => /^\d+(\/\d+)?$/.test(n)), p.id).toBe(true); // plain ratios
+  });
   it('EDO presets are EDO steps of their division', () => {
     const rast = SCALE_PRESETS.find((p) => p.id === 'edo24-rast')!;
     expect(rast).toMatchObject({ tuning: 'custom_edo', edo: 24 });
