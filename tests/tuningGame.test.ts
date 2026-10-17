@@ -17,8 +17,8 @@ describe('tuning game', () => {
     for (let k = 0; k < 200; k++) {
       const r = newRound('3-2', Math.random, null);
       expect(r.interval.ratio).toBe('3/2');
-      expect(r.baseHz).toBeGreaterThanOrEqual(196);
-      expect(r.baseHz).toBeLessThanOrEqual(392);
+      expect(r.baseHz).toBeGreaterThanOrEqual(220);
+      expect(r.baseHz).toBeLessThanOrEqual(440);
       expect(r.min).toBeLessThan(r.interval.cents);
       expect(r.max).toBeGreaterThan(r.interval.cents);
       expect(r.max - r.min).toBeCloseTo(100, 6);

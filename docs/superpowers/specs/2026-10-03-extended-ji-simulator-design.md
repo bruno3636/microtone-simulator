@@ -721,3 +721,5 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
 - **Presets** (group "Tritave (EDT)"): Bohlen–Pierce (13EDT, all 13 steps), Bohlen–Pierce Lambda
   mode (13EDT steps 0 2 3 4 6 7 9 10 12), Bohlen–Pierce (just: 1, 27/25, 25/21, 9/7, 7/5, 75/49, 5/3,
   9/5, 49/25, 15/7, 7/3, 63/25, 25/9; Just intonation tuning with period 3) and 9EDT.
+- Random base notes are 220–440 Hz (A3–A4; was G3–G4). New round / Next round use the ratio in the
+  box when it is valid (and make it the current interval), so a typed ratio is never reset.

@@ -35,7 +35,7 @@ const EDGE = 20;
 const MIN_AWAY = 15;
 
 /**
- * A new round for `intervalId` ('random' picks one). The base note is random between G3 and G4
+ * A new round for `intervalId` ('random' picks one). The base note is random between 220 and 440 Hz
  * unless `fixedBaseHz` is given. `rng` returns values in [0, 1).
  */
 export function newRound(
@@ -45,7 +45,7 @@ export function newRound(
   const interval = typeof which !== 'string' ? which : intervalId === 'random'
     ? GAME_INTERVALS[Math.min(GAME_INTERVALS.length - 1, Math.floor(rng() * GAME_INTERVALS.length))]
     : GAME_INTERVALS.find((x) => x.id === intervalId) ?? GAME_INTERVALS[0];
-  const baseHz = fixedBaseHz ?? Math.round(196 * 2 ** rng() * 100) / 100; // G3 … G4
+  const baseHz = fixedBaseHz ?? Math.round(220 * 2 ** rng() * 100) / 100; // A3 … A4 (220–440 Hz)
   // the target sits 20–80¢ from the slider's low end, so its position gives nothing away
   const min = Math.round((interval.cents - (EDGE + rng() * (SPAN - 2 * EDGE))) * 10) / 10;
   const max = Math.round((min + SPAN) * 10) / 10;

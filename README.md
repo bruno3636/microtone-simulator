@@ -87,7 +87,7 @@ The **Tuning game** tab trains your ear:
 3. Press **Reveal result** to see how many cents sharp or flat you were, with a rating from
    *Perfect* (under 1¢) to *Keep practising*. Then **Hear the target**, or go to the **Next round**.
 
-**Base note:** *Random* picks a new one between G3 and G4 every round; *Choose* lets you pick a
+**Base note:** *Random* picks a new one between 220 and 440 Hz every round; *Choose* lets you pick a
 note and octave (C1–B7, A4 = 440 Hz) or type any frequency in Hz.
 Your rounds, average error and best result are tracked for the session.
 

@@ -65,7 +65,9 @@ export function TuningGame() {
   // leaving the game silences it
   useEffect(() => () => { for (const id of sounding.current.keys()) engine.noteOff(id); }, []);
 
-  const start = (iv: GameInterval = interval) => {
+  // a new round uses the ratio in the box (if valid), so a typed ratio is never lost
+  const start = (iv: GameInterval = parsed ?? interval) => {
+    setGameInterval(iv);
     const r = newRound(iv, Math.random, baseMode === 'choose' ? baseHz : null);
     setRound(r);
     setValue(r.start);
