@@ -11,11 +11,19 @@ export interface Tuning {
   defaultVariant?: string;
   /** notes generated from the "divisions per octave" setting */
   edo?: boolean;
+  /** notes generated from the "divisions per tritave" setting (3/1) */
+  edt?: boolean;
+  /** the interval the notes repeat at: 2 (octave, default) or 3 (tritave) */
+  period?: number;
 }
 
 /** N-EDO: k/N of an octave per step. */
 export const edoNotes = (n: number): string[] =>
   Array.from({ length: n }, (_, k) => (k === 0 ? '1' : `2^(${k}/${n})`));
+
+/** N-EDT: k/N of a tritave (3/1) per step. */
+export const edtNotes = (n: number): string[] =>
+  Array.from({ length: n }, (_, k) => (k === 0 ? '1' : `3^(${k}/${n})`));
 
 /** Circle-of-fifths position of each chromatic note from C (meantone: chain E♭ … G♯). */
 const FIFTHS_FROM_C = [0, 7, 2, -3, 4, -1, 6, 1, 8, 3, -2, 5]; // C C# D Eb E F F# G G# A Bb B
@@ -81,6 +89,9 @@ export const TUNINGS: Record<string, Tuning> = {
   custom_edo: {
     label: 'Custom EDO', scalable: false, edo: true,
   },
+  custom_edt: {
+    label: 'Custom EDT (tritave)', scalable: false, edt: true, period: 3,
+  },
   pythagorean_tuning: {
     label: 'Pythagorean', scalable: true,
     // chain G♭ … B: fifths from C of each chromatic note, for the interval names
@@ -114,13 +125,14 @@ export const TUNINGS: Record<string, Tuning> = {
 
 /** Tuning menu order. */
 export const TUNING_ORDER = [
-  'just_intonation', 'harmonic_series', 'edo12', 'custom_edo', 'pythagorean_tuning', 'meantone', 'well_temperament',
+  'just_intonation', 'harmonic_series', 'edo12', 'custom_edo', 'custom_edt', 'pythagorean_tuning', 'meantone', 'well_temperament',
 ];
 
 /** The notes of a tuning: its variant's (default if unknown), N-EDO for custom EDO, else its fixed notes. */
-export function tuningNotes(tuning: string, variant?: string, edo = 31): string[] {
+export function tuningNotes(tuning: string, variant?: string, edo = 31, edt = 13): string[] {
   const t = TUNINGS[tuning] ?? TUNINGS.just_intonation;
   if (t.edo) return edoNotes(Math.max(1, Math.round(edo)));
+  if (t.edt) return edtNotes(Math.max(1, Math.round(edt)));
   if (t.variants) return (t.variants[variant ?? ''] ?? t.variants[t.defaultVariant!]).notes;
   return t.notes!;
 }

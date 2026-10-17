@@ -42,7 +42,7 @@ describe('convertSource (switch a pitch to another source)', () => {
   const t = (label: string) => SOURCE_TARGETS(31).find((x) => targetKey(x) === label)!;
   it('lists every source by its badge', () => {
     expect(SOURCE_TARGETS(31).map(targetKey)).toEqual([
-      'JI', '12EDO', '31EDO', 'Pyth', '1/3 MT', '1/4 MT', '1/5 MT', '1/6 MT', '2/7 MT', 'Werck', 'Kirn', 'Val', 'Yng',
+      'JI', '12EDO', '31EDO', '13EDT', 'Pyth', '1/3 MT', '1/4 MT', '1/5 MT', '1/6 MT', '2/7 MT', 'Werck', 'Kirn', 'Val', 'Yng',
     ]);
   });
   it('moves to the nearest pitch of the new source, keeping octave and cents offset', () => {
@@ -68,14 +68,14 @@ describe('convertSource (switch a pitch to another source)', () => {
 describe('scale presets', () => {
   it('cover every source and all evaluate', () => {
     const groups = new Set(SCALE_PRESETS.map((p) => p.group));
-    expect([...groups]).toEqual(['Just intonation', '12EDO', 'Other EDOs', 'Pythagorean', 'Meantone', 'Well temperament']);
+    expect([...groups]).toEqual(['Just intonation', '12EDO', 'Other EDOs', 'Tritave (EDT)', 'Pythagorean', 'Meantone', 'Well temperament']);
     for (const p of SCALE_PRESETS) {
       expect(p.notes.length, p.id).toBeGreaterThan(3);
       for (const n of p.notes) expect(evalRatio(n), `${p.id} ${n}`).not.toBeNull();
       expect(evalRatio(p.notes[0])).toBe(1);
       const cs = p.notes.map(cents);
-      expect(cs.every((c, i) => i === 0 || c > cs[i - 1]), p.id).toBe(true); // ascending, within the octave
-      expect(cs.at(-1)!).toBeLessThan(1200);
+      expect(cs.every((c, i) => i === 0 || c > cs[i - 1]), p.id).toBe(true); // ascending, within the period
+      expect(cs.at(-1)!).toBeLessThan(1200 * Math.log2(p.period ?? 2));
     }
     expect(new Set(SCALE_PRESETS.map((p) => p.id)).size).toBe(SCALE_PRESETS.length);
     // each group is one contiguous run (the menu shows one heading per group)

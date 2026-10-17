@@ -79,15 +79,16 @@ export function toFraction(v: number): string | null {
   return null;
 }
 
-export function degreeRatio(notes: string[], degree: number): number | null {
+/** Degree `degree` of the collection: notes repeat every `period` (2 = octave, 3 = tritave). */
+export function degreeRatio(notes: string[], degree: number, period = 2): number | null {
   const len = notes.length;
   if (len === 0) return null;
   const r = evalRatio(notes[mod(degree, len)]);
-  return r == null ? null : r * 2 ** Math.floor(degree / len);
+  return r == null ? null : r * period ** Math.floor(degree / len);
 }
 
-export function degreeFreq(notes: string[], degree: number, rootHz: number): number | null {
-  const r = degreeRatio(notes, degree);
+export function degreeFreq(notes: string[], degree: number, rootHz: number, period = 2): number | null {
+  const r = degreeRatio(notes, degree, period);
   return r == null ? null : r * rootHz;
 }
 
@@ -109,10 +110,10 @@ export function isPure(expr: string): boolean {
 }
 
 export function createFromTemplate(
-  tuning: string, scale: string, variant?: string, edo?: number,
+  tuning: string, scale: string, variant?: string, edo?: number, edt?: number,
 ): { notes: string[]; scale: string } {
   const t = TUNINGS[tuning] ?? TUNINGS.just_intonation;
-  const all = tuningNotes(tuning, variant, edo);
+  const all = tuningNotes(tuning, variant, edo, edt);
   if (!t.scalable) return { notes: all, scale: 'chromatic' };
   return { notes: SCALES[scale].map((n) => all[n - 1]), scale };
 }
@@ -132,3 +133,12 @@ export function edoStep(expr: string, n: number): number | null {
 
 /** N-EDO note for step k. */
 export const edoExpr = (k: number, n: number) => (k === 0 ? '1' : `2^(${k}/${n})`);
+
+/** Any EDT step (equal division of the tritave 3/1) written as "3^(k/N)", or null. */
+export function parseEdt(expr: string): { step: number; divisions: number } | null {
+  const m = /^3\^\((-?\d+)\/(\d+)\)$/.exec(String(expr).replace(/\s+/g, ''));
+  return m && Number(m[2]) > 0 ? { step: Number(m[1]), divisions: Number(m[2]) } : null;
+}
+
+/** N-EDT note for step k. */
+export const edtExpr = (k: number, n: number) => (k === 0 ? '1' : `3^(${k}/${n})`);

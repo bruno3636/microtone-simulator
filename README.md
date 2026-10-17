@@ -21,9 +21,13 @@ key layout). In the **Tuning** panel:
   - **12EDO:** church modes, harmonic/melodic minor, pentatonics, blues, whole tone, octatonic,
     Hirajōshi and more.
   - **Other EDOs:** 5, 7, 17, 19, 22, 24 (maqam Rast, Bayati, Hijaz, quarter-tones), 31, 41 and 53.
+  - **Tritave (EDT):** Bohlen–Pierce (13EDT), its Lambda mode, the just Bohlen–Pierce scale and
+    9EDT. These repeat at the tritave (3/1, an octave plus a fifth) instead of the octave.
   - **Pythagorean**, **meantone** (⅓-, ¼-, ⅕-, ⅙-, 2/7-comma, incl. 17-note split keys) and
     **well temperaments** (Werckmeister III, Kirnberger III, Vallotti, Young).
-- Or choose a **Tuning** (+ **Variant** or **Divisions / octave**) and a **Scale**.
+- Or choose a **Tuning** (+ **Variant**, **Divisions / octave** or **Divisions / tritave**) and a
+  **Scale**. **Custom EDT** divides the tritave (3/1) into N equal steps (3^(k/N)); its notes
+  repeat every tritave, so the keys and cards wrap at 3/1 instead of 2/1.
 - **Root** / **Root Hz** set the pitch of the first note. **Reset** reloads the tuning or preset;
   **Clear** leaves only the root.
 
@@ -79,7 +83,7 @@ The **Tuning game** tab trains your ear:
 2. Press **▶ Play** and move the **slider** until your note sounds perfectly in tune with the base
    note. Listen to **Both** for the beating (it slows down and stops as you get close), or to
    the **Bottom** (base) or **Top** (your) note alone. The slider shows no numbers; its range is shifted every round
-   and your note starts 25–120¢ off. The ±¢ buttons make fine adjustments.
+   (it spans 100¢) and your note starts at least 15¢ off. The ±¢ buttons make fine adjustments.
 3. Press **Reveal result** to see how many cents sharp or flat you were, with a rating from
    *Perfect* (under 1¢) to *Keep practising*. Then **Hear the target**, or go to the **Next round**.
 

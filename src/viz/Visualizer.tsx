@@ -26,7 +26,7 @@ function drawnNotes(dark: boolean): Drawn[] {
   }
   for (const d of s.shown) {
     if (sounding.has(d) || d >= len) continue;
-    const freq = degreeFreq(s.notes, d, s.root.freq);
+    const freq = degreeFreq(s.notes, d, s.root.freq, s.period);
     if (freq == null) continue;
     out.push({ id: String(d), degree: d, freq, level: 1, color: degreeColor(d, dark), dim: true });
   }
@@ -106,7 +106,7 @@ export function Visualizer() {
         const len = s.notes.length;
         const markers: RoughnessMarker[] = [];
         for (let d = 0; d < len * (v.roughRange ?? 1) + 1; d++) {
-          const r = degreeRatio(s.notes, d);
+          const r = degreeRatio(s.notes, d, s.period);
           if (r != null) markers.push({ cents: 1200 * Math.log2(r), color: degreeColor(mod(d, len), dark), sounding: false });
         }
         const sounding = drawnNotes(dark).filter((n) => !n.dim);

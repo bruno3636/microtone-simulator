@@ -9,16 +9,17 @@ import { NumberField } from './ui';
 /** The typed-input source that matches the current tuning, so the popover opens on the familiar one. */
 const SOURCE_FOR_TUNING: Record<string, DegreeSourceId> = {
   just_intonation: 'ji', harmonic_series: 'ji', edo12: 'edo12',
-  custom_edo: 'custom_edo', pythagorean_tuning: 'pythagorean', meantone: 'meantone', well_temperament: 'well',
+  custom_edo: 'custom_edo', custom_edt: 'custom_edt', pythagorean_tuning: 'pythagorean', meantone: 'meantone', well_temperament: 'well',
 };
 
 export function AddDegreePopover({ after, onClose }: { after: number; onClose(): void }) {
-  const { insertDegree, tuning, tuningVariant, edo, root } = useStore.getState();
+  const { insertDegree, tuning, tuningVariant, edo, edt, root } = useStore.getState();
   const [source, setSource] = useState<DegreeSourceId>(SOURCE_FOR_TUNING[tuning] ?? 'ji');
   const [ratio, setRatio] = useState('3/2');
   const [cents, setCents] = useState(0);
   const [steps, setSteps] = useState(7);
   const [divisions, setDivisions] = useState(edo);
+  const [edtDivisions, setEdtDivisions] = useState(edt);
   const [meantone, setMeantone] = useState(tuning === 'meantone' && tuningVariant ? tuningVariant : 'quarter');
   const [well, setWell] = useState(tuning === 'well_temperament' && tuningVariant ? tuningVariant : 'werckmeister3');
   const [note, setNote] = useState(7);
@@ -34,7 +35,7 @@ export function AddDegreePopover({ after, onClose }: { after: number; onClose():
   }, [onClose]);
 
   const variant = source === 'meantone' ? meantone : source === 'well' ? well : undefined;
-  const built = buildDegree({ source, ratio, cents, steps, divisions, variant, spelling, note });
+  const built = buildDegree({ source, ratio, cents, steps, divisions: source === 'custom_edt' ? edtDivisions : divisions, variant, spelling, note });
   const value = built == null ? null : evalRatio(built);
   const add = () => {
     if (built == null) return;
@@ -70,10 +71,11 @@ export function AddDegreePopover({ after, onClose }: { after: number; onClose():
       {(source === 'ji' || source === 'cents') && (
         <NumberField label={source === 'cents' ? 'Cents above root' : '± cents'} value={cents} min={-2400} max={2400} step={0.1} onChange={setCents} />
       )}
-      {(source === 'edo12' || source === 'custom_edo') && (
+      {(source === 'edo12' || source === 'custom_edo' || source === 'custom_edt') && (
         <div className="flex gap-3">
           <NumberField label="Steps" value={steps} min={-96} max={96} onChange={setSteps} />
           {source === 'custom_edo' && <NumberField label="Divisions" value={divisions} min={1} max={96} onChange={setDivisions} />}
+          {source === 'custom_edt' && <NumberField label="Divisions / 3:1" value={edtDivisions} min={1} max={96} onChange={setEdtDivisions} />}
         </div>
       )}
       {source === 'meantone' && variantSelect('meantone', meantone, setMeantone)}

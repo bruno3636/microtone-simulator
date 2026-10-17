@@ -3,8 +3,8 @@ import { useStore, type StoreState } from '../state/store';
 import { degreeFreq } from '../tuning/ratios';
 
 /** Sounding frequency of a degree: live notes follow the pitch bend, sustained (shift) notes don't. */
-export function liveFreq(s: Pick<StoreState, 'notes' | 'root' | 'latched' | 'bend'>, degree: number): number | null {
-  const f = degreeFreq(s.notes, degree, s.root.freq);
+export function liveFreq(s: Pick<StoreState, 'notes' | 'root' | 'latched' | 'bend'> & { period?: number }, degree: number): number | null {
+  const f = degreeFreq(s.notes, degree, s.root.freq, s.period ?? 2);
   if (f == null) return null;
   return s.latched.includes(degree) ? f : f * 2 ** (s.bend / 1200);
 }
@@ -39,7 +39,7 @@ export function toggleLatch(degree: number): void {
 // a sounding pitch follows its card: editing its ratio / cents (or the root), bending, and
 // sustaining (which leaves the bend) are heard live
 useStore.subscribe((s, prev) => {
-  if (s.notes === prev.notes && s.root.freq === prev.root.freq && s.bend === prev.bend && s.latched === prev.latched) return;
+  if (s.notes === prev.notes && s.root.freq === prev.root.freq && s.bend === prev.bend && s.latched === prev.latched && s.period === prev.period) return;
   for (const d of s.held) {
     const f = liveFreq(s, d);
     if (f != null) engine.retune(String(d), f);

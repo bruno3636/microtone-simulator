@@ -1,7 +1,7 @@
 import { useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent as RPointerEvent } from 'react';
 import { nearestSlot, previewIndex, type SlotRect } from './reorder';
 import { useStore } from '../state/store';
-import { evalRatio, degreeFreq, splitCents, joinCents, setCents, parseEdo, edoExpr, splitLabel } from '../tuning/ratios';
+import { evalRatio, degreeFreq, splitCents, joinCents, setCents, parseEdo, parseEdt, edoExpr, edtExpr, splitLabel } from '../tuning/ratios';
 import { NumberField } from './ui';
 import { AddDegreePopover } from './AddDegreePopover';
 import { degreeColor } from '../theme';
@@ -46,22 +46,36 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
   // 12EDO / Custom EDO: edit the step number instead of the ratio expression
   const tuning = useStore((s) => s.tuning);
   const edo = useStore((s) => s.edo);
+  const edt = useStore((s) => s.edt);
   const edoTuning = tuning === 'edo12' || tuning === 'custom_edo';
-  // any note written as an EDO step shows Step k / N (N from the note), whatever the tuning —
-  // e.g. a 12EDO step inserted into a just-intonation collection; the root "1" counts as step 0
-  // only in an EDO tuning (the cents offset is ignored here)
-  const parsed = parseEdo(ratio) ?? (edoTuning && ratio.trim() === '1' ? { step: 0, divisions: tuning === 'edo12' ? 12 : edo } : null);
+  // any note written as an EDO step ("2^(k/N)") or EDT step ("3^(k/N)", tritave) shows Step k / N
+  // (N from the note), whatever the tuning — e.g. a 12EDO step inserted into a just-intonation
+  // collection; the root "1" counts as step 0 only in an EDO / EDT tuning (cents offset ignored)
+  const isRoot = ratio.trim() === '1';
+  const parsed = (() => {
+    const e = parseEdo(ratio);
+    if (e) return { ...e, period: 2 };
+    const t = parseEdt(ratio);
+    if (t) return { ...t, period: 3 };
+    if (isRoot && edoTuning) return { step: 0, divisions: tuning === 'edo12' ? 12 : edo, period: 2 };
+    if (isRoot && tuning === 'custom_edt') return { step: 0, divisions: edt, period: 3 };
+    return null;
+  })();
   const step = parsed?.step ?? null;
   const divisions = parsed?.divisions ?? null;
+  const tritave = parsed?.period === 3;
+  const stepExpr = tritave ? edtExpr : edoExpr;
   const hz = degreeFreq(notes, i, rootHz);
   const ratioValue = evalRatio(note);
   const centsAboveRoot = ratioValue == null ? null : 1200 * Math.log2(ratioValue);
-  const badge = sourceBadge(note, tuning, edo);
+  const badge = sourceBadge(note, tuning, edo, edt);
   // the badge opens a menu of every source; picking one moves the pitch to that source's nearest note
-  const targets = SOURCE_TARGETS(edo, divisions ?? undefined);
-  const octave = octaveOf(note);
+  const targets = SOURCE_TARGETS(edo, tritave ? undefined : divisions ?? undefined, edt, tritave ? divisions ?? undefined : undefined);
+  // EDT notes move by tritaves (3/1), everything else by octaves
+  const octave = tritave && step != null && divisions != null ? Math.floor(step / divisions) : octaveOf(note);
   const shiftOct = (k: number) =>
-    setNote(i, step != null && divisions != null ? setCents(edoExpr(step + k * divisions, divisions), cents ?? 0) : shiftOctave(note, k));
+    setNote(i, step != null && divisions != null ? setCents(stepExpr(step + k * divisions, divisions), cents ?? 0) : shiftOctave(note, k));
+  const periodName = tritave ? 'a tritave' : 'an octave';
 
   const release = (e: RPointerEvent) => {
     if (!pointers.current.delete(e.pointerId)) return;
@@ -141,8 +155,8 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
       ) : step != null && divisions != null ? (
         <div className="flex items-center justify-between gap-2">
           <span className="label">Step</span>
-          <NumberField hideLabel label="EDO step" value={step} min={-999} max={999} suffix={`/ ${divisions}`}
-            onChange={(k) => setNote(i, setCents(edoExpr(Math.round(k), divisions), cents ?? 0))} />
+          <NumberField hideLabel label={tritave ? "EDT step" : "EDO step"} value={step} min={-999} max={999} suffix={`/ ${divisions}`}
+            onChange={(k) => setNote(i, setCents(stepExpr(Math.round(k), divisions), cents ?? 0))} />
         </div>
       ) : (
         <label className="flex items-center gap-2">
@@ -163,12 +177,12 @@ function DegreeCard({ i, dragStyle, grip }: { i: number; dragStyle: CSSPropertie
         </span>
       </div>
       <div className="flex items-center justify-between gap-1">
-        <span className="label">Octave</span>
+        <span className="label">{tritave ? 'Tritave' : 'Octave'}</span>
         <span className="flex items-center gap-1">
-          <button type="button" className="btn px-1.5 py-0 leading-tight" aria-label={`Pitch ${i + 1} down an octave`} title="Down an octave"
+          <button type="button" className="btn px-1.5 py-0 leading-tight" aria-label={`Pitch ${i + 1} down ${periodName}`} title={`Down ${periodName}`}
             onClick={() => shiftOct(-1)}>−</button>
           <span className="mono w-6 text-center text-sm">{octave > 0 ? `+${octave}` : octave}</span>
-          <button type="button" className="btn px-1.5 py-0 leading-tight" aria-label={`Pitch ${i + 1} up an octave`} title="Up an octave"
+          <button type="button" className="btn px-1.5 py-0 leading-tight" aria-label={`Pitch ${i + 1} up ${periodName}`} title={`Up ${periodName}`}
             onClick={() => shiftOct(1)}>+</button>
         </span>
       </div>

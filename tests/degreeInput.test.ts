@@ -8,7 +8,7 @@ const cents = (s: string | null) => 1200 * Math.log2(value(s)!);
 describe('buildDegree (insert degree from a typed value)', () => {
   it('offers every source', () => {
     expect(DEGREE_SOURCES.map((s) => s.id)).toEqual([
-      'ji', 'edo12', 'custom_edo', 'pythagorean', 'meantone', 'well', 'cents',
+      'ji', 'edo12', 'custom_edo', 'custom_edt', 'pythagorean', 'meantone', 'well', 'cents',
     ]);
   });
   it('just intonation: a ratio expression', () => {

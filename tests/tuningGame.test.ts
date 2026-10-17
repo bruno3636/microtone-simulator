@@ -21,9 +21,10 @@ describe('tuning game', () => {
       expect(r.baseHz).toBeLessThanOrEqual(392);
       expect(r.min).toBeLessThan(r.interval.cents);
       expect(r.max).toBeGreaterThan(r.interval.cents);
-      expect(r.max - r.min).toBeCloseTo(300, 6);
-      expect(Math.abs(r.start - r.interval.cents)).toBeGreaterThanOrEqual(25);
-      expect(Math.abs(r.start - r.interval.cents)).toBeLessThanOrEqual(120);
+      expect(r.max - r.min).toBeCloseTo(100, 6);
+      expect(r.interval.cents - r.min).toBeGreaterThanOrEqual(19.9); // not at an end
+      expect(r.max - r.interval.cents).toBeGreaterThanOrEqual(19.9);
+      expect(Math.abs(r.start - r.interval.cents)).toBeGreaterThanOrEqual(14.9);
       expect(r.start).toBeGreaterThanOrEqual(r.min);
       expect(r.start).toBeLessThanOrEqual(r.max);
     }

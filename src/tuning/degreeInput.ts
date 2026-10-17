@@ -4,12 +4,13 @@ import { evalRatio, joinCents, withCents } from './ratios';
 
 /** Ways to type in a new scale degree (the "insert degree" popover). */
 export type DegreeSourceId =
-  | 'ji' | 'edo12' | 'custom_edo' | 'pythagorean' | 'meantone' | 'well' | 'cents';
+  | 'ji' | 'edo12' | 'custom_edo' | 'custom_edt' | 'pythagorean' | 'meantone' | 'well' | 'cents';
 
 export const DEGREE_SOURCES: { id: DegreeSourceId; label: string }[] = [
   { id: 'ji', label: 'JI + cents (ratio ± cents)' },
   { id: 'edo12', label: '12EDO (steps)' },
   { id: 'custom_edo', label: 'Custom EDO (steps of N)' },
+  { id: 'custom_edt', label: 'Custom EDT (steps of N, tritave 3/1)' },
   { id: 'pythagorean', label: 'Pythagorean (note)' },
   { id: 'meantone', label: 'Meantone (note)' },
   { id: 'well', label: 'Well temperament (note)' },
@@ -71,6 +72,9 @@ export function buildDegree(i: DegreeInput): string | null {
     case 'custom_edo':
       if (!isInt(i.steps) || !isInt(i.divisions) || i.divisions < 1) return null;
       return i.steps === 0 ? '1' : `2^(${i.steps}/${i.divisions})`;
+    case 'custom_edt':
+      if (!isInt(i.steps) || !isInt(i.divisions) || i.divisions < 1) return null;
+      return i.steps === 0 ? '1' : `3^(${i.steps}/${i.divisions})`;
     case 'pythagorean': {
       const n = fifthsOf(i.spelling);
       return n == null ? null : withLabel(noteTag('pythagorean', null, n), pythagorean(n));

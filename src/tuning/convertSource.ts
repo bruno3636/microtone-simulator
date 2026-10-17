@@ -1,5 +1,5 @@
 import { TUNINGS } from './presets';
-import { edoExpr, evalRatio, setCents, splitCents, toFraction } from './ratios';
+import { edoExpr, edtExpr, evalRatio, setCents, splitCents, toFraction } from './ratios';
 import { alternativesFor } from './degreeInput';
 import { shiftOctave } from './octave';
 import { MEANTONE_BADGES, WELL_BADGES } from './sourceBadge';
@@ -8,6 +8,7 @@ import { MEANTONE_BADGES, WELL_BADGES } from './sourceBadge';
 export type SourceTarget =
   | { kind: 'ji' }
   | { kind: 'edo'; divisions: number }
+  | { kind: 'edt'; divisions: number }
   | { kind: 'pythagorean' }
   | { kind: 'meantone'; variant: string }
   | { kind: 'well'; variant: string };
@@ -17,18 +18,24 @@ export function targetKey(t: SourceTarget): string {
   switch (t.kind) {
     case 'ji': return 'JI';
     case 'edo': return `${t.divisions}EDO`;
+    case 'edt': return `${t.divisions}EDT`;
     case 'pythagorean': return 'Pyth';
     case 'meantone': return MEANTONE_BADGES[t.variant];
     case 'well': return WELL_BADGES[t.variant];
   }
 }
 
-/** Every source, in menu order: JI, 12EDO, the custom EDO (plus `extraEdo`), Pythagorean, meantones, wells. */
-export function SOURCE_TARGETS(edo: number, extraEdo?: number): SourceTarget[] {
+/**
+ * Every source, in menu order: JI, 12EDO, the custom EDO (plus `extraEdo`), the custom EDT (plus
+ * `extraEdt`), Pythagorean, meantones, wells.
+ */
+export function SOURCE_TARGETS(edo: number, extraEdo?: number, edt = 13, extraEdt?: number): SourceTarget[] {
+  const edts = [...new Set([edt, ...(extraEdt ? [extraEdt] : [])])].sort((a, b) => a - b);
   const edos = [...new Set([12, edo, ...(extraEdo ? [extraEdo] : [])])].sort((a, b) => a - b);
   return [
     { kind: 'ji' },
     ...edos.map((divisions): SourceTarget => ({ kind: 'edo', divisions })),
+    ...edts.map((divisions): SourceTarget => ({ kind: 'edt', divisions })),
     { kind: 'pythagorean' },
     ...Object.keys(TUNINGS.meantone.variants!).map((variant): SourceTarget => ({ kind: 'meantone', variant })),
     ...Object.keys(TUNINGS.well_temperament.variants!).map((variant): SourceTarget => ({ kind: 'well', variant })),
@@ -66,6 +73,8 @@ export function convertSource(note: string, target: SourceTarget): string {
   switch (target.kind) {
     case 'edo':
       return setCents(edoExpr(Math.round((c * target.divisions) / 1200), target.divisions), cents ?? 0);
+    case 'edt':
+      return setCents(edtExpr(Math.round((c * target.divisions) / (1200 * Math.log2(3))), target.divisions), cents ?? 0);
     case 'ji': {
       // written as a plain fraction ("5/4", "5/2"), not the template's "1 + 1/4"
       pick = nearest(JI_NOTES, within);

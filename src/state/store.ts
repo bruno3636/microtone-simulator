@@ -29,6 +29,10 @@ interface Data {
   tuningVariant: string;
   /** divisions per octave for Custom EDO */
   edo: number;
+  /** divisions of the tritave for the Custom EDT tuning */
+  edt: number;
+  /** the interval the pitch collection repeats at: 2 (octave) or 3 (tritave) */
+  period: number;
   scale: string;
   notes: string[];
   root: { note: string; freq: number };
@@ -61,6 +65,7 @@ interface Actions {
   applyTemplate(tuning: string, scale: string): void;
   setTuningVariant(variant: string): void;
   setEdo(n: number): void;
+  setEdt(n: number): void;
   resetNotes(): void;
   clearNotes(): void;
   setNote(i: number, expr: string): void;
@@ -123,6 +128,8 @@ export const useStore = create<StoreState>()(
       tuning: 'just_intonation',
       tuningVariant: '',
       edo: 31,
+      edt: 13,
+      period: 2,
       scale: 'chromatic',
       notes: [...INITIAL_PRESET.notes],
       root: { note: 'A', freq: NOTE_FREQS.A },
@@ -149,18 +156,23 @@ export const useStore = create<StoreState>()(
         const s = get();
         // switching tuning resets the variant to that tuning's default
         const variant = tuning === s.tuning && s.tuningVariant ? s.tuningVariant : (TUNINGS[tuning]?.defaultVariant ?? '');
-        const t = createFromTemplate(tuning, scale, variant, s.edo);
-        set({ tuning, tuningVariant: variant, scale: t.scale, notes: t.notes, shown: [0], scalePreset: null });
+        const t = createFromTemplate(tuning, scale, variant, s.edo, s.edt);
+        set({ tuning, tuningVariant: variant, scale: t.scale, notes: t.notes, shown: [0], scalePreset: null, period: TUNINGS[tuning]?.period ?? 2 });
       },
       setTuningVariant: (variant) => {
         const s = get();
-        const t = createFromTemplate(s.tuning, s.scale, variant, s.edo);
+        const t = createFromTemplate(s.tuning, s.scale, variant, s.edo, s.edt);
         set({ tuningVariant: variant, scale: t.scale, notes: t.notes, shown: [0], scalePreset: null });
       },
       setEdo: (n) => {
         const edo = Math.min(96, Math.max(1, Math.round(n)));
         set({ edo });
         if (TUNINGS[get().tuning]?.edo) get().applyTemplate(get().tuning, get().scale); // also clears a scale preset
+      },
+      setEdt: (n) => {
+        const edt = Math.min(96, Math.max(1, Math.round(n)));
+        set({ edt });
+        if (TUNINGS[get().tuning]?.edt) get().applyTemplate(get().tuning, get().scale);
       },
       resetNotes: () => {
         const { scalePreset } = get();
@@ -172,6 +184,7 @@ export const useStore = create<StoreState>()(
         if (!p) return;
         set((s) => ({
           tuning: p.tuning, tuningVariant: p.variant ?? TUNINGS[p.tuning]?.defaultVariant ?? '', edo: p.edo ?? s.edo,
+          edt: p.edt ?? s.edt, period: p.period ?? TUNINGS[p.tuning]?.period ?? 2,
           scale: 'chromatic', notes: [...p.notes], shown: [0], scalePreset: id,
           // 12-note presets play like a piano (A W S E D …); others go back from the piano layout
           keymap: p.notes.length === 12 && s.keymaps.piano ? 'piano' : s.keymap === 'piano' ? 'scale' : s.keymap,

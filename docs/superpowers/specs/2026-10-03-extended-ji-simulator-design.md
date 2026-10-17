@@ -681,8 +681,8 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
 - Intervals (`GAME_INTERVALS`): 16/15, 10/9, 9/8, 7/6, 6/5, 11/9, 5/4, 9/7, 4/3, 11/8, 7/5, 3/2, 8/5,
   5/3, 7/4, 16/9, 9/5, 15/8, 2/1 (names as in Inter-Note Ratio), or Random.
 - A round (`newRound`): base note random in G3–G4 (196–392 Hz) unless "Random base note" is off
-  (then the root); a 300¢-wide slider with the target 60–240¢ from its low end; the tuned note
-  starts 25–120¢ from the target. The slider shows no numbers; ±5 / ±1 / ±0.1¢ buttons nudge it.
+  (then the root); a 100¢-wide slider (revised 2026-10-17, was 300¢) with the target 20–80¢ from
+  its low end; the tuned note starts anywhere on the slider at least 15¢ from the target. The slider shows no numbers; ±5 / ±1 / ±0.1¢ buttons nudge it.
 - Listening: Both / Base / Yours (+ Target after revealing) with a Play / Stop toggle. The game
   plays its own engine voices (`game-base`, `game-tuned`, `game-target`) with the current timbre;
   moving the slider retunes the sounding note live. Game voices are left out of the computed
@@ -706,3 +706,18 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
   frequency (`nearestNote`). Choosing a base retunes the current round (slider position kept);
   New round keeps the chosen base; switching back to Random starts a fresh round.
 - Listening options are labelled **Both / Bottom / Top** (+ Target after revealing).
+
+### 2026-10-17 — EDT (equal divisions of the tritave) and Bohlen–Pierce
+
+- **Period:** the pitch collection repeats at `period` (store, persisted, default 2): degrees past
+  the last note are the earlier ones × period^n (`degreeRatio` / `degreeFreq` take the period).
+  Picking a tuning sets it from `TUNINGS[t].period ?? 2`; loading a preset from `preset.period`.
+- **Custom EDT (tritave)** tuning: N equal divisions of 3/1 (`edtNotes`, "3^(k/N)"), "Divisions /
+  tritave" field (1–96, default 13, `edt` in the store, `setEdt`), period 3.
+- EDT notes ("3^(k/N)", `parseEdt` / `edtExpr`): cards show Step k / N; the Octave row becomes
+  **Tritave** (step ± N); badge `NEDT` (root "1" in the Custom EDT tuning too); the source menu lists
+  the custom EDT (and the note's own) — conversion rounds cents / (1200·log2 3 / N); the insert
+  menu has "Custom EDT (steps of N, tritave 3/1)".
+- **Presets** (group "Tritave (EDT)"): Bohlen–Pierce (13EDT, all 13 steps), Bohlen–Pierce Lambda
+  mode (13EDT steps 0 2 3 4 6 7 9 10 12), Bohlen–Pierce (just: 1, 27/25, 25/21, 9/7, 7/5, 75/49, 5/3,
+  9/5, 49/25, 15/7, 7/3, 63/25, 25/9; Just intonation tuning with period 3) and 9EDT.

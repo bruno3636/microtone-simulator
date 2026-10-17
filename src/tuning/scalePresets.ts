@@ -1,5 +1,5 @@
 import { buildDegree } from './degreeInput';
-import { edoExpr, evalRatio } from './ratios';
+import { edoExpr, edtExpr, evalRatio } from './ratios';
 
 /** A ready-made scale: which tuning it belongs to and its notes (ascending, root first). */
 export interface ScalePreset {
@@ -9,6 +9,9 @@ export interface ScalePreset {
   tuning: string;
   variant?: string;
   edo?: number;
+  edt?: number;
+  /** the interval the notes repeat at (default 2, the octave; 3 for tritave scales) */
+  period?: number;
   notes: string[];
 }
 
@@ -93,7 +96,7 @@ const ALL_PRESETS: ScalePreset[] = [
   ...EXTRA_PRESETS(),
 ];
 
-export const PRESET_GROUPS = ['Just intonation', '12EDO', 'Other EDOs', 'Pythagorean', 'Meantone', 'Well temperament'];
+export const PRESET_GROUPS = ['Just intonation', '12EDO', 'Other EDOs', 'Tritave (EDT)', 'Pythagorean', 'Meantone', 'Well temperament'];
 
 /** Every preset, grouped by source in `PRESET_GROUPS` order (stable within a group). */
 export const SCALE_PRESETS: ScalePreset[] = PRESET_GROUPS.flatMap((g) => ALL_PRESETS.filter((p) => p.group === g));
@@ -144,6 +147,15 @@ function EXTRA_PRESETS(): ScalePreset[] {
     EN(31, 'septimal', '31EDO septimal major (7/4)', [0, 5, 10, 13, 18, 23, 25]),
     EN(41, 'major', '41EDO major', [0, 7, 13, 17, 24, 30, 37]),
     EN(53, 'chromatic', '53EDO commas (53)', range(53)),
+    // tritave scales: repeat at 3/1 instead of the octave
+    { id: 'edt13-bp', label: 'Bohlen–Pierce (13EDT)', group: 'Tritave (EDT)', tuning: 'custom_edt', edt: 13, period: 3,
+      notes: range(13).map((k) => edtExpr(k, 13)) },
+    { id: 'edt13-lambda', label: 'Bohlen–Pierce Lambda mode (13EDT)', group: 'Tritave (EDT)', tuning: 'custom_edt', edt: 13, period: 3,
+      notes: [0, 2, 3, 4, 6, 7, 9, 10, 12].map((k) => edtExpr(k, 13)) },
+    { id: 'bp-just', label: 'Bohlen–Pierce (just)', group: 'Tritave (EDT)', tuning: 'just_intonation', period: 3,
+      notes: ['1', '27/25', '25/21', '9/7', '7/5', '75/49', '5/3', '9/5', '49/25', '15/7', '7/3', '63/25', '25/9'] },
+    { id: 'edt9', label: '9EDT', group: 'Tritave (EDT)', tuning: 'custom_edt', edt: 9, period: 3,
+      notes: range(9).map((k) => edtExpr(k, 9)) },
     // Pythagorean modes and chromatic
     { id: 'pyth-dorian', label: 'Pythagorean Dorian', group: 'Pythagorean', tuning: 'pythagorean_tuning', notes: pyth('C D E♭ F G A B♭') },
     { id: 'pyth-phrygian', label: 'Pythagorean Phrygian', group: 'Pythagorean', tuning: 'pythagorean_tuning', notes: pyth('C D♭ E♭ F G A♭ B♭') },

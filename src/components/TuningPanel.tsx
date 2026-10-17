@@ -36,6 +36,9 @@ export function TuningPanel() {
       {tuning.edo && (
         <NumberField label="Divisions / octave" value={s.edo} min={1} max={96} onChange={s.setEdo} />
       )}
+      {tuning.edt && (
+        <NumberField label="Divisions / tritave" value={s.edt} min={1} max={96} onChange={s.setEdt} />
+      )}
       <label className="flex flex-col gap-1">
         <span className="label">Scale</span>
         <select {...sel} value={s.scale} onChange={pick((v) => s.applyTemplate(s.tuning, v))}>

@@ -50,7 +50,7 @@ describe('ratios', () => {
   describe('tuning roster', () => {
     it('offers exactly the requested tunings, in order', () => {
       expect(TUNING_ORDER).toEqual([
-        'just_intonation', 'harmonic_series', 'edo12', 'custom_edo', 'pythagorean_tuning', 'meantone', 'well_temperament',
+        'just_intonation', 'harmonic_series', 'edo12', 'custom_edo', 'custom_edt', 'pythagorean_tuning', 'meantone', 'well_temperament',
       ]);
       expect([...TUNING_ORDER].sort()).toEqual(Object.keys(TUNINGS).sort());
     });

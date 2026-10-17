@@ -21,14 +21,18 @@ export const GAME_INTERVALS: GameInterval[] = [
 export interface Round {
   interval: GameInterval;
   baseHz: number;
-  /** slider range (cents above the base): 300¢ wide, the target somewhere inside, not centred */
+  /** slider range (cents above the base): 100¢ wide, the target somewhere inside, not centred */
   min: number;
   max: number;
-  /** where the tuned note starts: 25–120¢ from the target */
+  /** where the tuned note starts: anywhere on the slider at least 15¢ from the target */
   start: number;
 }
 
-const SPAN = 300;
+const SPAN = 100;
+/** the target is at least this far from either end of the slider */
+const EDGE = 20;
+/** the tuned note starts at least this far from the target */
+const MIN_AWAY = 15;
 
 /**
  * A new round for `intervalId` ('random' picks one). The base note is random between G3 and G4
@@ -42,13 +46,15 @@ export function newRound(
     ? GAME_INTERVALS[Math.min(GAME_INTERVALS.length - 1, Math.floor(rng() * GAME_INTERVALS.length))]
     : GAME_INTERVALS.find((x) => x.id === intervalId) ?? GAME_INTERVALS[0];
   const baseHz = fixedBaseHz ?? Math.round(196 * 2 ** rng() * 100) / 100; // G3 … G4
-  // the target sits 60–240¢ from the slider's low end, so its position gives nothing away
-  const min = Math.round((interval.cents - (60 + rng() * (SPAN - 120))) * 10) / 10;
+  // the target sits 20–80¢ from the slider's low end, so its position gives nothing away
+  const min = Math.round((interval.cents - (EDGE + rng() * (SPAN - 2 * EDGE))) * 10) / 10;
   const max = Math.round((min + SPAN) * 10) / 10;
-  // start 25–120¢ away, on whichever side has room
-  const away = 25 + rng() * 95;
-  let start = interval.cents + (rng() < 0.5 ? -away : away);
-  if (start < min || start > max) start = interval.cents * 2 - start;
+  // start anywhere on the slider except within 15¢ of the target: pick a point along the two
+  // allowed stretches (below and above the target) laid end to end
+  const below = interval.cents - MIN_AWAY - min;
+  const above = max - (interval.cents + MIN_AWAY);
+  const u = rng() * (below + above);
+  const start = u < below ? min + u : interval.cents + MIN_AWAY + (u - below);
   return { interval, baseHz, min, max, start: Math.round(start * 10) / 10 };
 }
 
