@@ -73,7 +73,7 @@ export function drawRoughness(dc: DrawCtx, v: RoughnessView, hover: Hover | null
   for (const p of v.curve) ctx.lineTo(xOf(p.cents), yOf(p.value));
   ctx.lineTo(w, base);
   ctx.closePath();
-  ctx.globalAlpha = 0.12;
+  ctx.globalAlpha = 0.05; // a faint fill keeps the markers and dip labels readable
   ctx.fillStyle = colors.text;
   ctx.fill();
   ctx.globalAlpha = 1;
