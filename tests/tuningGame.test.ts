@@ -62,10 +62,11 @@ describe('custom just intervals', () => {
   });
   it('rejects non-just, out-of-range or malformed input', async () => {
     const { parseCustomInterval } = await import('../src/game/tuningGame');
-    for (const bad of ['', 'abc', '1', '1/1', '8/9', '9/1', '2^(1/12)', 'sqrt(2)', '0', '-3/2']) {
+    for (const bad of ['', 'abc', '1', '1/1', '8/9', '33/1', '2^(1/12)', 'sqrt(2)', '0', '-3/2', '3/0', '3^12/2^19']) {
       expect(parseCustomInterval(bad), bad).toBeNull();
     }
     expect(parseCustomInterval('8/1')!.ratio).toBe('8/1');
+    expect(parseCustomInterval('32/1')!.ratio).toBe('32/1');
   });
   it('newRound accepts a custom interval', async () => {
     const { parseCustomInterval } = await import('../src/game/tuningGame');
@@ -95,5 +96,49 @@ describe('choosing the base note', () => {
   it('a chosen base is used as is', () => {
     const r = newRound(GAME_INTERVALS[0], Math.random, 110);
     expect(r.baseHz).toBe(110);
+  });
+});
+
+describe('big ratios', () => {
+  it('large numerators and denominators are read exactly (no rounding through decimals)', async () => {
+    const { parseCustomInterval } = await import('../src/game/tuningGame');
+    const comma = parseCustomInterval('531441/524288')!; // Pythagorean comma
+    expect(comma.ratio).toBe('531441/524288');
+    expect(comma.cents).toBeCloseTo(23.46, 2);
+    expect(parseCustomInterval('1048576/1048575')!.cents).toBeCloseTo(0.00165, 4);
+    expect(parseCustomInterval('4096/3125')!.ratio).toBe('4096/3125');
+    expect(parseCustomInterval('2187/2048')!.ratio).toBe('2187/2048');
+    expect(parseCustomInterval('1000000/999999')).not.toBeNull();
+    expect(parseCustomInterval('99999999999999999999/50000000000000000000')!.ratio).toBe('99999999999999999999/50000000000000000000');
+  });
+  it('wide intervals up to 32/1 (five octaves)', async () => {
+    const { parseCustomInterval, MAX_CUSTOM } = await import('../src/game/tuningGame');
+    expect(MAX_CUSTOM).toBe(32);
+    expect(parseCustomInterval('16/1')!.cents).toBeCloseTo(4800, 6);
+    expect(parseCustomInterval('25:1')!.ratio).toBe('25/1');
+    expect(parseCustomInterval('1.5/1')!.ratio).toBe('3/2');
+    expect(parseCustomInterval('12.5')!.ratio).toBe('25/2');
+  });
+});
+
+describe('cents targets', () => {
+  it('parses a size in cents (optionally with ¢ or c)', async () => {
+    const { parseCentsInterval } = await import('../src/game/tuningGame');
+    expect(parseCentsInterval('386.3')).toMatchObject({ cents: 386.3, ratio: '386.3¢', name: '', kind: 'cents' });
+    expect(parseCentsInterval(' 700 ¢ ')!.cents).toBe(700);
+    expect(parseCentsInterval('551.3c')!.cents).toBe(551.3);
+    expect(parseCentsInterval('6000')!.cents).toBe(6000);
+  });
+  it('rejects zero, negatives, too large or non-numbers', async () => {
+    const { parseCentsInterval } = await import('../src/game/tuningGame');
+    for (const bad of ['', '0', '-50', '6000.5', 'abc', '3/2', '1e3']) expect(parseCentsInterval(bad), bad).toBeNull();
+  });
+  it('a round can use a cents target', async () => {
+    const { parseCentsInterval } = await import('../src/game/tuningGame');
+    const iv = parseCentsInterval('700')!;
+    const r = newRound(iv, Math.random, 300);
+    expect(r.interval.cents).toBe(700);
+    expect(r.min).toBeLessThan(700);
+    expect(r.max).toBeGreaterThan(700);
   });
 });

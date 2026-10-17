@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { engine } from '../audio/engine';
-import { MAX_CUSTOM, NOTE_NAMES, OCTAVES, describeError, nearestNote, newRound, noteHz, parseCustomInterval, rate, type GameInterval, type Round } from '../game/tuningGame';
+import { MAX_CENTS, MAX_CUSTOM, NOTE_NAMES, OCTAVES, describeError, nearestNote, newRound, noteHz, parseCentsInterval, parseCustomInterval, rate, type GameInterval, type Round } from '../game/tuningGame';
 import { NumberField, Segmented } from './ui';
 
 type Listen = 'both' | 'base' | 'yours' | 'target';
@@ -14,7 +14,7 @@ const TARGET = 'game-target';
 const firstRound = newRound(parseCustomInterval('3/2')!);
 const session = {
   baseMode: 'random' as 'random' | 'choose', baseHz: Math.round(noteHz('C', 4) * 100) / 100, round: firstRound, value: firstRound.start, revealed: false,
-  ratioText: '3/2', interval: firstRound.interval,
+  ratioText: '3/2', interval: firstRound.interval, targetMode: 'ratio' as 'ratio' | 'cents', centsText: '386.3',
   stats: { rounds: 0, total: 0, best: Infinity },
 };
 
@@ -35,7 +35,10 @@ export function TuningGame() {
   // the interval to tune: any just ratio the user types
   const [ratioText, setRatioText] = useState(session.ratioText);
   const [interval, setGameInterval] = useState<GameInterval>(session.interval);
-  const parsed = parseCustomInterval(ratioText);
+  // the target can be typed as a just ratio or as a size in cents
+  const [targetMode, setTargetMode] = useState(session.targetMode);
+  const [centsText, setCentsText] = useState(session.centsText);
+  const parsed = targetMode === 'ratio' ? parseCustomInterval(ratioText) : parseCentsInterval(centsText);
   const sounding = useRef(new Map<string, number>());
 
   const freq = (cents: number) => round.baseHz * 2 ** (cents / 1200);
@@ -59,8 +62,8 @@ export function TuningGame() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing, listen, value, round]);
 
-  useEffect(() => { Object.assign(session, { baseMode, baseHz, round, value, revealed, stats, ratioText, interval }); },
-    [baseMode, baseHz, round, value, revealed, stats, ratioText, interval]);
+  useEffect(() => { Object.assign(session, { baseMode, baseHz, round, value, revealed, stats, ratioText, interval, targetMode, centsText }); },
+    [baseMode, baseHz, round, value, revealed, stats, ratioText, interval, targetMode, centsText]);
 
   // leaving the game silences it
   useEffect(() => () => { for (const id of sounding.current.keys()) engine.noteOff(id); }, []);
@@ -96,21 +99,33 @@ export function TuningGame() {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end gap-4">
+        <Segmented<'ratio' | 'cents'> label="Target as" value={targetMode}
+          onChange={(m) => {
+            setTargetMode(m);
+            const iv = m === 'ratio' ? parseCustomInterval(ratioText) : parseCentsInterval(centsText);
+            if (iv) start(iv);
+          }}
+          options={[{ value: 'ratio', label: 'Ratio' }, { value: 'cents', label: 'Cents' }]} />
         <form className="flex items-end gap-2" onSubmit={(e) => {
           e.preventDefault();
           if (!parsed) return;
-          setGameInterval(parsed);
           start(parsed);
         }}>
           <label className="flex flex-col gap-1">
-            <span className="label">Interval ratio</span>
-            <input className="input mono w-28" value={ratioText} placeholder="e.g. 13/8" aria-invalid={!parsed}
-              aria-describedby="game-ratio-help" onChange={(e) => setRatioText(e.target.value)} />
+            <span className="label">{targetMode === 'ratio' ? 'Interval ratio' : 'Interval in cents'}</span>
+            <input className="input mono w-28" aria-invalid={!parsed} aria-describedby="game-ratio-help"
+              value={targetMode === 'ratio' ? ratioText : centsText}
+              placeholder={targetMode === 'ratio' ? 'e.g. 13/8' : 'e.g. 386.3'}
+              onChange={(e) => (targetMode === 'ratio' ? setRatioText : setCentsText)(e.target.value)} />
           </label>
           <button type="submit" className="btn" disabled={!parsed} style={{ opacity: parsed ? 1 : 0.4 }}>Use</button>
           <span id="game-ratio-help" className="label pb-2 normal-case tracking-normal"
             style={{ color: parsed ? undefined : 'var(--error)' }}>
-            {parsed ? `${parsed.name ? `${parsed.name} · ` : ''}${parsed.ratio}` : `a just ratio above 1/1, up to ${MAX_CUSTOM}/1 (e.g. 3/2, 13/8, 21:16)`}
+            {parsed
+              ? parsed.kind === 'cents' ? `${parsed.cents}¢` : `${parsed.name ? `${parsed.name} · ` : ''}${parsed.ratio}`
+              : targetMode === 'ratio'
+                ? `a just ratio above 1/1, up to ${MAX_CUSTOM}/1 (e.g. 3/2, 13/8, 21:16)`
+                : `a size in cents above 0, up to ${MAX_CENTS} (e.g. 386.3, 700)`}
           </span>
         </form>
         <Segmented<'random' | 'choose'> label="Base note" value={baseMode}
@@ -196,7 +211,7 @@ export function TuningGame() {
             <span className="label normal-case tracking-normal">{verdict.detail}</span>
           </div>
           <p className="mono m-0 text-sm">
-            your interval {value.toFixed(1)}¢ · target {round.interval.ratio} = {round.interval.cents.toFixed(1)}¢ · base {round.baseHz.toFixed(2)} Hz
+            your interval {value.toFixed(1)}¢ · target {round.interval.kind === 'cents' ? `${round.interval.cents}¢` : `${round.interval.ratio} = ${round.interval.cents.toFixed(1)}¢`} · base {round.baseHz.toFixed(2)} Hz
           </p>
           {/* error scale: ±50¢ around the target */}
           <div className="relative h-8 border-b border-[var(--border)]" aria-hidden>

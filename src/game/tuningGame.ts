@@ -1,10 +1,12 @@
-import { evalRatio, toFraction } from '../tuning/ratios';
-
 /**
  * Tuning game: tune a note against a base note to a chosen just interval by ear, then reveal how
  * far off you were. Pure logic here; the panel is `components/TuningGame.tsx`.
  */
-export interface GameInterval { id: string; name: string; ratio: string; cents: number }
+export interface GameInterval {
+  id: string; name: string; ratio: string; cents: number;
+  /** 'cents': typed as a size in cents (`ratio` then reads e.g. "386.3¢") */
+  kind?: 'ratio' | 'cents';
+}
 
 const I = (name: string, a: number, b: number): GameInterval =>
   ({ id: `${a}-${b}`, name, ratio: `${a}/${b}`, cents: 1200 * Math.log2(a / b) });
@@ -58,23 +60,62 @@ export function newRound(
   return { interval, baseHz, min, max, start: Math.round(start * 10) / 10 };
 }
 
-/** largest custom interval (three octaves) */
-export const MAX_CUSTOM = 8;
+/** largest custom interval (five octaves; the top note stays audible above a 440 Hz base) */
+export const MAX_CUSTOM = 32;
+
+/** A decimal or integer string as an exact fraction of BigInts ("1.625" → 1625 / 1000). */
+function exact(text: string): [bigint, bigint] | null {
+  const m = /^(\d*)(?:\.(\d+))?$/.exec(text);
+  if (!m || (m[1] === '' && !m[2])) return null;
+  const frac = m[2] ?? '';
+  return [BigInt((m[1] || '0') + frac), 10n ** BigInt(frac.length)];
+}
+const gcd = (a: bigint, b: bigint): bigint => (b === 0n ? a : gcd(b, a % b));
 
 /**
- * A just interval typed in by the user — "13/8", "21:16", "3" or an exact decimal ("1.625") —
- * reduced to lowest terms; null unless it is rational, above 1/1 and at most 8/1.
+ * A just interval typed in by the user — "13/8", "21:16", "3", "1.625" or "1.5/1" — read exactly
+ * from its digits (any size of numbers, e.g. 531441/524288) and reduced to lowest terms; null
+ * unless it is above 1/1 and at most 32/1. Roots, powers and other expressions are rejected.
  */
 export function parseCustomInterval(text: string): GameInterval | null {
-  const t = text.trim().replace(/\s*:\s*/, '/');
-  if (!/^[\d\s./]+$/.test(t)) return null; // digits, "/" and "." only: no roots or powers
-  const v = evalRatio(t);
-  if (v == null || v <= 1 + 1e-12 || v > MAX_CUSTOM + 1e-12) return null;
-  const frac = toFraction(v);
-  if (!frac) return null;
+  const parts = text.trim().split(/\s*[/:]\s*/);
+  if (parts.length > 2) return null;
+  const num = exact(parts[0]);
+  const den = parts.length === 2 ? exact(parts[1]) : [1n, 1n] as [bigint, bigint];
+  if (!num || !den) return null;
+  let n = num[0] * den[1];
+  let d = num[1] * den[0];
+  if (n === 0n || d === 0n) return null;
+  const g = gcd(n, d);
+  n /= g;
+  d /= g;
+  // compare exactly: 1 < n/d ≤ 32
+  if (n <= d || n > d * BigInt(MAX_CUSTOM)) return null;
+  const frac = `${n}/${d}`;
   // a known interval keeps its name ("Perfect 5th"); anything else is named by its ratio alone
   const known = GAME_INTERVALS.find((x) => x.ratio === frac);
-  return known ?? { id: `custom-${frac}`, name: '', ratio: frac, cents: 1200 * Math.log2(v) };
+  const cents = 1200 * (log2Big(n) - log2Big(d));
+  return known ?? { id: `custom-${frac}`, name: '', ratio: frac, cents };
+}
+
+/** log2 of a BigInt of any size (scaled down first so it fits a float). */
+function log2Big(x: bigint): number {
+  const bits = x.toString(2).length;
+  if (bits <= 1000) return Math.log2(Number(x));
+  const shift = BigInt(bits - 60);
+  return Math.log2(Number(x >> shift)) + Number(shift);
+}
+
+/** largest cents target (five octaves, as for ratios) */
+export const MAX_CENTS = 6000;
+
+/** A target typed as a size in cents ("386.3", "700¢", "551.3c"): above 0, at most 6000. */
+export function parseCentsInterval(text: string): GameInterval | null {
+  const m = /^\s*(\d+(?:\.\d+)?|\.\d+)\s*(?:¢|c|cents?)?\s*$/i.exec(text);
+  if (!m) return null;
+  const c = Number(m[1]);
+  if (!(c > 0) || c > MAX_CENTS) return null;
+  return { id: `cents-${c}`, name: '', ratio: `${c}¢`, cents: c, kind: 'cents' };
 }
 
 /** Note names for choosing a base note (sharps). */

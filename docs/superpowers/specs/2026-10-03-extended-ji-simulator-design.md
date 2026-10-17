@@ -723,3 +723,12 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
   9/5, 49/25, 15/7, 7/3, 63/25, 25/9; Just intonation tuning with period 3) and 9EDT.
 - Random base notes are 220–440 Hz (A3–A4; was G3–G4). New round / Next round use the ratio in the
   box when it is valid (and make it the current interval), so a typed ratio is never reset.
+- **Target as Ratio | Cents** switch: in Cents mode the box takes a size in cents above 0 up to 3600
+  (`parseCentsInterval`; "386.3", "700¢", "551.3c"), the prompt reads "Tune your note to 700¢ above
+  the base note" and the result shows "target 700¢". Switching mode starts a round with that mode's
+  value when valid; each mode keeps its own text.
+- **Big ratios:** `parseCustomInterval` reads the typed digits exactly with BigInt (a/b, a:b,
+  integers, decimals on either side), reduces by gcd and compares 1 < n/d ≤ 32 exactly, so ratios
+  with large numbers (531441/524288, 4096/3125, 20-digit terms) work — previously they went through a
+  float and `toFraction`, which only recovered denominators ≤ 4096. The limit is now 32/1 (five
+  octaves) for ratios and 6000¢ for cents targets (was 8/1 and 3600¢).
