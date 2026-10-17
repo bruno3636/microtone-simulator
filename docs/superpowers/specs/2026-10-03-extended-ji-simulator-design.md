@@ -732,3 +732,4 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
   with large numbers (531441/524288, 4096/3125, 20-digit terms) work — previously they went through a
   float and `toFraction`, which only recovered denominators ≤ 4096. The limit is now 32/1 (five
   octaves) for ratios and 6000¢ for cents targets (was 8/1 and 3600¢).
+- The slider's width is random each round between 64¢ and 128¢ (`MIN_SPAN` / `MAX_SPAN`; was a fixed 100¢); the target stays ≥ 20¢ from each end and the start ≥ 15¢ from the target.

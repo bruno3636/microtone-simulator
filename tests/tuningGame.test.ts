@@ -21,7 +21,8 @@ describe('tuning game', () => {
       expect(r.baseHz).toBeLessThanOrEqual(440);
       expect(r.min).toBeLessThan(r.interval.cents);
       expect(r.max).toBeGreaterThan(r.interval.cents);
-      expect(r.max - r.min).toBeCloseTo(100, 6);
+      expect(r.max - r.min).toBeGreaterThanOrEqual(64 - 1e-6);
+      expect(r.max - r.min).toBeLessThanOrEqual(128 + 1e-6);
       expect(r.interval.cents - r.min).toBeGreaterThanOrEqual(19.9); // not at an end
       expect(r.max - r.interval.cents).toBeGreaterThanOrEqual(19.9);
       expect(Math.abs(r.start - r.interval.cents)).toBeGreaterThanOrEqual(14.9);
@@ -30,6 +31,11 @@ describe('tuning game', () => {
     }
   });
 
+  it('the slider width varies between 64 and 128 cents', () => {
+    const widths = Array.from({ length: 300 }, () => { const r = newRound('3-2'); return r.max - r.min; });
+    expect(Math.min(...widths)).toBeLessThan(75);
+    expect(Math.max(...widths)).toBeGreaterThan(117);
+  });
   it('random picks any interval; a fixed base frequency is used when given', () => {
     const r = newRound('random', seq(0.999, 0.5, 0.5, 0.5, 0.5), 261.63);
     expect(r.interval).toBe(GAME_INTERVALS.at(-1));

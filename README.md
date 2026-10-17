@@ -85,7 +85,7 @@ The **Tuning game** tab trains your ear:
 2. Press **▶ Play** and move the **slider** until your note sounds perfectly in tune with the base
    note. Listen to **Both** for the beating (it slows down and stops as you get close), or to
    the **Bottom** (base) or **Top** (your) note alone. The slider shows no numbers; its range is shifted every round
-   (it spans 100¢) and your note starts at least 15¢ off. The ±¢ buttons make fine adjustments.
+   (it spans a random 64–128¢) and your note starts at least 15¢ off. The ±¢ buttons make fine adjustments.
 3. Press **Reveal result** to see how many cents sharp or flat you were, with a rating from
    *Perfect* (under 1¢) to *Keep practising*. Then **Hear the target**, or go to the **Next round**.
 

@@ -23,14 +23,16 @@ export const GAME_INTERVALS: GameInterval[] = [
 export interface Round {
   interval: GameInterval;
   baseHz: number;
-  /** slider range (cents above the base): 100¢ wide, the target somewhere inside, not centred */
+  /** slider range (cents above the base): 64–128¢ wide (random), the target somewhere inside, not centred */
   min: number;
   max: number;
   /** where the tuned note starts: anywhere on the slider at least 15¢ from the target */
   start: number;
 }
 
-const SPAN = 100;
+/** the slider is between these many cents wide, chosen at random each round */
+export const MIN_SPAN = 64;
+export const MAX_SPAN = 128;
 /** the target is at least this far from either end of the slider */
 const EDGE = 20;
 /** the tuned note starts at least this far from the target */
@@ -48,9 +50,11 @@ export function newRound(
     ? GAME_INTERVALS[Math.min(GAME_INTERVALS.length - 1, Math.floor(rng() * GAME_INTERVALS.length))]
     : GAME_INTERVALS.find((x) => x.id === intervalId) ?? GAME_INTERVALS[0];
   const baseHz = fixedBaseHz ?? Math.round(220 * 2 ** rng() * 100) / 100; // A3 … A4 (220–440 Hz)
-  // the target sits 20–80¢ from the slider's low end, so its position gives nothing away
-  const min = Math.round((interval.cents - (EDGE + rng() * (SPAN - 2 * EDGE))) * 10) / 10;
-  const max = Math.round((min + SPAN) * 10) / 10;
+  // a random width, and the target somewhere inside (≥ 20¢ from each end): neither the slider's
+  // size nor the target's position gives anything away
+  const span = Math.round((MIN_SPAN + rng() * (MAX_SPAN - MIN_SPAN)) * 10) / 10;
+  const min = Math.round((interval.cents - (EDGE + rng() * (span - 2 * EDGE))) * 10) / 10;
+  const max = Math.round((min + span) * 10) / 10;
   // start anywhere on the slider except within 15¢ of the target: pick a point along the two
   // allowed stretches (below and above the target) laid end to end
   const below = interval.cents - MIN_AWAY - min;
