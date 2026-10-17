@@ -191,7 +191,7 @@ export function TuningGame() {
           aria-label="Tune your note (cents)" aria-valuetext={revealed ? `${value.toFixed(1)} cents` : 'hidden'}
           onChange={(e) => setValue(Number(e.target.value))} />
         <div className="flex flex-wrap gap-2">
-          {[-5, -1, -0.1, 0.1, 1, 5].map((d) => (
+          {[-5, -2, -0.5, -0.1, 0.1, 0.5, 2, 5].map((d) => (
             <button key={d} type="button" className="btn px-2 py-0.5 text-sm" disabled={revealed} onClick={() => nudge(d)}>
               {d > 0 ? '+' : '−'}{Math.abs(d)}¢
             </button>
