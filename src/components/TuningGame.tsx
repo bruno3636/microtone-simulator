@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../state/store';
 import { engine } from '../audio/engine';
-import { GAME_INTERVALS, describeError, newRound, rate, type Round } from '../game/tuningGame';
+import { MAX_CUSTOM, describeError, newRound, parseCustomInterval, rate, type GameInterval, type Round } from '../game/tuningGame';
 import { Segmented } from './ui';
 
 type Listen = 'both' | 'base' | 'yours' | 'target';
@@ -12,9 +12,10 @@ const TUNED = 'game-tuned';
 const TARGET = 'game-target';
 
 /** The game survives switching tabs for this session (the panel unmounts when hidden). */
-const firstRound = newRound('3-2');
+const firstRound = newRound(parseCustomInterval('3/2')!);
 const session = {
-  intervalId: '3-2', randomBase: true, round: firstRound, value: firstRound.start, revealed: false,
+  randomBase: true, round: firstRound, value: firstRound.start, revealed: false,
+  ratioText: '3/2', interval: firstRound.interval,
   stats: { rounds: 0, total: 0, best: Infinity },
 };
 
@@ -24,7 +25,6 @@ const session = {
  */
 export function TuningGame() {
   const rootHz = useStore((s) => s.root.freq);
-  const [intervalId, setIntervalId] = useState(session.intervalId);
   const [randomBase, setRandomBase] = useState(session.randomBase);
   const [round, setRound] = useState<Round>(session.round);
   const [value, setValue] = useState(session.value);
@@ -32,6 +32,10 @@ export function TuningGame() {
   const [playing, setPlaying] = useState(false);
   const [listen, setListen] = useState<Listen>('both');
   const [stats, setStats] = useState(session.stats);
+  // the interval to tune: any just ratio the user types
+  const [ratioText, setRatioText] = useState(session.ratioText);
+  const [interval, setGameInterval] = useState<GameInterval>(session.interval);
+  const parsed = parseCustomInterval(ratioText);
   const sounding = useRef(new Map<string, number>());
 
   const freq = (cents: number) => round.baseHz * 2 ** (cents / 1200);
@@ -55,14 +59,14 @@ export function TuningGame() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing, listen, value, round]);
 
-  useEffect(() => { Object.assign(session, { intervalId, randomBase, round, value, revealed, stats }); },
-    [intervalId, randomBase, round, value, revealed, stats]);
+  useEffect(() => { Object.assign(session, { randomBase, round, value, revealed, stats, ratioText, interval }); },
+    [randomBase, round, value, revealed, stats, ratioText, interval]);
 
   // leaving the game silences it
   useEffect(() => () => { for (const id of sounding.current.keys()) engine.noteOff(id); }, []);
 
-  const start = (id = intervalId) => {
-    const r = newRound(id, Math.random, randomBase ? null : rootHz);
+  const start = (iv: GameInterval = interval) => {
+    const r = newRound(iv, Math.random, randomBase ? null : rootHz);
     setRound(r);
     setValue(r.start);
     setRevealed(false);
@@ -83,14 +87,23 @@ export function TuningGame() {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-end gap-4">
-        <label className="flex flex-col gap-1">
-          <span className="label">Interval</span>
-          <select className="input" value={intervalId}
-            onChange={(e) => { setIntervalId(e.target.value); start(e.target.value); e.currentTarget.blur(); }}>
-            <option value="random">Random</option>
-            {GAME_INTERVALS.map((x) => <option key={x.id} value={x.id}>{x.name} ({x.ratio})</option>)}
-          </select>
-        </label>
+        <form className="flex items-end gap-2" onSubmit={(e) => {
+          e.preventDefault();
+          if (!parsed) return;
+          setGameInterval(parsed);
+          start(parsed);
+        }}>
+          <label className="flex flex-col gap-1">
+            <span className="label">Interval ratio</span>
+            <input className="input mono w-28" value={ratioText} placeholder="e.g. 13/8" aria-invalid={!parsed}
+              aria-describedby="game-ratio-help" onChange={(e) => setRatioText(e.target.value)} />
+          </label>
+          <button type="submit" className="btn" disabled={!parsed} style={{ opacity: parsed ? 1 : 0.4 }}>Use</button>
+          <span id="game-ratio-help" className="label pb-2 normal-case tracking-normal"
+            style={{ color: parsed ? undefined : 'var(--error)' }}>
+            {parsed ? `${parsed.name ? `${parsed.name} · ` : ''}${parsed.ratio}` : `a just ratio above 1/1, up to ${MAX_CUSTOM}/1 (e.g. 3/2, 13/8, 21:16)`}
+          </span>
+        </form>
         <label className="flex items-center gap-2 pb-2">
           <input type="checkbox" checked={randomBase} onChange={(e) => setRandomBase(e.target.checked)} />
           <span className="label normal-case tracking-normal">Random base note (else the root, {+rootHz.toFixed(2)} Hz)</span>
@@ -99,7 +112,11 @@ export function TuningGame() {
       </div>
 
       <p className="m-0 text-lg">
-        Tune your note to a <strong>{round.interval.name}</strong> <span className="mono">({round.interval.ratio})</span> above the base note.
+        {round.interval.name ? (
+          <>Tune your note to a <strong>{round.interval.name}</strong> <span className="mono">({round.interval.ratio})</span> above the base note.</>
+        ) : (
+          <>Tune your note to <strong className="mono">{round.interval.ratio}</strong> above the base note.</>
+        )}
       </p>
 
       <div className="flex flex-wrap items-end gap-4">

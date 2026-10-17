@@ -1,3 +1,5 @@
+import { evalRatio, toFraction } from '../tuning/ratios';
+
 /**
  * Tuning game: tune a note against a base note to a chosen just interval by ear, then reveal how
  * far off you were. Pure logic here; the panel is `components/TuningGame.tsx`.
@@ -32,8 +34,11 @@ const SPAN = 300;
  * A new round for `intervalId` ('random' picks one). The base note is random between G3 and G4
  * unless `fixedBaseHz` is given. `rng` returns values in [0, 1).
  */
-export function newRound(intervalId: string, rng: () => number = Math.random, fixedBaseHz: number | null = null): Round {
-  const interval = intervalId === 'random'
+export function newRound(
+  which: string | GameInterval, rng: () => number = Math.random, fixedBaseHz: number | null = null,
+): Round {
+  const intervalId = typeof which === 'string' ? which : null;
+  const interval = typeof which !== 'string' ? which : intervalId === 'random'
     ? GAME_INTERVALS[Math.min(GAME_INTERVALS.length - 1, Math.floor(rng() * GAME_INTERVALS.length))]
     : GAME_INTERVALS.find((x) => x.id === intervalId) ?? GAME_INTERVALS[0];
   const baseHz = fixedBaseHz ?? Math.round(196 * 2 ** rng() * 100) / 100; // G3 … G4
@@ -45,6 +50,25 @@ export function newRound(intervalId: string, rng: () => number = Math.random, fi
   let start = interval.cents + (rng() < 0.5 ? -away : away);
   if (start < min || start > max) start = interval.cents * 2 - start;
   return { interval, baseHz, min, max, start: Math.round(start * 10) / 10 };
+}
+
+/** largest custom interval (three octaves) */
+export const MAX_CUSTOM = 8;
+
+/**
+ * A just interval typed in by the user — "13/8", "21:16", "3" or an exact decimal ("1.625") —
+ * reduced to lowest terms; null unless it is rational, above 1/1 and at most 8/1.
+ */
+export function parseCustomInterval(text: string): GameInterval | null {
+  const t = text.trim().replace(/\s*:\s*/, '/');
+  if (!/^[\d\s./]+$/.test(t)) return null; // digits, "/" and "." only: no roots or powers
+  const v = evalRatio(t);
+  if (v == null || v <= 1 + 1e-12 || v > MAX_CUSTOM + 1e-12) return null;
+  const frac = toFraction(v);
+  if (!frac) return null;
+  // a known interval keeps its name ("Perfect 5th"); anything else is named by its ratio alone
+  const known = GAME_INTERVALS.find((x) => x.ratio === frac);
+  return known ?? { id: `custom-${frac}`, name: '', ratio: frac, cents: 1200 * Math.log2(v) };
 }
 
 export interface Rating { label: string; detail: string }

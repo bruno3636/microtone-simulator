@@ -47,3 +47,31 @@ describe('tuning game', () => {
     expect(describeError(-7.5)).toBe('7.5¢ flat');
   });
 });
+
+describe('custom just intervals', () => {
+  it('parses a/b, a:b, integers and exact decimals into a reduced ratio', async () => {
+    const { parseCustomInterval } = await import('../src/game/tuningGame');
+    expect(parseCustomInterval('13/8')).toMatchObject({ ratio: '13/8', id: 'custom-13/8', name: '' });
+    expect(parseCustomInterval('6:4')).toMatchObject({ ratio: '3/2', name: 'Perfect 5th' }); // known names kept
+    expect(parseCustomInterval(' 21 : 16 ')!.ratio).toBe('21/16');
+    expect(parseCustomInterval('26/16')!.ratio).toBe('13/8');
+    expect(parseCustomInterval('1.625')!.ratio).toBe('13/8');
+    expect(parseCustomInterval('3')!.ratio).toBe('3/1');
+    expect(parseCustomInterval('13/8')!.cents).toBeCloseTo(840.528, 3);
+  });
+  it('rejects non-just, out-of-range or malformed input', async () => {
+    const { parseCustomInterval } = await import('../src/game/tuningGame');
+    for (const bad of ['', 'abc', '1', '1/1', '8/9', '9/1', '2^(1/12)', 'sqrt(2)', '0', '-3/2']) {
+      expect(parseCustomInterval(bad), bad).toBeNull();
+    }
+    expect(parseCustomInterval('8/1')!.ratio).toBe('8/1');
+  });
+  it('newRound accepts a custom interval', async () => {
+    const { parseCustomInterval } = await import('../src/game/tuningGame');
+    const iv = parseCustomInterval('11/7')!;
+    const r = newRound(iv, Math.random, null);
+    expect(r.interval).toBe(iv);
+    expect(r.min).toBeLessThan(iv.cents);
+    expect(r.max).toBeGreaterThan(iv.cents);
+  });
+});

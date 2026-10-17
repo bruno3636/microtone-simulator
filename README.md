@@ -74,7 +74,8 @@ key layout). In the **Tuning** panel:
 ### Tuning game
 The **Tuning game** tab trains your ear:
 
-1. Pick an **interval** (any of 19 just intervals, from 16/15 to 2/1) or **Random**.
+1. Type the **interval ratio** you want to practise — any just interval above 1/1 up to 8/1, e.g.
+   `3/2`, `13/8`, `21:16` or `1.625` — and press **Use** (or Enter).
 2. Press **▶ Play** and move the **slider** until your note sounds perfectly in tune with the base
    note. Listen to **Both** for the beating (it slows down and stops as you get close), or to
    the **Base** or **Yours** alone. The slider shows no numbers; its range is shifted every round

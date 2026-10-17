@@ -693,3 +693,10 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
   interval; "Next round" starts a new round (same interval, or a new random one).
 - Session stats: rounds, average |error|, best. The game's state survives switching tabs for the
   session (not persisted).
+- **Custom ratio…** in the interval menu shows a ratio box: any just interval typed as `a/b`, `a:b`,
+  an integer or an exact decimal, rational, above 1/1 and at most 8/1 (`parseCustomInterval`,
+  reduced to lowest terms; roots and powers rejected). Use / Enter starts a round with it; the prompt
+  reads "Tune your note to 13/8 above the base note"; Next round keeps it.
+- The interval menu is replaced by a single **Interval ratio** box (default `3/2`, no dropdown, no
+  Random option): `parseCustomInterval` input, Use / Enter starts a round. Ratios matching one of
+  `GAME_INTERVALS` keep its name ("a Perfect 5th (3/2)"); others are shown by ratio alone.
