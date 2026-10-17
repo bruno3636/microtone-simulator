@@ -9,6 +9,7 @@ import { DegreeGrid } from './components/DegreeGrid';
 import { KeyboardMap } from './components/KeyboardMap';
 import { InterScaleRatios } from './components/InterScaleRatios';
 import { SynthPanel } from './components/SynthPanel';
+import { TuningGame } from './components/TuningGame';
 import { Visualizer } from './viz/Visualizer';
 
 export default function App() {
@@ -24,9 +25,9 @@ export default function App() {
       <main className="mx-auto flex max-w-[1200px] flex-col gap-6 px-4 py-6">
         <div className="flex flex-col gap-3">
           <Segmented label="Panel" value={tab} onChange={setTab}
-            options={[{ value: 'tuning', label: 'Tuning' }, { value: 'synth', label: 'Synthesizer' }]} />
+            options={[{ value: 'tuning', label: 'Tuning' }, { value: 'synth', label: 'Synthesizer' }, { value: 'game', label: 'Tuning game' }]} />
           <div className="panel p-4">
-            {tab === 'tuning' ? <TuningPanel /> : <SynthPanel />}
+            {tab === 'tuning' ? <TuningPanel /> : tab === 'synth' ? <SynthPanel /> : <TuningGame />}
           </div>
         </div>
         <Visualizer />

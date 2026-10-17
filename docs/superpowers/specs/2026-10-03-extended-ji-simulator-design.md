@@ -673,3 +673,23 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
 - **First visit:** with nothing saved, the app starts on the `ji12-7limit` preset (1, 16/15, 9/8,
   7/6, 5/4, 4/3, 7/5, 3/2, 8/5, 5/3, 7/4, 15/8; tuning Just intonation, scale preset selected so
   Reset reloads it) with the piano keymap. Saved settings are unaffected.
+
+### 2026-10-17 — Tuning game
+
+- Third panel tab **Tuning game** (`tab: 'game'`, `components/TuningGame.tsx`, logic in
+  `game/tuningGame.ts`).
+- Intervals (`GAME_INTERVALS`): 16/15, 10/9, 9/8, 7/6, 6/5, 11/9, 5/4, 9/7, 4/3, 11/8, 7/5, 3/2, 8/5,
+  5/3, 7/4, 16/9, 9/5, 15/8, 2/1 (names as in Inter-Note Ratio), or Random.
+- A round (`newRound`): base note random in G3–G4 (196–392 Hz) unless "Random base note" is off
+  (then the root); a 300¢-wide slider with the target 60–240¢ from its low end; the tuned note
+  starts 25–120¢ from the target. The slider shows no numbers; ±5 / ±1 / ±0.1¢ buttons nudge it.
+- Listening: Both / Base / Yours (+ Target after revealing) with a Play / Stop toggle. The game
+  plays its own engine voices (`game-base`, `game-tuned`, `game-target`) with the current timbre;
+  moving the slider retunes the sounding note live. Game voices are left out of the computed
+  visualizer views and the envelope dots (no peeking); leaving the tab silences them.
+- Reveal: locks the slider and shows the rating (`rate`: Perfect < 1¢, Excellent < 3¢, Great < 6¢,
+  Good < 12¢, Close < 30¢, else Keep practising), "x¢ sharp / flat" (`describeError`), your
+  interval vs the target in cents, and a ±50¢ error scale. "Hear the target" plays base + the exact
+  interval; "Next round" starts a new round (same interval, or a new random one).
+- Session stats: rounds, average |error|, best. The game's state survives switching tabs for the
+  session (not persisted).

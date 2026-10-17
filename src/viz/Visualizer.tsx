@@ -19,6 +19,7 @@ function drawnNotes(dark: boolean): Drawn[] {
   const out: Drawn[] = [];
   const sounding = new Set<number>();
   for (const v of engine.getVoices()) {
+    if (!/^-?\d+$/.test(v.id)) continue; // tuning-game voices aren't drawn (no peeking)
     const degree = Number(v.id);
     sounding.add(degree);
     out.push({ id: v.id, degree, freq: v.freq, level: v.level, brightness: v.brightness, color: degreeColor(mod(degree, len), dark), dim: false });

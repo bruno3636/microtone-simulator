@@ -71,6 +71,20 @@ key layout). In the **Tuning** panel:
     notes are highlighted, and hovering reads the interval and its roughness. Change the harmonics
     in the Synthesizer tab to see how the timbre moves the dips.
 
+### Tuning game
+The **Tuning game** tab trains your ear:
+
+1. Pick an **interval** (any of 19 just intervals, from 16/15 to 2/1) or **Random**.
+2. Press **▶ Play** and move the **slider** until your note sounds perfectly in tune with the base
+   note. Listen to **Both** for the beating (it slows down and stops as you get close), or to
+   the **Base** or **Yours** alone. The slider shows no numbers; its range is shifted every round
+   and your note starts 25–120¢ off. The ±¢ buttons make fine adjustments.
+3. Press **Reveal result** to see how many cents sharp or flat you were, with a rating from
+   *Perfect* (under 1¢) to *Keep practising*. Then **Hear the target**, or go to the **Next round**.
+
+Each round uses a random base note between G3 and G4 (untick *Random base note* to use the root).
+Your rounds, average error and best result are tracked for the session.
+
 ### Shape the sound
 The **Synthesizer** tab has instrument presets (measured spectra), a harmonics editor (count,
 slope curve, per-harmonic tweaks, brightness decay), an ADSR envelope with draggable curves,

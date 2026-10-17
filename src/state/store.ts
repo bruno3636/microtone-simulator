@@ -23,7 +23,7 @@ export interface VizSettings {
 }
 
 interface Data {
-  tab: 'tuning' | 'synth';
+  tab: 'tuning' | 'synth' | 'game';
   tuning: string;
   /** variant of the tuning (meantone fraction, well temperament); '' when it has none */
   tuningVariant: string;

@@ -52,7 +52,7 @@ export function EnvelopeEditor() {
     let raf = 0;
     let had = false;
     const tick = () => {
-      const vs = engine.getVoices();
+      const vs = engine.getVoices().filter((v) => /^-?\d+$/.test(v.id)); // degrees only, not game voices
       if (vs.length || had) setVoices(vs);
       had = vs.length > 0;
       raf = requestAnimationFrame(tick);
