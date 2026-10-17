@@ -75,3 +75,24 @@ describe('custom just intervals', () => {
     expect(r.max).toBeGreaterThan(iv.cents);
   });
 });
+
+describe('choosing the base note', () => {
+  it('note + octave → Hz (A4 = 440, 12-TET)', async () => {
+    const { noteHz } = await import('../src/game/tuningGame');
+    expect(noteHz('A', 4)).toBeCloseTo(440, 9);
+    expect(noteHz('C', 4)).toBeCloseTo(261.626, 3);
+    expect(noteHz('C♯', 2)).toBeCloseTo(69.296, 3);
+    expect(noteHz('B', 6)).toBeCloseTo(1975.533, 3);
+  });
+  it('Hz → the nearest note and octave', async () => {
+    const { nearestNote } = await import('../src/game/tuningGame');
+    expect(nearestNote(440)).toEqual({ name: 'A', octave: 4 });
+    expect(nearestNote(261.63)).toEqual({ name: 'C', octave: 4 });
+    expect(nearestNote(123.47)).toEqual({ name: 'B', octave: 2 });
+    expect(nearestNote(255)).toEqual({ name: 'C', octave: 4 }); // nearer C4 than B3
+  });
+  it('a chosen base is used as is', () => {
+    const r = newRound(GAME_INTERVALS[0], Math.random, 110);
+    expect(r.baseHz).toBe(110);
+  });
+});

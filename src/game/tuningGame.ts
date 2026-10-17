@@ -71,6 +71,23 @@ export function parseCustomInterval(text: string): GameInterval | null {
   return known ?? { id: `custom-${frac}`, name: '', ratio: frac, cents: 1200 * Math.log2(v) };
 }
 
+/** Note names for choosing a base note (sharps). */
+export const NOTE_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+/** Octaves offered for the base note (scientific pitch: C4 = middle C). */
+export const OCTAVES = [1, 2, 3, 4, 5, 6, 7];
+
+/** 12-TET frequency of a note (A4 = 440 Hz). */
+export function noteHz(name: string, octave: number): number {
+  const midi = 12 * (octave + 1) + Math.max(0, NOTE_NAMES.indexOf(name));
+  return 440 * 2 ** ((midi - 69) / 12);
+}
+
+/** The 12-TET note nearest a frequency. */
+export function nearestNote(hz: number): { name: string; octave: number } {
+  const midi = Math.round(69 + 12 * Math.log2(hz / 440));
+  return { name: NOTE_NAMES[((midi % 12) + 12) % 12], octave: Math.floor(midi / 12) - 1 };
+}
+
 export interface Rating { label: string; detail: string }
 
 /** A verdict for an error in cents (sign ignored). */

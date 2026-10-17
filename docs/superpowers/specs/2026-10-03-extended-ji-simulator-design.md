@@ -700,3 +700,9 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
 - The interval menu is replaced by a single **Interval ratio** box (default `3/2`, no dropdown, no
   Random option): `parseCustomInterval` input, Use / Enter starts a round. Ratios matching one of
   `GAME_INTERVALS` keep its name ("a Perfect 5th (3/2)"); others are shown by ratio alone.
+- **Base note** control replaces the "Random base note / root" checkbox: *Random* (G3–G4 each
+  round) or *Choose* — note (C … B, sharps) and octave (1–7) selects (`noteHz`, 12-TET, A4 = 440)
+  plus a Hz field (20–2500 Hz) for any frequency; the selects follow the nearest note to a typed
+  frequency (`nearestNote`). Choosing a base retunes the current round (slider position kept);
+  New round keeps the chosen base; switching back to Random starts a fresh round.
+- Listening options are labelled **Both / Bottom / Top** (+ Target after revealing).

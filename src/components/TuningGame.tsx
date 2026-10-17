@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { useStore } from '../state/store';
 import { engine } from '../audio/engine';
-import { MAX_CUSTOM, describeError, newRound, parseCustomInterval, rate, type GameInterval, type Round } from '../game/tuningGame';
-import { Segmented } from './ui';
+import { MAX_CUSTOM, NOTE_NAMES, OCTAVES, describeError, nearestNote, newRound, noteHz, parseCustomInterval, rate, type GameInterval, type Round } from '../game/tuningGame';
+import { NumberField, Segmented } from './ui';
 
 type Listen = 'both' | 'base' | 'yours' | 'target';
 
@@ -14,7 +13,7 @@ const TARGET = 'game-target';
 /** The game survives switching tabs for this session (the panel unmounts when hidden). */
 const firstRound = newRound(parseCustomInterval('3/2')!);
 const session = {
-  randomBase: true, round: firstRound, value: firstRound.start, revealed: false,
+  baseMode: 'random' as 'random' | 'choose', baseHz: Math.round(noteHz('C', 4) * 100) / 100, round: firstRound, value: firstRound.start, revealed: false,
   ratioText: '3/2', interval: firstRound.interval,
   stats: { rounds: 0, total: 0, best: Infinity },
 };
@@ -24,8 +23,9 @@ const session = {
  * far off you were. The slider shows no numbers and its range is shifted each round.
  */
 export function TuningGame() {
-  const rootHz = useStore((s) => s.root.freq);
-  const [randomBase, setRandomBase] = useState(session.randomBase);
+  // base note: random each round, or one the user chooses (note + octave, or any Hz)
+  const [baseMode, setBaseMode] = useState(session.baseMode);
+  const [baseHz, setBaseHz] = useState(session.baseHz);
   const [round, setRound] = useState<Round>(session.round);
   const [value, setValue] = useState(session.value);
   const [revealed, setRevealed] = useState(session.revealed);
@@ -59,14 +59,14 @@ export function TuningGame() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing, listen, value, round]);
 
-  useEffect(() => { Object.assign(session, { randomBase, round, value, revealed, stats, ratioText, interval }); },
-    [randomBase, round, value, revealed, stats, ratioText, interval]);
+  useEffect(() => { Object.assign(session, { baseMode, baseHz, round, value, revealed, stats, ratioText, interval }); },
+    [baseMode, baseHz, round, value, revealed, stats, ratioText, interval]);
 
   // leaving the game silences it
   useEffect(() => () => { for (const id of sounding.current.keys()) engine.noteOff(id); }, []);
 
   const start = (iv: GameInterval = interval) => {
-    const r = newRound(iv, Math.random, randomBase ? null : rootHz);
+    const r = newRound(iv, Math.random, baseMode === 'choose' ? baseHz : null);
     setRound(r);
     setValue(r.start);
     setRevealed(false);
@@ -76,6 +76,13 @@ export function TuningGame() {
     setRevealed(true);
     setStats((s) => ({ rounds: s.rounds + 1, total: s.total + Math.abs(error), best: Math.min(s.best, Math.abs(error)) }));
   };
+  /** Choosing a base retunes the current round (your slider position is kept). */
+  const chooseBase = (hz: number) => {
+    const f = Math.round(hz * 100) / 100;
+    setBaseHz(f);
+    setRound((r) => ({ ...r, baseHz: f }));
+  };
+  const base = nearestNote(baseHz);
   const togglePlay = () => {
     engine.resume();
     setPlaying((p) => !p);
@@ -104,10 +111,38 @@ export function TuningGame() {
             {parsed ? `${parsed.name ? `${parsed.name} · ` : ''}${parsed.ratio}` : `a just ratio above 1/1, up to ${MAX_CUSTOM}/1 (e.g. 3/2, 13/8, 21:16)`}
           </span>
         </form>
-        <label className="flex items-center gap-2 pb-2">
-          <input type="checkbox" checked={randomBase} onChange={(e) => setRandomBase(e.target.checked)} />
-          <span className="label normal-case tracking-normal">Random base note (else the root, {+rootHz.toFixed(2)} Hz)</span>
-        </label>
+        <Segmented<'random' | 'choose'> label="Base note" value={baseMode}
+          onChange={(m) => {
+            setBaseMode(m);
+            if (m === 'choose') chooseBase(baseHz);
+            else {
+              // back to random: a fresh round with a random base
+              const r = newRound(interval, Math.random, null);
+              setRound(r);
+              setValue(r.start);
+              setRevealed(false);
+            }
+          }}
+          options={[{ value: 'random', label: 'Random' }, { value: 'choose', label: 'Choose' }]} />
+        {baseMode === 'choose' && (
+          <div className="flex items-end gap-2">
+            <label className="flex flex-col gap-1">
+              <span className="label">Note</span>
+              <select className="input" value={base.name}
+                onChange={(e) => { chooseBase(noteHz(e.target.value, base.octave)); e.currentTarget.blur(); }}>
+                {NOTE_NAMES.map((n) => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="label">Octave</span>
+              <select className="input" value={base.octave}
+                onChange={(e) => { chooseBase(noteHz(base.name, Number(e.target.value))); e.currentTarget.blur(); }}>
+                {OCTAVES.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </label>
+            <NumberField label="Hz" value={baseHz} min={20} max={2500} step={0.01} suffix="Hz" onChange={chooseBase} />
+          </div>
+        )}
         <button type="button" className="btn" onClick={() => start()}>New round</button>
       </div>
 
@@ -122,7 +157,7 @@ export function TuningGame() {
       <div className="flex flex-wrap items-end gap-4">
         <Segmented<Listen> label="Listen to" value={listen} onChange={setListen}
           options={[
-            { value: 'both', label: 'Both' }, { value: 'base', label: 'Base' }, { value: 'yours', label: 'Yours' },
+            { value: 'both', label: 'Both' }, { value: 'base', label: 'Bottom' }, { value: 'yours', label: 'Top' },
             ...(revealed ? [{ value: 'target' as const, label: 'Target' }] : []),
           ]} />
         <button type="button" className="btn btn-primary" aria-pressed={playing} onClick={togglePlay}>

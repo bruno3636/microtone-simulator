@@ -78,12 +78,13 @@ The **Tuning game** tab trains your ear:
    `3/2`, `13/8`, `21:16` or `1.625` — and press **Use** (or Enter).
 2. Press **▶ Play** and move the **slider** until your note sounds perfectly in tune with the base
    note. Listen to **Both** for the beating (it slows down and stops as you get close), or to
-   the **Base** or **Yours** alone. The slider shows no numbers; its range is shifted every round
+   the **Bottom** (base) or **Top** (your) note alone. The slider shows no numbers; its range is shifted every round
    and your note starts 25–120¢ off. The ±¢ buttons make fine adjustments.
 3. Press **Reveal result** to see how many cents sharp or flat you were, with a rating from
    *Perfect* (under 1¢) to *Keep practising*. Then **Hear the target**, or go to the **Next round**.
 
-Each round uses a random base note between G3 and G4 (untick *Random base note* to use the root).
+**Base note:** *Random* picks a new one between G3 and G4 every round; *Choose* lets you pick a
+note and octave (C1–B7, A4 = 440 Hz) or type any frequency in Hz.
 Your rounds, average error and best result are tracked for the session.
 
 ### Shape the sound
