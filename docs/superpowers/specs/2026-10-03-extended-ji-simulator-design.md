@@ -655,7 +655,7 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
 - Third visualizer view **Roughness** (Source toggle hidden; **Range**: 1 or 2 octaves,
   `viz.roughRange`, persisted with a default of 1).
 - Model (`src/audio/roughness.ts`): W. A. Sethares' parametrisation of Plomp–Levelt — for partials
-  f1 < f2 with amplitudes a1, a2: d = min(a1, a2)·(e^(−3.5·s·Δf) − e^(−5.75·s·Δf)),
+  f1 < f2 with amplitudes a1, a2: d = 5·min(a1, a2)·(e^(−3.51·s·Δf) − e^(−5.75·s·Δf)),
   s = 0.24 / (0.0207·f1 + 18.96); a sound's roughness is the sum over all pairs of its partials
   (`totalRoughness`, sorted by frequency, inner loop stops once a pair is > ln(1e8)/3.5 scaled
   bandwidths apart).
@@ -769,3 +769,9 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
   1e-7). Notch depths shrink with the visible width (∝ 1/zoom) while the label threshold falls faster
   (∝ zoom^−1.5), so a labelled dip stays labelled — the fixed floor had removed e.g. 37/29 (square
   wave) from 24× on. A notch at a valley is merged into it with the larger of the two depths.
+- Roughness constants now match Sethares' `dissmeasure` program exactly: b1 = 3.51 (was 3.5) and an
+  overall factor C = 5 on each pair's term (was 1). The factor scales every value (readouts, the
+  game's roughness numbers) by 5 without changing the curve's shape; dip depths (log scale) and
+  label thresholds are unaffected. Locations: the model's derivation is in *Tuning, Timbre,
+  Spectrum, Scale*, appendix "How to Draw Dissonance Curves"; the min-amplitude weighting in
+  "Analysis of the Time Domain Model" (the 1993 JASA paper used the product).

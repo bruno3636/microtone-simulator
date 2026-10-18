@@ -129,3 +129,11 @@ describe('labels stay as you zoom in', () => {
     expect(labelled).toEqual([true, true, true, true, true, true, true]);
   });
 });
+
+describe("matches Sethares' dissmeasure constants", () => {
+  it('d = 5 · min(a1, a2) · (e^(−3.51·s·Δf) − e^(−5.75·s·Δf)), s = 0.24 / (0.0207·f1 + 18.96)', () => {
+    const s = 0.24 / (0.0207 * 440 + 18.96);
+    const x = s * 20;
+    expect(pairDissonance(440, 1, 460, 0.5)).toBeCloseTo(5 * 0.5 * (Math.exp(-3.51 * x) - Math.exp(-5.75 * x)), 12);
+  });
+});

@@ -66,7 +66,7 @@ key layout). In the **Tuning** panel:
   Both spectra have a **Log / Lin** frequency axis.
 
   **Roughness** measures sensory dissonance with William Sethares' model: every pair of partials
-  adds a Plomp–Levelt roughness term, d = min(a₁, a₂)·(e^(−3.5·s·Δf) − e^(−5.75·s·Δf)) with
+  adds a Plomp–Levelt roughness term, d = 5·min(a₁, a₂)·(e^(−3.51·s·Δf) − e^(−5.75·s·Δf)) with
   s = 0.24 / (0.0207·f₁ + 18.96). It shows:
   - the total roughness of the notes sounding right now (their partials at their live levels);
   - the **dissonance curve** of the current timbre against the root over 1 or 2 octaves, on a

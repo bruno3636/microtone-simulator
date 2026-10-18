@@ -2,14 +2,19 @@
  * Sensory roughness after W. A. Sethares ("Local consonance and the relationship between timbre
  * and scale", JASA 1993; "Tuning, Timbre, Spectrum, Scale", 2005), his parametrisation of the
  * Plomp–Levelt curve: for two partials f1 < f2 with amplitudes a1, a2,
- *   d = min(a1, a2) · (e^(−b1·s·(f2−f1)) − e^(−b2·s·(f2−f1))),   s = d* / (s1·f1 + s2),
- * and the roughness of a sound is the sum of d over every pair of its partials.
+ *   d = C · min(a1, a2) · (e^(−b1·s·(f2−f1)) − e^(−b2·s·(f2−f1))),   s = d* / (s1·f1 + s2),
+ * and the roughness of a sound is the sum of d over every pair of its partials. The constants are
+ * those of his `dissmeasure` program (b1 = 3.51, b2 = 5.75, d* = 0.24, s1 = 0.0207, s2 = 18.96,
+ * C = 5); weighting by the smaller amplitude follows the book's time-domain analysis (the 1993 paper
+ * used the product a1·a2).
  */
-const B1 = 3.5;
+const B1 = 3.51;
 const B2 = 5.75;
 const D_STAR = 0.24;
 const S1 = 0.0207;
 const S2 = 18.96;
+/** overall scale of each pair's term (dissmeasure's C1 = 5, C2 = −5) */
+const C = 5;
 /** beyond this many scaled bandwidths a pair contributes < 1e-8: stop looking further up */
 const FAR = Math.log(1e8) / B1;
 
@@ -19,7 +24,7 @@ export function pairDissonance(fa: number, aa: number, fb: number, ab: number): 
   const [f1, f2] = fa <= fb ? [fa, fb] : [fb, fa];
   const s = D_STAR / (S1 * f1 + S2);
   const x = s * (f2 - f1);
-  return Math.min(aa, ab) * (Math.exp(-B1 * x) - Math.exp(-B2 * x));
+  return C * Math.min(aa, ab) * (Math.exp(-B1 * x) - Math.exp(-B2 * x));
 }
 
 /** Sum of the pair dissonances of all partials (any order). */
