@@ -74,6 +74,10 @@ key layout). In the **Tuning** panel:
     labelled with nearby just ratios, scale degrees stand on the curve in their colours, sounding
     notes are highlighted, and hovering reads the interval and its roughness. Change the harmonics
     in the Synthesizer tab to see how the timbre moves the dips.
+  - **Zoom** in on the curve with ⌘/Ctrl + scroll or a trackpad pinch (or **Zoom + / −**), drag
+    to pan, and double-click (or **Reset**) to see the whole range. Zooming recomputes the curve
+    for the visible stretch, down to a 5¢ window. The deepest dips are labelled at full view;
+    smaller dips get their ratio as soon as you zoom in a little.
 
 ### Tuning game
 The **Tuning game** tab trains your ear:

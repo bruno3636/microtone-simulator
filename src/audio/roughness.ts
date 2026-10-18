@@ -77,3 +77,32 @@ export function curveMinima(curve: { cents: number; value: number }[], prominenc
 export function intervalRoughness(amps: number[], baseHz: number, cents: number): number {
   return dissonanceCurve(amps, baseHz, cents, cents, 1)[0].value;
 }
+
+export interface Dip { cents: number; value: number; prominence: number }
+
+/**
+ * Every local minimum of a curve with its depth on a log scale — ln(lower of the two neighbouring
+ * peaks / dip value), one side at the ends — deepest first. Dips shallower than `minProminence`
+ * are dropped.
+ */
+export function curveDips(curve: { cents: number; value: number }[], minProminence = 0.001): Dip[] {
+  const v = curve.map((p) => Math.max(p.value, 1e-12));
+  const out: Dip[] = [];
+  for (let i = 0; i < v.length; i++) {
+    if ((i > 0 && v[i - 1] < v[i]) || (i < v.length - 1 && v[i + 1] <= v[i])) continue;
+    let left = v[i];
+    for (let j = i - 1; j >= 0 && v[j] >= v[i]; j--) left = Math.max(left, v[j]);
+    let right = v[i];
+    for (let j = i + 1; j < v.length && v[j] >= v[i]; j++) right = Math.max(right, v[j]);
+    const edge = i === 0 || i === v.length - 1;
+    const peak = edge ? Math.max(left, right) : Math.min(left, right);
+    const prominence = Math.log(peak / v[i]);
+    if (prominence >= minProminence) out.push({ cents: curve[i].cents, value: curve[i].value, prominence });
+  }
+  return out.sort((a, b) => b.prominence - a.prominence);
+}
+
+/** How deep (log scale) a dip must be to get a label at a given zoom factor: shallower as you zoom in. */
+export function dipLabelThreshold(zoom: number): number {
+  return 0.06 / Math.max(1, zoom) ** 1.5;
+}

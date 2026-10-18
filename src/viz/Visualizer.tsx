@@ -7,7 +7,8 @@ import { buildPartials, findCoincidences } from './partials';
 import { drawComputedWave, drawLiveWave, drawHint, type DrawCtx, type WaveNote } from './drawWave';
 import { drawComputedSpectrum, drawLiveSpectrum, type Hover } from './drawSpectrum';
 import { drawRoughness, type RoughnessMarker } from './drawRoughness';
-import { curveMinima, dissonanceCurve, totalRoughness } from '../audio/roughness';
+import { curveDips, dissonanceCurve, totalRoughness, type Dip } from '../audio/roughness';
+import { panBy, zoomAt, type ZoomView } from './zoom';
 import { NumberField, Segmented, Slider } from '../components/ui';
 
 interface Drawn extends WaveNote { degree: number }
@@ -45,6 +46,15 @@ export function Visualizer() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hover = useRef<Hover | null>(null);
+  // roughness view zoom: the visible stretch of the interval axis (null = the whole range)
+  const zoom = useRef<ZoomView | null>(null);
+  const drag = useRef<{ x: number; view: ZoomView } | null>(null);
+  const roughRange = () => (useStore.getState().viz.roughRange ?? 1) * 1200;
+  const currentView = (): ZoomView => zoom.current ?? { from: 0, to: roughRange() };
+  const zoomBy = (factor: number, atFraction = 0.5) => {
+    const v = currentView();
+    zoom.current = zoomAt(v, v.from + atFraction * (v.to - v.from), factor, roughRange());
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current!;
@@ -77,7 +87,7 @@ export function Visualizer() {
     // roughness view: the dissonance curve only changes with the timbre, root or range
     let roughKey = '';
     let roughCurve: { cents: number; value: number }[] = [];
-    let roughMinima: { cents: number; value: number }[] = [];
+    let roughMinima: Dip[] = [];
     let captured = false;
 
     const frame = (now: number) => {
@@ -97,11 +107,14 @@ export function Visualizer() {
       if (v.view === 'roughness') {
         const amps = engine.getAmplitudes();
         const range = (v.roughRange ?? 1) * 1200;
-        const key = `${amps.join(',')}|${s.root.freq}|${range}`;
+        if (zoom.current && zoom.current.to > range + 1e-9) zoom.current = null; // the range shrank
+        const view = zoom.current ?? { from: 0, to: range };
+        // the curve is computed for the visible stretch only, so zooming in shows real detail
+        const key = `${amps.join(',')}|${s.root.freq}|${view.from.toFixed(3)}|${view.to.toFixed(3)}`;
         if (key !== roughKey) {
           roughKey = key;
-          roughCurve = dissonanceCurve(amps, s.root.freq, 0, range, range === 1200 ? 601 : 901);
-          roughMinima = curveMinima(roughCurve, 0.03);
+          roughCurve = dissonanceCurve(amps, s.root.freq, view.from, view.to, 601);
+          roughMinima = curveDips(roughCurve);
         }
         const len = s.notes.length;
         const markers: RoughnessMarker[] = [];
@@ -113,7 +126,7 @@ export function Visualizer() {
         for (const n of sounding) markers.push({ cents: 1200 * Math.log2(n.freq / s.root.freq), color: n.color, sounding: true });
         const partials = buildPartials(sounding, amps, 20000, engine.getDarkAmplitudes());
         drawRoughness(dc, {
-          curve: roughCurve, minima: roughMinima, markers, rangeCents: range,
+          curve: roughCurve, minima: roughMinima, markers, rangeCents: range, fromCents: view.from, toCents: view.to,
           current: sounding.length ? totalRoughness(partials) : null,
           rootLabel: `${s.root.note || 'root'} ${+s.root.freq.toFixed(2)} Hz`,
         }, hover.current);
@@ -156,7 +169,16 @@ export function Visualizer() {
       }
     };
     raf = requestAnimationFrame(frame);
-    return () => { cancelAnimationFrame(raf); ro.disconnect(); };
+    // roughness view: ⌘/Ctrl + wheel (or a trackpad pinch, which browsers send as Ctrl + wheel)
+    // zooms around the pointer; a plain wheel still scrolls the page
+    const onWheel = (e: WheelEvent) => {
+      if (useStore.getState().viz.view !== 'roughness' || w === 0 || !(e.ctrlKey || e.metaKey)) return;
+      e.preventDefault();
+      const x = e.clientX - wrap.getBoundingClientRect().left;
+      zoomBy(Math.exp(e.deltaY * 0.0015), Math.min(1, Math.max(0, x / w)));
+    };
+    wrap.addEventListener('wheel', onWheel, { passive: false });
+    return () => { cancelAnimationFrame(raf); ro.disconnect(); wrap.removeEventListener('wheel', onWheel); };
   }, []);
 
   return (
@@ -165,8 +187,16 @@ export function Visualizer() {
         <Segmented<VizSettings['view']> label="View" value={viz.view} onChange={(view) => setViz({ view })}
           options={[{ value: 'wave', label: 'Wave' }, { value: 'spectrum', label: 'Spectrum' }, { value: 'roughness', label: 'Roughness' }]} />
         {viz.view === 'roughness' ? (
-          <Segmented<'1' | '2'> label="Range" value={String(viz.roughRange ?? 1) as '1' | '2'} onChange={(r) => setViz({ roughRange: Number(r) as 1 | 2 })}
-            options={[{ value: '1', label: '1 octave' }, { value: '2', label: '2 octaves' }]} />
+          <>
+            <Segmented<'1' | '2'> label="Range" value={String(viz.roughRange ?? 1) as '1' | '2'}
+              onChange={(r) => { zoom.current = null; setViz({ roughRange: Number(r) as 1 | 2 }); }}
+              options={[{ value: '1', label: '1 octave' }, { value: '2', label: '2 octaves' }]} />
+            <div className="flex items-end gap-1" role="group" aria-label="Zoom">
+              <button type="button" className="btn" aria-label="Zoom in" title="Zoom in (or ⌘/Ctrl + scroll, or pinch, on the curve)" onClick={() => zoomBy(0.5)}>Zoom +</button>
+              <button type="button" className="btn" aria-label="Zoom out" title="Zoom out" onClick={() => zoomBy(2)}>Zoom −</button>
+              <button type="button" className="btn" title="Show the whole range (or double-click the curve)" onClick={() => { zoom.current = null; }}>Reset</button>
+            </div>
+          </>
         ) : (
           <Segmented<VizSettings['source']> label="Source" value={viz.source} onChange={(source) => setViz({ source })}
             options={[{ value: 'computed', label: 'Computed' }, { value: 'live', label: 'Live' }]} />
@@ -196,10 +226,22 @@ export function Visualizer() {
         )}
       </div>
       <div ref={wrapRef} className="relative h-[320px] w-full sm:h-[380px]"
+        style={{ cursor: viz.view === 'roughness' ? (drag.current ? 'grabbing' : 'grab') : undefined, touchAction: viz.view === 'roughness' ? 'none' : undefined }}
+        onPointerDown={(e) => {
+          // roughness view: drag sideways to pan a zoomed curve
+          if (viz.view !== 'roughness' || e.button !== 0) return;
+          drag.current = { x: e.clientX, view: currentView() };
+          try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* synthetic events */ }
+        }}
         onPointerMove={(e) => {
           const r = e.currentTarget.getBoundingClientRect();
           hover.current = { x: e.clientX - r.left, y: e.clientY - r.top };
+          const d = drag.current;
+          if (d && r.width > 0) zoom.current = panBy(d.view, -((e.clientX - d.x) / r.width) * (d.view.to - d.view.from), roughRange());
         }}
+        onPointerUp={() => { drag.current = null; }}
+        onPointerCancel={() => { drag.current = null; }}
+        onDoubleClick={() => { if (viz.view === 'roughness') zoom.current = null; }}
         onPointerLeave={() => { hover.current = null; }}>
         <canvas ref={canvasRef} className="absolute inset-0" aria-label="Wave and spectrum visualizer" />
       </div>

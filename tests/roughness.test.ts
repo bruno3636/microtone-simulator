@@ -44,3 +44,24 @@ describe('intervalRoughness (tuning game)', () => {
     expect(intervalRoughness(amps, 300, 715)).toBeGreaterThan(fifth);
   });
 });
+
+describe('curveDips (labels on the roughness curve)', () => {
+  it('finds every dip with its depth on a log scale, deepest first', async () => {
+    const { curveDips } = await import('../src/audio/roughness');
+    const amps = Array.from({ length: 12 }, (_, k) => 1 / (k + 1));
+    const curve = dissonanceCurve(amps, 261.6, 0, 1200, 1201);
+    const dips = curveDips(curve);
+    // deepest first
+    expect(dips.every((d, i) => i === 0 || d.prominence <= dips[i - 1].prominence)).toBe(true);
+    const near = (c: number) => dips.find((d) => Math.abs(d.cents - c) <= 3);
+    // big dips (3/2, 4/3) are much deeper than small ones (7/5, 8/7) but the small ones are found too
+    expect(near(702)!.prominence).toBeGreaterThan(near(583)!.prominence);
+    expect(near(231)).toBeDefined(); // 8/7
+    expect(dips.length).toBeGreaterThan(curveMinima(curve, 0.03).length);
+  });
+  it('dipLabelThreshold falls as you zoom in', async () => {
+    const { dipLabelThreshold } = await import('../src/audio/roughness');
+    expect(dipLabelThreshold(2)).toBeLessThan(dipLabelThreshold(1));
+    expect(dipLabelThreshold(8)).toBeLessThan(dipLabelThreshold(2));
+  });
+});

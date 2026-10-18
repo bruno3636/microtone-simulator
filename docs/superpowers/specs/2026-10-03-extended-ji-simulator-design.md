@@ -743,3 +743,17 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
   background): "target 0.0803" at the target's dot and "yours 0.1355 · +68.8%" at yours; when the
   dots are close the labels lean apart. The separate roughness text line and the ±50¢ error scale
   (target line + marker block) are removed.
+- **Roughness zoom:** the visible stretch of the interval axis (`ZoomView`, not persisted) can be
+  zoomed with ⌘/Ctrl + wheel or a trackpad pinch around the pointer (`zoomAt`, factor
+  e^(deltaY·0.0015); a plain wheel scrolls the page), or with Zoom + / Zoom − (×½ / ×2 about the
+  centre); dragging pans (`panBy`); double-click or Reset shows the whole range; changing the Range
+  resets it. The window stays inside 0 … range and is at least 5¢ wide (`MIN_ZOOM_WIDTH`). The
+  curve (601 points) is recomputed for the visible stretch, the cents grid uses the finest 1-2-5 step
+  whose labels are ≥ 44 px apart (`gridStep`, down to 1¢), and the header shows the zoom factor and
+  range.
+- **Dip labels follow the zoom:** every local minimum is found with its depth on a log scale
+  (`curveDips`: ln(lower neighbouring peak / dip), deepest first). A dip is labelled when its depth is
+  at least `dipLabelThreshold(zoom)` = 0.06 / zoom^1.5 (zoom = full range / visible width), deepest
+  first, skipping labels that would overlap one already placed. At full view the clear dips are
+  labelled (e.g. 5/4, 4/3, 7/5, 3/2, 8/5, 5/3, 7/4 for the default timbre); 6/5 appears by 1.5×,
+  7/6 by 3×.
