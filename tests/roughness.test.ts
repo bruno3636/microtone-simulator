@@ -65,3 +65,23 @@ describe('curveDips (labels on the roughness curve)', () => {
     expect(dipLabelThreshold(8)).toBeLessThan(dipLabelThreshold(2));
   });
 });
+
+describe('notches on a slope', () => {
+  // the app's default timbre (8 harmonics)
+  const amps = [0.782, 0.47, 0.294, 0.194, 0.138, 0.106, 0.088, 0.078];
+  it('finds a notch where the curve keeps falling but bends sharply (8/7 at ≈231¢)', async () => {
+    const { curveDips, dipLabelThreshold } = await import('../src/audio/roughness');
+    const curve = dissonanceCurve(amps, 440, 0, 1200, 601);
+    const dips = curveDips(curve);
+    const n87 = dips.find((d) => Math.abs(d.cents - 231.2) <= 4);
+    expect(n87, JSON.stringify(dips.slice(0, 12).map((d) => [Math.round(d.cents), +d.prominence.toFixed(3)]))).toBeDefined();
+    // labelled by a little zoom at the latest
+    expect(n87!.prominence).toBeGreaterThan(dipLabelThreshold(1.5));
+  });
+  it('true valleys are still found once (not doubled as notches)', async () => {
+    const { curveDips } = await import('../src/audio/roughness');
+    const curve = dissonanceCurve(amps, 440, 0, 1200, 601);
+    const near702 = curveDips(curve).filter((d) => Math.abs(d.cents - 702) <= 10);
+    expect(near702).toHaveLength(1);
+  });
+});

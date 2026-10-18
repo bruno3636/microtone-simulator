@@ -753,7 +753,9 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
   range.
 - **Dip labels follow the zoom:** every local minimum is found with its depth on a log scale
   (`curveDips`: ln(lower neighbouring peak / dip), deepest first). A dip is labelled when its depth is
-  at least `dipLabelThreshold(zoom)` = 0.06 / zoom^1.5 (zoom = full range / visible width), deepest
-  first, skipping labels that would overlap one already placed. At full view the clear dips are
-  labelled (e.g. 5/4, 4/3, 7/5, 3/2, 8/5, 5/3, 7/4 for the default timbre); 6/5 appears by 1.5×,
-  7/6 by 3×.
+  at least `dipLabelThreshold(zoom)` = 0.035 / zoom^1.5 (zoom = full range / visible width), deepest
+  first, skipping labels that would overlap one already placed. Notches where the curve keeps
+  rising or falling but bends sharply (e.g. 8/7 at ≈231¢ on the slope down from the unison) count
+  too: their depth is how far the point sits below the straight line (log values) between the points
+  1% of the visible width to either side. Default timbre: full view labels 3/2 4/3 5/3 7/4 5/4 7/5 8/5
+  6/5 8/7; 7/6 appears by 1.5×.

@@ -81,12 +81,16 @@ export function intervalRoughness(amps: number[], baseHz: number, cents: number)
 export interface Dip { cents: number; value: number; prominence: number }
 
 /**
- * Every local minimum of a curve with its depth on a log scale — ln(lower of the two neighbouring
- * peaks / dip value), one side at the ends — deepest first. Dips shallower than `minProminence`
- * are dropped.
+ * Dips of a curve, deepest first, with their depth on a log scale:
+ * - valleys (local minima): ln(lower of the two neighbouring peaks / dip value), one side at the ends;
+ * - notches where the curve keeps rising or falling but bends sharply (two partials coinciding on a
+ *   slope, e.g. 8/7): how far the point sits below the straight line (in log values) between the
+ *   points `notchWindow` × the curve's width to either side, where that is a local maximum.
+ * Dips shallower than `minProminence` are dropped; a notch next to a valley is the valley.
  */
-export function curveDips(curve: { cents: number; value: number }[], minProminence = 0.001): Dip[] {
+export function curveDips(curve: { cents: number; value: number }[], minProminence = 0.001, notchWindow = 0.01): Dip[] {
   const v = curve.map((p) => Math.max(p.value, 1e-12));
+  const lv = v.map(Math.log);
   const out: Dip[] = [];
   for (let i = 0; i < v.length; i++) {
     if ((i > 0 && v[i - 1] < v[i]) || (i < v.length - 1 && v[i + 1] <= v[i])) continue;
@@ -99,10 +103,19 @@ export function curveDips(curve: { cents: number; value: number }[], minProminen
     const prominence = Math.log(peak / v[i]);
     if (prominence >= minProminence) out.push({ cents: curve[i].cents, value: curve[i].value, prominence });
   }
+  // notches: depth below the chord across ±k points, at its local maxima
+  const k = Math.max(2, Math.round(v.length * notchWindow));
+  const depth = lv.map((x, i) => (i < k || i >= lv.length - k ? -Infinity : (lv[i - k] + lv[i + k]) / 2 - x));
+  for (let i = k; i < lv.length - k; i++) {
+    const d = depth[i];
+    if (d < minProminence || depth[i - 1] > d || depth[i + 1] >= d) continue;
+    if (out.some((m) => Math.abs(m.cents - curve[i].cents) <= Math.abs(curve[k].cents - curve[0].cents))) continue;
+    out.push({ cents: curve[i].cents, value: curve[i].value, prominence: d });
+  }
   return out.sort((a, b) => b.prominence - a.prominence);
 }
 
 /** How deep (log scale) a dip must be to get a label at a given zoom factor: shallower as you zoom in. */
 export function dipLabelThreshold(zoom: number): number {
-  return 0.06 / Math.max(1, zoom) ** 1.5;
+  return 0.035 / Math.max(1, zoom) ** 1.5;
 }
