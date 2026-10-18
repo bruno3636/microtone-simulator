@@ -137,3 +137,19 @@ describe("matches the book's model (Appendix E)", () => {
     expect(pairDissonance(440, 1, 460, 0.5)).toBeCloseTo(0.5 * (Math.exp(-3.5 * x) - Math.exp(-5.75 * x)), 12);
   });
 });
+
+describe("loudness weighting (book eqs. E.4–E.5)", () => {
+  it('loudness in sones: ℓ = 2^(SPL/10) / 16, amplitude 1 = 70 dB SPL', async () => {
+    const { loudness, REFERENCE_DB } = await import('../src/audio/roughness');
+    expect(REFERENCE_DB).toBe(70);
+    expect(loudness(1)).toBeCloseTo(2 ** 7 / 16, 12); // 70 dB → 8 sones
+    expect(loudness(10 ** (-30 / 20))).toBeCloseTo(1, 12); // 40 dB → 1 sone
+    expect(loudness(0.1) / loudness(1)).toBeCloseTo(0.1 ** (2 * Math.log10(2)), 12); // ∝ A^0.602
+    expect(loudness(0)).toBe(0);
+  });
+  it('totalRoughness weights each pair by the smaller loudness (amplitudes converted with E.5)', async () => {
+    const { totalRoughness, loudness } = await import('../src/audio/roughness');
+    const ps = [{ freq: 440, amp: 1 }, { freq: 460, amp: 0.25 }];
+    expect(totalRoughness(ps)).toBeCloseTo(pairDissonance(440, loudness(0.25), 460, loudness(1)), 12);
+  });
+});

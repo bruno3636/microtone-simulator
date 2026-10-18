@@ -2,12 +2,12 @@
  * Sensory roughness after W. A. Sethares ("Local consonance and the relationship between timbre
  * and scale", JASA 1993; "Tuning, Timbre, Spectrum, Scale", 2005), his parametrisation of the
  * Plomp–Levelt curve: for two partials f1 < f2 with amplitudes a1, a2,
- *   d = min(a1, a2) · (e^(−b1·s·(f2−f1)) − e^(−b2·s·(f2−f1))),   s = d* / (s1·f1 + s2),
- * and the roughness of a sound is the sum of d over every pair of its partials.
+ *   d = min(ℓ1, ℓ2) · (e^(−b1·s·(f2−f1)) − e^(−b2·s·(f2−f1))),   s = d* / (s1·f1 + s2),
+ * where ℓ1, ℓ2 are the partials' loudnesses in sones, and the roughness of a sound is the sum of d
+ * over every pair of its partials.
  * As in the book (2nd ed., Appendix E "How to Draw Dissonance Curves", eqs. E.1–E.4, E.6–E.7):
  * b1 = 3.5, b2 = 5.75, d* = 0.24, no overall factor. s1, s2 use the unrounded fit 0.0207 / 18.96 of
- * his `dissmeasure` program (the book prints 0.021 / 19). The book weights pairs by the smaller
- * *loudness* (sones); here by the smaller amplitude.
+ * his `dissmeasure` program (the book prints 0.021 / 19). Loudness follows eq. E.5 (see `loudness`).
  */
 const B1 = 3.5;
 const B2 = 5.75;
@@ -19,6 +19,24 @@ const FAR = Math.log(1e8) / B1;
 
 export interface Partial { freq: number; amp: number }
 
+/**
+ * The level (dB SPL) taken for amplitude 1, the strongest harmonic at full level. The app's
+ * amplitudes are relative, while the book's loudness needs an absolute level; 70 dB is a moderate
+ * listening level. It only scales the whole curve (loudness ∝ amplitude^0.6), not its shape.
+ */
+export const REFERENCE_DB = 70;
+
+/**
+ * Loudness in sones of a partial with relative amplitude `amp` (book eq. E.5):
+ * SPL = REFERENCE_DB + 20·log10(amp), ℓ = 2^(SPL/10) / 16 (40 dB = 1 sone, +10 dB ≈ twice as loud).
+ */
+export function loudness(amp: number): number {
+  if (!(amp > 0)) return 0;
+  const spl = REFERENCE_DB + 20 * Math.log10(amp);
+  return 2 ** (spl / 10) / 16;
+}
+
+/** Dissonance of two partials with weights (loudnesses) `aa`, `ab` (book eqs. E.2–E.4). */
 export function pairDissonance(fa: number, aa: number, fb: number, ab: number): number {
   const [f1, f2] = fa <= fb ? [fa, fb] : [fb, fa];
   const s = D_STAR / (S1 * f1 + S2);
@@ -26,9 +44,12 @@ export function pairDissonance(fa: number, aa: number, fb: number, ab: number): 
   return Math.min(aa, ab) * (Math.exp(-B1 * x) - Math.exp(-B2 * x));
 }
 
-/** Sum of the pair dissonances of all partials (any order). */
+/**
+ * Sum of the pair dissonances of all partials (any order), each pair weighted by the smaller
+ * loudness (book eqs. E.4–E.6): each partial's amplitude is converted to sones with `loudness`.
+ */
 export function totalRoughness(partials: Partial[]): number {
-  const ps = partials.filter((p) => p.amp > 0).sort((a, b) => a.freq - b.freq);
+  const ps = partials.filter((p) => p.amp > 0).map((p) => ({ freq: p.freq, amp: loudness(p.amp) })).sort((a, b) => a.freq - b.freq);
   let total = 0;
   for (let i = 0; i < ps.length; i++) {
     const s = D_STAR / (S1 * ps[i].freq + S2);

@@ -655,7 +655,7 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
 - Third visualizer view **Roughness** (Source toggle hidden; **Range**: 1 or 2 octaves,
   `viz.roughRange`, persisted with a default of 1).
 - Model (`src/audio/roughness.ts`): W. A. Sethares' parametrisation of Plomp–Levelt — for partials
-  f1 < f2 with amplitudes a1, a2: d = min(a1, a2)·(e^(−3.5·s·Δf) − e^(−5.75·s·Δf)),
+  f1 < f2 with loudnesses ℓ1, ℓ2 (sones): d = min(ℓ1, ℓ2)·(e^(−3.5·s·Δf) − e^(−5.75·s·Δf)),
   s = 0.24 / (0.0207·f1 + 18.96); a sound's roughness is the sum over all pairs of its partials
   (`totalRoughness`, sorted by frequency, inner loop stops once a pair is > ln(1e8)/3.5 scaled
   bandwidths apart).
@@ -779,3 +779,24 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
   b1 = 3.5, b2 = 5.75, d* = 0.24, no overall factor (the 3.51 and ×5 of `dissmeasure` are reverted).
   s1 / s2 keep the program's unrounded 0.0207 / 18.96 (the book prints 0.021 / 19). The book weights
   pairs by the smaller loudness in sones (E.4–E.5); the app keeps the smaller amplitude.
+- **Loudness weighting (book eqs. E.4–E.5):** each partial's relative amplitude is converted to
+  loudness before the pair sums — SPL = 70 dB + 20·log10(amplitude) (`REFERENCE_DB`: the strongest
+  harmonic at full level is taken as 70 dB SPL, since the app's amplitudes are relative), ℓ =
+  2^(SPL/10)/16 sones (`loudness`) — and pairs are weighted by min(ℓ1, ℓ2) (`totalRoughness`, so the
+  readout, the curve and the game's numbers all use it). Loudness ∝ amplitude^0.602, so weak upper
+  partials count more than with amplitude weighting: dip positions are unchanged, small dips get
+  relatively deeper (more labels for bright timbres, e.g. the square wave), and values are in
+  loudness units (×8 at 70 dB). `dipRatio` still ranks coinciding pairs by amplitude (same order).
+- **Weighting switch** (Roughness view, `viz.roughWeight`, persisted, default 'level'): 'level' uses
+  each partial's level directly as ℓ, as in Sethares' own curves (book §6.2 and Fig. 6.1 specify
+  spectra as loudnesses; his programs take the loudness array as given); 'loudness' converts levels
+  as amplitudes to sones with eq. E.5 (`loudness`, 70 dB reference). `totalRoughness`,
+  `dissonanceCurve` and `intervalRoughness` take the weighting; the view's readout and curve and the
+  tuning game's roughness all follow it. Loudness weighting compresses strong vs weak partials
+  (∝ amplitude^0.6): intervals whose roughness comes from a few strong low partials (e.g. the major
+  seventh, upper fundamental vs lower 2nd harmonic) lose relative weight, regions where many weak
+  upper partials clash (near the unison) gain it; dip positions are unchanged.
+- Decision (2026-10-18): roughness uses **loudness weighting only** — amplitudes converted to sones
+  with eq. E.5 (70 dB reference) before min(ℓ1, ℓ2). The Level / Loudness switch and
+  `viz.roughWeight` are removed; `totalRoughness`, `dissonanceCurve` and `intervalRoughness` no longer
+  take a weighting argument.
