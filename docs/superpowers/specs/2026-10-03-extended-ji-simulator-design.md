@@ -655,7 +655,7 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
 - Third visualizer view **Roughness** (Source toggle hidden; **Range**: 1 or 2 octaves,
   `viz.roughRange`, persisted with a default of 1).
 - Model (`src/audio/roughness.ts`): W. A. Sethares' parametrisation of Plomp–Levelt — for partials
-  f1 < f2 with amplitudes a1, a2: d = 5·min(a1, a2)·(e^(−3.51·s·Δf) − e^(−5.75·s·Δf)),
+  f1 < f2 with amplitudes a1, a2: d = min(a1, a2)·(e^(−3.5·s·Δf) − e^(−5.75·s·Δf)),
   s = 0.24 / (0.0207·f1 + 18.96); a sound's roughness is the sum over all pairs of its partials
   (`totalRoughness`, sorted by frequency, inner loop stops once a pair is > ln(1e8)/3.5 scaled
   bandwidths apart).
@@ -775,3 +775,7 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
   label thresholds are unaffected. Locations: the model's derivation is in *Tuning, Timbre,
   Spectrum, Scale*, appendix "How to Draw Dissonance Curves"; the min-amplitude weighting in
   "Analysis of the Time Domain Model" (the 1993 JASA paper used the product).
+- Revised after checking the book (2nd ed., Appendix E, pp. 345–347): the model follows the book —
+  b1 = 3.5, b2 = 5.75, d* = 0.24, no overall factor (the 3.51 and ×5 of `dissmeasure` are reverted).
+  s1 / s2 keep the program's unrounded 0.0207 / 18.96 (the book prints 0.021 / 19). The book weights
+  pairs by the smaller loudness in sones (E.4–E.5); the app keeps the smaller amplitude.
