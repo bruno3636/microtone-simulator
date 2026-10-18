@@ -85,3 +85,47 @@ describe('notches on a slope', () => {
     expect(near702).toHaveLength(1);
   });
 });
+
+describe('dip labels come from the harmonics that coincide there', () => {
+  // square wave: odd harmonics 1/k up to 63
+  const square = Array.from({ length: 64 }, (_, i) => ((i + 1) % 2 ? 1 / (i + 1) : 0));
+  it('dipRatio picks the strongest coinciding harmonic pair within the tolerance', async () => {
+    const { dipRatio } = await import('../src/audio/roughness');
+    expect(dipRatio(884.4, square, 4)).toEqual({ p: 5, q: 3 });
+    expect(dipRatio(582.5, square, 4)).toEqual({ p: 7, q: 5 });
+    // square waves have no even harmonics, so 3/2 can't be the coincidence behind a dip
+    expect(dipRatio(701.9, square, 4)).not.toEqual({ p: 3, q: 2 });
+    // a dip 17¢ from 5/3 is not labelled 5/3
+    expect(dipRatio(901.9, square, 4)).not.toEqual({ p: 5, q: 3 });
+    const saw = Array.from({ length: 16 }, (_, i) => 1 / (i + 1));
+    expect(dipRatio(702, saw, 4)).toEqual({ p: 3, q: 2 });
+    expect(dipRatio(1500, [1], 4)).toBeNull(); // a sine has nothing to coincide
+  });
+  it('labelDips never shows the same ratio twice (square wave, zoomed windows)', async () => {
+    const { curveDips, labelDips, dipLabelThreshold } = await import('../src/audio/roughness');
+    for (const [f, t] of [[0, 1200], [400, 800], [500, 700], [800, 960], [850, 920], [980, 1060]]) {
+      const curve = dissonanceCurve(square, 440, f, t, 601);
+      const labels = labelDips(curveDips(curve), square, dipLabelThreshold(1200 / (t - f)), f, t).map((d) => d.label);
+      expect(new Set(labels).size, `${f}–${t}: ${labels}`).toBe(labels.length);
+    }
+    const curve = dissonanceCurve(square, 440, 850, 920, 601);
+    const near53 = labelDips(curveDips(curve), square, dipLabelThreshold(1200 / 70), 850, 920).filter((d) => d.label === '5/3');
+    expect(near53).toHaveLength(1);
+    expect(Math.abs(near53[0].cents - 884.4)).toBeLessThan(2);
+  });
+});
+
+describe('labels stay as you zoom in', () => {
+  const square = Array.from({ length: 64 }, (_, i) => ((i + 1) % 2 ? 1 / (i + 1) : 0));
+  it('37/29 (square wave) keeps its label from the zoom where it appears up to 64×', async () => {
+    const { curveDips, labelDips, dipLabelThreshold } = await import('../src/audio/roughness');
+    const c0 = 1200 * Math.log2(37 / 29);
+    const labelled = [8, 12, 16, 24, 32, 48, 64].map((z) => {
+      const width = 1200 / z;
+      const f = c0 - width * 0.4;
+      const curve = dissonanceCurve(square, 440, f, f + width, 601);
+      return labelDips(curveDips(curve), square, dipLabelThreshold(z), f, f + width).some((d) => d.label === '37/29');
+    });
+    expect(labelled).toEqual([true, true, true, true, true, true, true]);
+  });
+});

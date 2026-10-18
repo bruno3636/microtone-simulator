@@ -2,7 +2,7 @@ import { drawHint, type DrawCtx } from './drawWave';
 import type { Hover } from './drawSpectrum';
 import { nearestJust } from '../tuning/interScale';
 import { gridStep } from './zoom';
-import { dipLabelThreshold, type Dip } from '../audio/roughness';
+import { dipLabelThreshold, labelDips, type Dip } from '../audio/roughness';
 
 export interface RoughnessMarker { cents: number; color: string; sounding: boolean }
 
@@ -10,6 +10,8 @@ export interface RoughnessView {
   curve: { cents: number; value: number }[];
   /** every dip of the visible curve, deepest first */
   minima: Dip[];
+  /** the timbre's harmonic amplitudes: dips are named by the harmonics that coincide there */
+  amps: number[];
   /** scale degrees (dim) and sounding notes (bright), in cents above the root */
   markers: RoughnessMarker[];
   /** roughness of the notes sounding now, or null when nothing sounds */
@@ -97,19 +99,17 @@ export function drawRoughness(dc: DrawCtx, v: RoughnessView, hover: Hover | null
   // zoom in (the depth needed falls with the zoom), and a label never overlaps one already placed
   ctx.fillStyle = colors.secondary;
   ctx.textAlign = 'center';
-  const threshold = dipLabelThreshold(v.rangeCents / span);
+  // each dip is named by the harmonic ratio that coincides there (each ratio once, at its deepest dip)
+  const labels = labelDips(v.minima, v.amps, dipLabelThreshold(v.rangeCents / span), v.fromCents, v.toCents);
   const placed: [number, number][] = [];
-  for (const m of v.minima) {
-    if (m.prominence < threshold) break; // deepest first: the rest are shallower
-    if (m.cents < v.fromCents + span * 0.01 || m.cents > v.toCents - span * 0.01) continue;
-    const { a, b } = nearestJust(2 ** (m.cents / 1200));
-    const half = ctx.measureText(`${a}/${b}`).width / 2 + 4;
+  for (const m of labels) {
+    const half = ctx.measureText(m.label).width / 2 + 4;
     const lx = Math.min(w - 16, Math.max(16, xOf(m.cents)));
     if (placed.some(([l, r]) => lx + half > l && lx - half < r)) continue;
     placed.push([lx - half, lx + half]);
     // below the dip, or above it when that would run into the axis labels
     const y = yOf(m.value) + 14 > base - 4 ? yOf(m.value) - 8 : yOf(m.value) + 14;
-    ctx.fillText(`${a}/${b}`, Math.min(w - 16, Math.max(16, xOf(m.cents))), y);
+    ctx.fillText(m.label, Math.min(w - 16, Math.max(16, xOf(m.cents))), y);
   }
   ctx.textAlign = 'start';
 

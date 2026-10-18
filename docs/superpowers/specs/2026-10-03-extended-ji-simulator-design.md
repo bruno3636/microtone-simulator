@@ -759,3 +759,13 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
   too: their depth is how far the point sits below the straight line (log values) between the points
   1% of the visible width to either side. Default timbre: full view labels 3/2 4/3 5/3 7/4 5/4 7/5 8/5
   6/5 8/7; 7/6 appears by 1.5×.
+- **Dip names come from the harmonics that coincide there** (`dipRatio`): the ratio p/q (lowest
+  terms) for which harmonic k·p of the lower tone meets harmonic k·q of the upper one, both present in
+  the timbre, within 4¢ of the dip — the strongest pair (largest min(amplitudes) over k) wins, then
+  the closest. Dips with no coinciding pair nearby get no label, and each ratio is shown once, at its
+  deepest dip (`labelDips`). Previously labels used `nearestJust`, which prefers simple ratios up to
+  ~17¢ away, so e.g. a square wave (odd harmonics only) showed 5/3, 3/2 or 19/13 on several dips.
+- Labels persist as you zoom in: `curveDips` no longer drops dips below a fixed depth (0.001; now
+  1e-7). Notch depths shrink with the visible width (∝ 1/zoom) while the label threshold falls faster
+  (∝ zoom^−1.5), so a labelled dip stays labelled — the fixed floor had removed e.g. 37/29 (square
+  wave) from 24× on. A notch at a valley is merged into it with the larger of the two depths.

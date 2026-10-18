@@ -126,7 +126,7 @@ export function Visualizer() {
         for (const n of sounding) markers.push({ cents: 1200 * Math.log2(n.freq / s.root.freq), color: n.color, sounding: true });
         const partials = buildPartials(sounding, amps, 20000, engine.getDarkAmplitudes());
         drawRoughness(dc, {
-          curve: roughCurve, minima: roughMinima, markers, rangeCents: range, fromCents: view.from, toCents: view.to,
+          curve: roughCurve, minima: roughMinima, amps, markers, rangeCents: range, fromCents: view.from, toCents: view.to,
           current: sounding.length ? totalRoughness(partials) : null,
           rootLabel: `${s.root.note || 'root'} ${+s.root.freq.toFixed(2)} Hz`,
         }, hover.current);

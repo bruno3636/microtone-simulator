@@ -86,9 +86,11 @@ export interface Dip { cents: number; value: number; prominence: number }
  * - notches where the curve keeps rising or falling but bends sharply (two partials coinciding on a
  *   slope, e.g. 8/7): how far the point sits below the straight line (in log values) between the
  *   points `notchWindow` × the curve's width to either side, where that is a local maximum.
- * Dips shallower than `minProminence` are dropped; a notch next to a valley is the valley.
+ * Dips shallower than `minProminence` are dropped (tiny: notch depths shrink with the visible width,
+ * and the label threshold — not this floor — decides what is shown); a notch at a valley is that
+ * valley, with the larger depth.
  */
-export function curveDips(curve: { cents: number; value: number }[], minProminence = 0.001, notchWindow = 0.01): Dip[] {
+export function curveDips(curve: { cents: number; value: number }[], minProminence = 1e-7, notchWindow = 0.01): Dip[] {
   const v = curve.map((p) => Math.max(p.value, 1e-12));
   const lv = v.map(Math.log);
   const out: Dip[] = [];
@@ -109,8 +111,10 @@ export function curveDips(curve: { cents: number; value: number }[], minProminen
   for (let i = k; i < lv.length - k; i++) {
     const d = depth[i];
     if (d < minProminence || depth[i - 1] > d || depth[i + 1] >= d) continue;
-    if (out.some((m) => Math.abs(m.cents - curve[i].cents) <= Math.abs(curve[k].cents - curve[0].cents))) continue;
-    out.push({ cents: curve[i].cents, value: curve[i].value, prominence: d });
+    // a notch at a valley is that valley: it keeps the larger of the two depths
+    const same = out.find((m) => Math.abs(m.cents - curve[i].cents) <= Math.abs(curve[k].cents - curve[0].cents));
+    if (same) same.prominence = Math.max(same.prominence, d);
+    else out.push({ cents: curve[i].cents, value: curve[i].value, prominence: d });
   }
   return out.sort((a, b) => b.prominence - a.prominence);
 }
@@ -118,4 +122,55 @@ export function curveDips(curve: { cents: number; value: number }[], minProminen
 /** How deep (log scale) a dip must be to get a label at a given zoom factor: shallower as you zoom in. */
 export function dipLabelThreshold(zoom: number): number {
   return 0.035 / Math.max(1, zoom) ** 1.5;
+}
+
+const gcdInt = (a: number, b: number): number => (b === 0 ? a : gcdInt(b, a % b));
+
+/**
+ * The harmonic coincidence behind a dip at `cents`: the ratio p/q (lowest terms) for which harmonic
+ * k·p of the lower tone meets harmonic k·q of the upper one, both present in `amps`, within `tolCents`.
+ * The strongest pair wins (the larger of min(amplitudes) over k), then the closest. Null if none.
+ */
+export function dipRatio(cents: number, amps: number[], tolCents = 4): { p: number; q: number } | null {
+  const n = amps.length;
+  const a = (k: number) => Math.abs(amps[k - 1] ?? 0);
+  let best: { p: number; q: number; strength: number; d: number } | null = null;
+  for (let q = 1; q <= n; q++) {
+    for (let p = q + 1; p <= n; p++) {
+      if (gcdInt(p, q) !== 1) continue;
+      const d = Math.abs(1200 * Math.log2(p / q) - cents);
+      if (d > tolCents) continue;
+      let strength = 0;
+      for (let k = 1; k * p <= n; k++) strength = Math.max(strength, Math.min(a(k * p), a(k * q)));
+      if (strength <= 0) continue;
+      if (!best || strength > best.strength * (1 + 1e-9) || (Math.abs(strength - best.strength) <= best.strength * 1e-9 && d < best.d)) {
+        best = { p, q, strength, d };
+      }
+    }
+  }
+  return best && { p: best.p, q: best.q };
+}
+
+/**
+ * Labels for the dips of the visible curve: deep enough for the zoom (`threshold`), away from the
+ * window's edges, named by their harmonic coincidence (`dipRatio`), each ratio once (the deepest dip
+ * keeps it). Dips with no coinciding harmonics nearby get no label.
+ */
+export function labelDips(
+  dips: Dip[], amps: number[], threshold: number, fromCents: number, toCents: number, tolCents = 4,
+): (Dip & { label: string })[] {
+  const span = toCents - fromCents;
+  const seen = new Set<string>();
+  const out: (Dip & { label: string })[] = [];
+  for (const d of dips) {
+    if (d.prominence < threshold) break; // deepest first
+    if (d.cents < fromCents + span * 0.01 || d.cents > toCents - span * 0.01) continue;
+    const r = dipRatio(d.cents, amps, tolCents);
+    if (!r) continue;
+    const label = `${r.p}/${r.q}`;
+    if (seen.has(label)) continue;
+    seen.add(label);
+    out.push({ ...d, label });
+  }
+  return out;
 }
