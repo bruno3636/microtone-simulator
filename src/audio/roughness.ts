@@ -72,3 +72,8 @@ export function curveMinima(curve: { cents: number; value: number }[], prominenc
   }
   return out;
 }
+
+/** Roughness of two tones with harmonic amplitudes `amps`, `cents` apart above `baseHz`. */
+export function intervalRoughness(amps: number[], baseHz: number, cents: number): number {
+  return dissonanceCurve(amps, baseHz, cents, cents, 1)[0].value;
+}

@@ -734,3 +734,12 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
   octaves) for ratios and 6000¢ for cents targets (was 8/1 and 3600¢).
 - The slider's width is random each round between 64¢ and 128¢ (`MIN_SPAN` / `MAX_SPAN`; was a fixed 100¢); the target stays ≥ 20¢ from each end and the start ≥ 15¢ from the target.
 - Nudge buttons: ±5, ±2, ±0.5 and ±0.1¢ (the ±1¢ buttons became ±2¢).
+- After revealing, the result card shows the Sethares roughness of your interval and of the target
+  (`intervalRoughness`: the dissonance curve at one interval, current synth harmonics, the round's
+  base note) with the % difference, and an SVG dissonance curve across the slider range (161 points,
+  linear scale) marking the target (dashed line, dot) and your note (accent dot). Not shown before
+  revealing, since the curve's dip would give the answer away.
+- Result card revised: the roughness values are labels on the curve (HTML over the SVG, with a
+  background): "target 0.0803" at the target's dot and "yours 0.1355 · +68.8%" at yours; when the
+  dots are close the labels lean apart. The separate roughness text line and the ±50¢ error scale
+  (target line + marker block) are removed.

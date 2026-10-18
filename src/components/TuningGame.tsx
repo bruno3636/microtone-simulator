@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { engine } from '../audio/engine';
+import { dissonanceCurve, intervalRoughness } from '../audio/roughness';
 import { MAX_CENTS, MAX_CUSTOM, NOTE_NAMES, OCTAVES, describeError, nearestNote, newRound, noteHz, parseCentsInterval, parseCustomInterval, rate, type GameInterval, type Round } from '../game/tuningGame';
 import { NumberField, Segmented } from './ui';
 
@@ -94,7 +95,18 @@ export function TuningGame() {
   };
   const nudge = (d: number) => setValue((v) => Math.min(round.max, Math.max(round.min, Math.round((v + d) * 10) / 10)));
   const verdict = rate(error);
-  const marker = Math.max(-50, Math.min(50, error));
+  // Sethares roughness, only once revealed (it would give the answer away while tuning): your
+  // interval, the target, and the dissonance curve across the slider's range, for this timbre
+  const rough = useMemo(() => {
+    if (!revealed) return null;
+    const amps = engine.getAmplitudes();
+    const curve = dissonanceCurve(amps, round.baseHz, round.min, round.max, 161);
+    return {
+      yours: intervalRoughness(amps, round.baseHz, value),
+      target: intervalRoughness(amps, round.baseHz, round.interval.cents),
+      curve,
+    };
+  }, [revealed, round, value]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -213,14 +225,7 @@ export function TuningGame() {
           <p className="mono m-0 text-sm">
             your interval {value.toFixed(1)}¢ · target {round.interval.kind === 'cents' ? `${round.interval.cents}¢` : `${round.interval.ratio} = ${round.interval.cents.toFixed(1)}¢`} · base {round.baseHz.toFixed(2)} Hz
           </p>
-          {/* error scale: ±50¢ around the target */}
-          <div className="relative h-8 border-b border-[var(--border)]" aria-hidden>
-            <div className="absolute bottom-0 left-1/2 h-8 w-px bg-[var(--text)]" />
-            {[-50, -25, 25, 50].map((c) => (
-              <span key={c} className="label absolute bottom-1 -translate-x-1/2 text-[10px]" style={{ left: `${50 + c}%` }}>{c > 0 ? '+' : ''}{c}¢</span>
-            ))}
-            <div className="absolute bottom-0 h-5 w-1.5 -translate-x-1/2 bg-[var(--accent)]" style={{ left: `${50 + marker}%` }} />
-          </div>
+          {rough && <RoughnessResult rough={rough} min={round.min} max={round.max} value={value} target={round.interval.cents} />}
           <div className="flex flex-wrap gap-2">
             <button type="button" className="btn" onClick={() => { engine.resume(); setListen('target'); setPlaying(true); }}>Hear the target</button>
             <button type="button" className="btn btn-primary" onClick={() => start()}>Next round</button>
@@ -233,6 +238,57 @@ export function TuningGame() {
           Rounds {stats.rounds} · average error {(stats.total / stats.rounds).toFixed(1)}¢ · best {stats.best.toFixed(1)}¢
         </p>
       )}
+    </div>
+  );
+}
+
+/**
+ * A small dissonance curve over the slider range with your note and the target on it, each labelled
+ * with its roughness (HTML labels over the SVG so the text stays the same size at any width).
+ */
+function RoughnessResult({ rough, min, max, value, target }: {
+  rough: { yours: number; target: number; curve: { cents: number; value: number }[] };
+  min: number; max: number; value: number; target: number;
+}) {
+  const W = 800;
+  const H = 110;
+  const TOP = 14; // room above the highest point
+  const vals = rough.curve.map((p) => p.value);
+  const lo = Math.min(...vals);
+  const hi = Math.max(...vals);
+  const x = (c: number) => ((c - min) / (max - min || 1)) * W;
+  const y = (v: number) => H - 6 - ((v - lo) / (hi - lo || 1)) * (H - 6 - TOP);
+  const points = rough.curve.map((p) => `${x(p.cents).toFixed(1)},${y(p.value).toFixed(1)}`).join(' ');
+  const diff = rough.target > 0 ? ((rough.yours - rough.target) / rough.target) * 100 : 0;
+  const pct = (c: number) => (x(c) / W) * 100;
+  const top = (v: number) => (y(v) / H) * 100;
+  // labels sit above their dots; when the dots are close, they lean apart instead of overlapping
+  const close = Math.abs(pct(value) - pct(target)) < 22;
+  const yoursRight = value >= target;
+  const lean = (right: boolean) => (close ? (right ? 'translate(8px, -130%)' : 'translate(calc(-100% - 8px), -130%)') : 'translate(-50%, -150%)');
+  return (
+    <div className="flex flex-col gap-1">
+      {/* the padding leaves room for labels above the highest dots; positions are % of the curve box */}
+      <div className="pt-6">
+        <div className="relative">
+        <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full" role="img"
+          aria-label={`Sethares roughness across the slider range: yours ${rough.yours.toFixed(4)}, target ${rough.target.toFixed(4)}`}>
+          <polyline points={points} fill="none" stroke="var(--text)" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
+          <line x1={x(target)} x2={x(target)} y1={0} y2={H} stroke="var(--text-secondary)" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
+          <circle cx={x(target)} cy={y(rough.target)} r={5} fill="var(--text-secondary)" />
+          <circle cx={x(value)} cy={y(rough.yours)} r={6.5} fill="var(--accent)" />
+        </svg>
+        <span className="mono absolute whitespace-nowrap bg-[var(--bg-raised)] px-1 text-xs text-[var(--text-secondary)]"
+          style={{ left: `${pct(target)}%`, top: `${top(rough.target)}%`, transform: lean(!yoursRight) }}>
+          target {rough.target.toFixed(4)}
+        </span>
+        <span className="mono absolute whitespace-nowrap bg-[var(--bg-raised)] px-1 text-xs font-semibold"
+          style={{ left: `${pct(value)}%`, top: `${top(rough.yours)}%`, transform: lean(yoursRight) }}>
+          yours {rough.yours.toFixed(4)}{Math.abs(diff) >= 0.05 ? ` · ${diff > 0 ? '+' : ''}${diff.toFixed(1)}%` : ''}
+        </span>
+        </div>
+      </div>
+      <span className="label normal-case tracking-normal">Sethares roughness across the slider · dashed = target · filled = yours · your timbre</span>
     </div>
   );
 }

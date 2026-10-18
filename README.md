@@ -87,7 +87,9 @@ The **Tuning game** tab trains your ear:
    the **Bottom** (base) or **Top** (your) note alone. The slider shows no numbers; its range is shifted every round
    (it spans a random 64–128¢) and your note starts at least 15¢ off. The ±¢ buttons make fine adjustments.
 3. Press **Reveal result** to see how many cents sharp or flat you were, with a rating from
-   *Perfect* (under 1¢) to *Keep practising*. Then **Hear the target**, or go to the **Next round**.
+   *Perfect* (under 1¢) to *Keep practising*, plus the **Sethares roughness** of your interval and of
+   the target, labelled on a small dissonance curve across the slider's range. Then **Hear the target**, or
+   go to the **Next round**.
 
 **Base note:** *Random* picks a new one between 220 and 440 Hz every round; *Choose* lets you pick a
 note and octave (C1–B7, A4 = 440 Hz) or type any frequency in Hz.

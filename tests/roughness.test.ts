@@ -33,3 +33,14 @@ describe('Sethares roughness', () => {
     expect(totalRoughness([{ freq: 440, amp: 1 }])).toBe(0);
   });
 });
+
+describe('intervalRoughness (tuning game)', () => {
+  it('is the dissonance-curve value at one interval and is lowest at the just ratio', async () => {
+    const { intervalRoughness } = await import('../src/audio/roughness');
+    const amps = Array.from({ length: 7 }, (_, k) => 0.88 ** k);
+    const fifth = intervalRoughness(amps, 300, 701.955);
+    expect(fifth).toBeCloseTo(dissonanceCurve(amps, 300, 701.955, 701.955, 1)[0].value, 12);
+    expect(intervalRoughness(amps, 300, 690)).toBeGreaterThan(fifth);
+    expect(intervalRoughness(amps, 300, 715)).toBeGreaterThan(fifth);
+  });
+});
