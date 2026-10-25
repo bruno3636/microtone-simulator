@@ -103,7 +103,9 @@ note and octave (C1–B7, A4 = 440 Hz) or type any frequency in Hz.
 Your rounds, average error and best result are tracked for the session.
 
 ### Shape the sound
-The **Synthesizer** tab has instrument presets (measured spectra), a harmonics editor (count,
+The **Synthesizer** tab has presets — classic waveforms, **1/k ×64 / ×32 / ×16 / ×8** (the first 64,
+32, 16 or 8 harmonics, harmonic k at 1/k of the fundamental; ×64 is the default) and instruments
+(measured spectra) — a harmonics editor (count,
 slope curve, per-harmonic tweaks, brightness decay), an ADSR envelope with draggable curves,
 volume and reverb. Settings are saved in your browser.
 

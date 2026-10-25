@@ -800,3 +800,7 @@ A single Zustand store with `persist` (localStorage key `ejis-settings`, `versio
   with eq. E.5 (70 dB reference) before min(ℓ1, ℓ2). The Level / Loudness switch and
   `viz.roughWeight` are removed; `totalRoughness`, `dissonanceCurve` and `intervalRoughness` no longer
   take a weighting argument.
+- **1/k presets** (`harm64`, `harm32`, `harm16`, `harm8`, labelled "1/k ×N", after the classic
+  waveforms): the first N harmonics, harmonic k at 1/k of the fundamental, all in phase (the saw's
+  spectrum without its alternating signs), with the synth envelope. **1/k ×64 is the default synth**
+  for a first visit (initial `preset`, `harmonics` and `envelope`); saved settings are unaffected.

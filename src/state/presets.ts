@@ -7,12 +7,12 @@ import {
 } from './spectra';
 
 export type PresetId =
-  | 'sine' | 'saw' | 'square' | 'triangle' | 'pluck' | 'organ' | 'piano' | 'harpsichord' | 'guitar' | 'harp' | 'violin' | 'cello' | 'voice'
+  | 'sine' | 'saw' | 'square' | 'triangle' | 'harm64' | 'harm32' | 'harm16' | 'harm8' | 'pluck' | 'organ' | 'piano' | 'harpsichord' | 'guitar' | 'harp' | 'violin' | 'cello' | 'voice'
   | 'flute' | 'oboe' | 'clarinet' | 'sax' | 'bassoon' | 'trumpet' | 'horn' | 'trombone' | 'tuba' | 'custom';
 
 /** Preset bar order: synthetic, keyboards, plucked, bowed, voice, woodwinds, brass (high to low). */
 export const PRESET_ORDER: Exclude<PresetId, 'custom'>[] = [
-  'sine', 'saw', 'square', 'triangle', 'pluck', 'organ', 'piano', 'harpsichord', 'guitar', 'harp', 'violin', 'cello', 'voice',
+  'sine', 'saw', 'square', 'triangle', 'harm64', 'harm32', 'harm16', 'harm8', 'pluck', 'organ', 'piano', 'harpsichord', 'guitar', 'harp', 'violin', 'cello', 'voice',
   'flute', 'oboe', 'clarinet', 'sax', 'bassoon', 'trumpet', 'horn', 'trombone', 'tuba',
 ];
 
@@ -84,6 +84,12 @@ export const SYNTH_PRESETS: Record<Exclude<PresetId, 'custom'>, SynthPreset> = {
     harmonics: series(32, (k) => (k % 2 ? (k % 4 === 1 ? 1 : -1) / (k * k) : 0)),
     envelope: { ...SYNTH_ENVELOPE },
   },
+  // Harmonic k at 1/k of the fundamental, all in phase (the saw's spectrum without its sign
+  // pattern): the first 64, 32, 16 or 8 harmonics. 1/k ×64 is the default synth.
+  harm64: { label: '1/k ×64', harmonics: series(64, (k) => 1 / k), envelope: { ...SYNTH_ENVELOPE } },
+  harm32: { label: '1/k ×32', harmonics: series(32, (k) => 1 / k), envelope: { ...SYNTH_ENVELOPE } },
+  harm16: { label: '1/k ×16', harmonics: series(16, (k) => 1 / k), envelope: { ...SYNTH_ENVELOPE } },
+  harm8: { label: '1/k ×8', harmonics: series(8, (k) => 1 / k), envelope: { ...SYNTH_ENVELOPE } },
   organ: {
     // pipe organ principal chorus, see spectra.ts; flue-pipe speech ≈40 ms, flat sustain
     label: 'Organ',

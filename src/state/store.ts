@@ -5,7 +5,7 @@ import { curveAmount, type EnvelopeSettings } from '../audio/envelope';
 import { DEFAULT_KEYMAPS, NOTE_FREQS, TUNINGS } from '../tuning/presets';
 import { SCALE_PRESETS } from '../tuning/scalePresets';
 import { createFromTemplate } from '../tuning/ratios';
-import { DEFAULT_ENVELOPE, DEFAULT_HARMONICS, SYNTH_PRESETS, type PresetId } from './presets';
+import { SYNTH_PRESETS, type PresetId } from './presets';
 import type { ThemeMode } from '../theme';
 
 export interface VizSettings {
@@ -138,11 +138,12 @@ export const useStore = create<StoreState>()(
       shown: [0],
       held: [],
       latched: [],
-      harmonics: structuredClone(DEFAULT_HARMONICS),
+      // a new user starts on the 1/k ×64 synth
+      harmonics: structuredClone(SYNTH_PRESETS.harm64.harmonics),
       darkHarmonics: null,
       brightnessTau: 1000,
-      envelope: { ...DEFAULT_ENVELOPE },
-      preset: 'custom',
+      envelope: { ...SYNTH_PRESETS.harm64.envelope },
+      preset: 'harm64',
       volume: 0.6,
       space: 0,
       viz: { view: 'wave', source: 'computed', periods: 2, speed: 0.5, showSum: true, freqScale: 'log', liveGain: 1, liveSpeed: 1, roughRange: 1 },
