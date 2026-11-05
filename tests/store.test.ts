@@ -210,7 +210,7 @@ describe('store', () => {
     };
     it('saw: every harmonic at 1/k, alternating sign (rising ramp)', () => {
       const t = SYNTH_PRESETS.saw.harmonics.tweaks;
-      expect(SYNTH_PRESETS.saw.harmonics.count).toBe(64);
+      expect(SYNTH_PRESETS.saw.harmonics.count).toBe(128);
       expect(t[1]).toBeCloseTo(1);
       expect(t[2]).toBeCloseTo(-1 / 2);
       expect(t[7]).toBeCloseTo(1 / 7);

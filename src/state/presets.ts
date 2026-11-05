@@ -43,8 +43,37 @@ function series(count: number, level: (k: number) => number): HarmonicSettings {
 
 const SYNTH_ENVELOPE: EnvelopeSettings = { attack: 5, decay: 100, sustain: 1, release: 120, attackCurve: 0, decayCurve: 0.6, releaseCurve: 0.6 };
 
-/** A measured spectrum as harmonic settings: every harmonic set explicitly as a tweak. */
-function measured(levels: number[]): HarmonicSettings {
+/** Every instrument preset carries at least this many harmonics. */
+export const MIN_INSTRUMENT_HARMONICS = 32;
+
+/**
+ * Extends a measured spectrum to `count` harmonics. The measurements stop where the partials
+ * sink below the −60 dB noise floor; the missing upper harmonics continue the spectrum's own
+ * roll-off: a power law (a straight line in dB per octave) fitted by least squares to the last
+ * eight non-zero harmonics, never rising and at least −6 dB/octave steep.
+ */
+export function extendSpectrum(levels: number[], count: number): number[] {
+  if (levels.length >= count) return levels;
+  const tail = levels.map((a, i) => [i + 1, a]).filter(([, a]) => a > 0).slice(-8);
+  const xs = tail.map(([k]) => Math.log(k));
+  const ys = tail.map(([, a]) => Math.log(a));
+  const mx = xs.reduce((s, x) => s + x, 0) / xs.length;
+  const my = ys.reduce((s, y) => s + y, 0) / ys.length;
+  const sxx = xs.reduce((s, x) => s + (x - mx) ** 2, 0);
+  const fitted = sxx > 0 ? xs.reduce((s, x, i) => s + (x - mx) * (ys[i] - my), 0) / sxx : -1;
+  const slope = Math.min(fitted, -1);
+  const [lastK, lastA] = tail[tail.length - 1];
+  const out = levels.slice();
+  for (let k = levels.length + 1; k <= count; k++) out.push(Number((lastA * (k / lastK) ** slope).toPrecision(4)));
+  return out;
+}
+
+/**
+ * A measured spectrum as harmonic settings: every harmonic set explicitly as a tweak, extended
+ * to at least MIN_INSTRUMENT_HARMONICS harmonics.
+ */
+function measured(measuredLevels: number[]): HarmonicSettings {
+  const levels = extendSpectrum(measuredLevels, MIN_INSTRUMENT_HARMONICS);
   return {
     count: levels.length,
     start: levels[0],
@@ -68,20 +97,20 @@ export const SYNTH_PRESETS: Record<Exclude<PresetId, 'custom'>, SynthPreset> = {
   },
   // Classic waveforms, exact Fourier series. Saw: every harmonic at 1/k with alternating sign
   // (rising ramp). Square: odd harmonics at 1/k. Triangle: odd harmonics at 1/k² with
-  // alternating sign; it falls below −60 dB after harmonic 31.
+  // alternating sign. All three carry 128 harmonics.
   saw: {
     label: 'Saw',
-    harmonics: series(64, (k) => (k % 2 ? 1 : -1) / k),
+    harmonics: series(128, (k) => (k % 2 ? 1 : -1) / k),
     envelope: { ...SYNTH_ENVELOPE },
   },
   square: {
     label: 'Square',
-    harmonics: series(64, (k) => (k % 2 ? 1 / k : 0)),
+    harmonics: series(128, (k) => (k % 2 ? 1 / k : 0)),
     envelope: { ...SYNTH_ENVELOPE },
   },
   triangle: {
     label: 'Triangle',
-    harmonics: series(32, (k) => (k % 2 ? (k % 4 === 1 ? 1 : -1) / (k * k) : 0)),
+    harmonics: series(128, (k) => (k % 2 ? (k % 4 === 1 ? 1 : -1) / (k * k) : 0)),
     envelope: { ...SYNTH_ENVELOPE },
   },
   // Harmonic k at 1/k of the fundamental, all in phase (the saw's spectrum without its sign

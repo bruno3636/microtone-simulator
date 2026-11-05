@@ -11,7 +11,7 @@ A rebuild of [web_intonation](https://flappix.github.io/web_intonation/) as a ne
 **Extended Just Intonation Simulator**. It keeps the original's tuning features and adds:
 
 - an animated visualizer with wave and spectrum (Fourier) views, each computed or live
-- a harmonic loudness curve with log/linear/exp shaping plus per-bar manual tweaks (1–64 harmonics)
+- a harmonic loudness curve with log/linear/exp shaping plus per-bar manual tweaks (1–128 harmonics)
 - a draggable ADSR envelope editor with curved segments
 - synth presets, click/touch playing, remembered settings, light/dark theme
 - a sound engine designed so beating and consonance are easy to hear
@@ -243,9 +243,9 @@ saved settings that name it migrate to CUSTOM.)
 | Preset | Harmonics | Envelope (A/D/S/R, curves) |
 |---|---|---|
 | SINE | count 1 | 10 / 200 / 100 % / 300, LIN/EXP/EXP |
-| SAW | exact Fourier series: 64 harmonics at (−1)^(k+1)/k (rising ramp) | 5 / 100 / 100 % / 120 |
-| SQUARE | 64 harmonics, odd only, at 1/k | 5 / 100 / 100 % / 120 |
-| TRIANGLE | 32 harmonics, odd only, at ±1/k² with alternating sign | 5 / 100 / 100 % / 120 |
+| SAW | exact Fourier series: 128 harmonics at (−1)^(k+1)/k (rising ramp) | 5 / 100 / 100 % / 120 |
+| SQUARE | 128 harmonics, odd only, at 1/k | 5 / 100 / 100 % / 120 |
+| TRIANGLE | 128 harmonics, odd only, at ±1/k² with alternating sign | 5 / 100 / 100 % / 120 |
 | PLUCK | count 32, start 1, end 0.02, curve 0.85, ALL | 3 / 1200 / 0 % / 500, LIN/EXP/EXP |
 
 Harmonic tweaks may be negative (−1 … 1): a phase-inverted harmonic. Sign doesn't change the
@@ -279,7 +279,7 @@ optionally carry a second, **sustain spectrum** and a **darken time τ**.
 ### 4.7 Instrument presets from spectral analysis (added 2026-10-03)
 
 PIANO, GUITAR, VIOLIN and CELLO use measured harmonic spectra, stored as per-harmonic levels
-(tweaks for every harmonic; values below −60 dB are dropped as noise floor).
+(tweaks for every harmonic; values below −60 dB are dropped as noise floor). Every instrument preset carries at least 32 harmonics: a spectrum measured to fewer is extended by a power-law (dB/octave) fit to its last eight non-zero harmonics, at least −6 dB/octave steep.
 
 | Preset | Spectrum source | Brightness decay |
 |---|---|---|

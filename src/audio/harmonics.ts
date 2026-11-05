@@ -12,7 +12,7 @@ export interface HarmonicSettings {
   tweaks: Record<number, number>;
 }
 
-export const MAX_HARMONICS = 64;
+export const MAX_HARMONICS = 128;
 
 const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x));
 

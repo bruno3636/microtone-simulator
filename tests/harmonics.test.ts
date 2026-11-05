@@ -13,8 +13,8 @@ describe('computeAmplitudes', () => {
     expect(a[1]).toBeCloseTo(0.5);
     expect(a[2]).toBeCloseTo(0);
   });
-  it('clamps count to 1..64', () => {
-    expect(computeAmplitudes({ ...base, count: 100 })).toHaveLength(64);
+  it('clamps count to 1..128', () => {
+    expect(computeAmplitudes({ ...base, count: 200 })).toHaveLength(128);
     expect(computeAmplitudes({ ...base, count: 0 })).toHaveLength(1);
   });
   it('tweaks override the curve', () => {
